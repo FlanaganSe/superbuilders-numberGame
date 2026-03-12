@@ -3,15 +3,17 @@ import tailwindcss from "@tailwindcss/vite";
 import react from "@vitejs/plugin-react";
 import { defineConfig } from "vite";
 import mkcert from "vite-plugin-mkcert";
+import { VitePWA } from "vite-plugin-pwa";
 import { viteStaticCopy } from "vite-plugin-static-copy";
 
 const isTest = process.env.VITEST === "true";
+const skipHttps = isTest || process.env.NO_HTTPS === "true";
 
 export default defineConfig({
 	plugins: [
 		react(),
 		tailwindcss(),
-		!isTest ? mkcert() : null,
+		!skipHttps ? mkcert() : null,
 		viteStaticCopy({
 			targets: [
 				{
@@ -24,6 +26,30 @@ export default defineConfig({
 				},
 			],
 		}),
+		!isTest
+			? VitePWA({
+					registerType: "autoUpdate",
+					workbox: {
+						maximumFileSizeToCacheInBytes: 30_000_000,
+						globPatterns: ["**/*.{js,css,html,wasm}"],
+						runtimeCaching: [
+							{
+								urlPattern: /\/models\/.*\.onnx$/,
+								handler: "CacheFirst",
+								options: {
+									cacheName: "onnx-models",
+									expiration: {
+										maxEntries: 5,
+										maxAgeSeconds: 60 * 60 * 24 * 365,
+									},
+									cacheableResponse: { statuses: [0, 200] },
+								},
+							},
+						],
+					},
+					manifest: false,
+				})
+			: null,
 	].filter(Boolean) as import("vite").PluginOption[],
 	worker: {
 		format: "es",

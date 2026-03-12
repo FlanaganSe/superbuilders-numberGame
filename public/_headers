@@ -1,0 +1,5 @@
+/*
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' blob: data:; connect-src 'self'; media-src 'self'; font-src 'self' https://fonts.gstatic.com; worker-src 'self' blob:
+  Permissions-Policy: camera=(self), microphone=()
+  X-Content-Type-Options: nosniff
+  X-Frame-Options: DENY

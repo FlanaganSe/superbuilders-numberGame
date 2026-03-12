@@ -228,7 +228,7 @@ Files to **update** during the plan:
   - [x] Step 3 — Wire FeedbackOverlay into GameScreen + App: integrate overlay, add session-end confetti, pause CV inference during success phase (1.5s), update component styles for visual polish → verify: `pnpm typecheck && pnpm test && pnpm lint && pnpm build`
   Commit: "feat: add visual design, animations, confetti, and FeedbackOverlay for children's game UX"
 
-- [ ] **M7: Audio + session flow + progressive loading** — Complete polished experience from start to finish
+- [x] **M7: Audio + session flow + progressive loading** — Complete polished experience from start to finish
   - [x] Step 1 — Sound infrastructure: create `src/audio/sound-manager.ts` (Howler setup with individual MP3+M4A files, autoSuspend=false, iOS unlock, visibility resume), `src/audio/use-audio.ts` (hook with stable play ref, mute-aware), `src/components/MuteButton.tsx` (toggle with speaker icons, ≥80px touch target) → verify: `pnpm typecheck`
   - [x] Step 2 — Wire audio to game events: update TapToStart (AudioContext unlock in gesture), CountdownTimer (tick each second), GameScreen (correctChime/encouragement/tileDetectedPop), SessionSummary (fix useMemo StrictMode bug, add fanfare), add MuteButton + visibility resume to App → verify: `pnpm typecheck && pnpm test`
   - [x] Step 3 — Progressive loader: create `src/components/ProgressiveLoader.tsx` (time-based friendly text, error state with retry/mock fallback), wire into App.tsx (show when workerStatus !== ready && phase !== idle) → verify: `pnpm typecheck && pnpm test && pnpm lint && pnpm build`
@@ -236,15 +236,13 @@ Files to **update** during the plan:
 
 ### Phase 4: Ship (Day 5–7)
 
-- [ ] **M8: Deployment + CI/CD** — App deployed to Cloudflare Pages with automated pipeline
-  - `vite-plugin-pwa` setup with Workbox: `maximumFileSizeToCacheInBytes: 30MB`, `globPatterns` for WASM, `runtimeCaching` CacheFirst for `.onnx`
-  - `public/manifest.json` with app name, icons, theme color, `display: standalone`, `orientation: "landscape"`
-  - `public/_headers` with security headers (CSP including `wasm-unsafe-eval`, Permissions-Policy for camera)
-  - `public/_redirects` for SPA routing
-  - GitHub Actions workflow: typecheck → lint → test → build → deploy to Cloudflare Pages
-  - Playwright WebKit E2E test: full game loop with `?recognition=mock` (camera mocked)
-  - `README.md` with setup/run instructions and CV pipeline overview (PRD deliverable)
-  - **Verify:** `pnpm build` produces < 2MB bundle (excluding `.onnx` and `.wasm`); Service Worker caches WASM and model files; deployed to Cloudflare Pages with correct security headers; GitHub Actions pipeline passes; E2E test runs in CI with WebKit; app works in both Safari tab and standalone (Add to Home Screen) mode
+- [x] **M8: Deployment + CI/CD** — App deployed to Cloudflare Pages with automated pipeline
+  - [x] Step 1 — PWA + Service Worker + manifest + icons: add vite-plugin-pwa to vite.config.ts (Workbox settings), create manifest.json, generate placeholder icons → verify: `pnpm typecheck && pnpm build`
+  - [x] Step 2 — Security headers + SPA redirects: create `public/_headers` (CSP, Permissions-Policy) + `public/_redirects` → verify: files in dist/ after build
+  - [x] Step 3 — GitHub Actions CI workflow: `.github/workflows/ci.yml` with typecheck → lint → test → build → deploy → verify: YAML valid
+  - [x] Step 4 — Playwright E2E test: install, configure WebKit, write game loop test, add test:e2e script → verify: `pnpm test:e2e` passes
+  - [x] Step 5 — README.md + final verification → verify: `pnpm typecheck && pnpm test && pnpm lint && pnpm build`
+  Commit: "feat: add deployment pipeline, PWA caching, E2E test, and README"
 
 - [ ] **M9: Real model integration + tuning** — Physical tiles detected on real iPad, all acceptance criteria met
   - Swap mock/placeholder model with trained YOLO11n ONNX model in `public/models/`

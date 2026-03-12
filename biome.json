@@ -28,7 +28,9 @@
 			"!**/.claude",
 			"!**/.agents",
 			"!**/.codex",
-			"!**/.plans"
+			"!**/.plans",
+			"!**/playwright-report",
+			"!**/test-results"
 		]
 	},
 	"css": {

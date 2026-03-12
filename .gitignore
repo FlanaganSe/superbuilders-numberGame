@@ -29,6 +29,10 @@ out/
 # TypeScript
 *.tsbuildinfo
 
+# Playwright
+playwright-report/
+test-results/
+
 # Logs
 *.log
 npm-debug.log*
