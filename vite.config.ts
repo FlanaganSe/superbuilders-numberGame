@@ -31,7 +31,7 @@ export default defineConfig({
 					registerType: "autoUpdate",
 					workbox: {
 						maximumFileSizeToCacheInBytes: 30_000_000,
-						globPatterns: ["**/*.{js,css,html,wasm}"],
+						globPatterns: ["**/*.{js,css,html,wasm,mp3,m4a}"],
 						runtimeCaching: [
 							{
 								urlPattern: /\/models\/.*\.onnx$/,
