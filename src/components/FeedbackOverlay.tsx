@@ -27,8 +27,8 @@ const ENCOURAGEMENT_TEXTS = [
 
 const CORRECT_SPRING = {
 	type: "spring" as const,
-	stiffness: 300,
-	damping: 15,
+	stiffness: 400,
+	damping: 10,
 };
 
 const WOBBLE_TRANSITION = {
@@ -79,7 +79,10 @@ export function FeedbackOverlay({
 				<TimeoutFeedback key="timeout" problem={feedback.problem} />
 			)}
 			{feedback?.type === "tile-seen" && (
-				<TileSeenFeedback key={`tile-${feedback.answer}`} />
+				<TileSeenFeedback
+					key={`tile-${feedback.answer}`}
+					answer={feedback.answer}
+				/>
 			)}
 		</AnimatePresence>
 	);
@@ -87,12 +90,25 @@ export function FeedbackOverlay({
 
 // ─── Confetti triggers ──────────────────────────────────────────────────────
 
+const CONFETTI_SCALAR = 2;
+const EMOJI_STAR = confetti.shapeFromText({
+	text: "⭐",
+	scalar: CONFETTI_SCALAR,
+});
+const EMOJI_SPARKLE = confetti.shapeFromText({
+	text: "✨",
+	scalar: CONFETTI_SCALAR,
+});
+
 function fireCorrectConfetti(): void {
 	confetti({
-		particleCount: 80,
+		particleCount: 60,
 		spread: 60,
-		origin: { y: 0.6 },
+		origin: { y: 0.7 },
 		colors: CONFETTI_COLORS,
+		shapes: [EMOJI_STAR, EMOJI_SPARKLE, "circle"],
+		scalar: CONFETTI_SCALAR,
+		flat: true,
 		disableForReducedMotion: true,
 	});
 }
@@ -160,18 +176,22 @@ function TimeoutFeedback({
 
 // ─── Tile-seen feedback ─────────────────────────────────────────────────────
 
-function TileSeenFeedback(): React.JSX.Element {
+function TileSeenFeedback({
+	answer,
+}: {
+	readonly answer: number;
+}): React.JSX.Element {
 	const reduced = useReducedMotion();
 
 	return (
 		<m.p
-			className="font-body text-3xl text-primary-400"
+			className="font-body text-3xl text-success-500"
 			initial={{ opacity: 0 }}
-			animate={reduced ? { opacity: 1 } : { opacity: 1, scale: [0.9, 1.05, 1] }}
+			animate={reduced ? { opacity: 1 } : { opacity: 1, scale: [0.8, 1.15, 1] }}
 			exit={{ opacity: 0 }}
 			transition={{ duration: 0.2 }}
 		>
-			I see a tile!
+			I see {answer}!
 		</m.p>
 	);
 }

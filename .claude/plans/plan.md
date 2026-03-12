@@ -52,20 +52,21 @@ Transform the Superbuilders demo from "functional prototype" to "polished, delig
 
 ### Phase 2: Reward Feedback
 
-- [ ] **M3: Confetti + Celebration Upgrade** — Emoji confetti, bouncier springs, sound variation
-  - `FeedbackOverlay.tsx`: Create emoji shapes with `confetti.shapeFromText({ text: '⭐', scalar: 2 })` and `'✨'`. Update `fireCorrectConfetti()` to use `shapes: [star, sparkle, 'circle']`, `scalar: 2`, `flat: true`, `origin: { y: 0.7 }`.
-  - `SessionSummary.tsx`: Same emoji confetti upgrade on the double-cannon burst.
-  - `FeedbackOverlay.tsx`: Update `CORRECT_SPRING` from `{ stiffness: 300, damping: 15 }` → `{ stiffness: 400, damping: 10 }`.
-  - `SessionSummary.tsx`: Update star stagger spring from `{ stiffness: 300, damping: 15 }` → `{ stiffness: 300, damping: 8 }`.
-  - `sound-manager.ts`: After `howl.play()` for `correctChime`, add `howl.rate(0.9 + Math.random() * 0.2, id)`.
-  - **Verify:** `pnpm typecheck && pnpm test`. Visually: correct answer shows ⭐✨ emoji confetti bursting from lower screen area. Stars on session-end should have a jelly-like plop. Each correct chime should sound slightly different.
+- [x] **M3: Confetti + Celebration Upgrade** — Emoji confetti, bouncier springs, sound variation
+  - [x] Step 1 — Emoji confetti in `FeedbackOverlay.tsx`: module-level `CONFETTI_SCALAR`, `EMOJI_STAR`, `EMOJI_SPARKLE` via `shapeFromText`; updated `fireCorrectConfetti()` with `shapes`, `scalar`, `flat: true`, `origin: { y: 0.7 }`
+  - [x] Step 2 — Bouncier `CORRECT_SPRING` in `FeedbackOverlay.tsx`: stiffness 300→400, damping 15→10
+  - [x] Step 3 — Bouncier star stagger in `SessionSummary.tsx`: damping 15→8 (jelly-like plop)
+  - [x] Step 4 — Pitch variation in `sound-manager.ts`: `howl.rate(0.9 + Math.random() * 0.2, id)` for correctChime only
+  - [x] SessionSummary confetti intentionally NOT changed — per user preference, session-end keeps colored rectangles for variety
+  - **Verify:** `pnpm typecheck && pnpm test && pnpm lint && pnpm build` — all pass (204 tests, 0 lint issues)
 
-- [ ] **M4: Tile-Seen Feedback** — Show detected answer value, stronger animation
-  - Thread `answer` prop to `TileSeenFeedback`: change line 82 from `<TileSeenFeedback key={...} />` to `<TileSeenFeedback key={...} answer={feedback.answer} />`
-  - Update `TileSeenFeedback` to accept `{ readonly answer: number }` and render `I see {answer}!`
-  - Increase animation scale from `[0.9, 1.05, 1]` → `[0.8, 1.15, 1]`
-  - Change color from `text-primary-400` → `text-success-500`
-  - **Verify:** `pnpm typecheck && pnpm test`. Visually in mock mode: type correct digit → should see "I see 7!" (not "I see a tile!") with a noticeable green bounce.
+- [x] **M4: Tile-Seen Feedback** — Show detected answer value, stronger animation
+  - [x] Step 1 — Threaded `answer` prop to `TileSeenFeedback` in `FeedbackOverlay.tsx:82-85`
+  - [x] Step 2 — Updated `TileSeenFeedback` signature to `{ readonly answer: number }`, render `I see {answer}!`
+  - [x] Step 3 — Increased animation scale from `[0.9, 1.05, 1]` → `[0.8, 1.15, 1]`
+  - [x] Step 4 — Changed color from `text-primary-400` → `text-success-500` (green = positive reinforcement)
+  - **Verify:** `pnpm typecheck && pnpm test && pnpm lint && pnpm build` — all pass
+  Commit: "feat: emoji confetti, bouncier springs, pitch variation, and tile-seen feedback"
 
 ### Phase 3: Gameplay UI
 

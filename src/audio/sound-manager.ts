@@ -67,7 +67,17 @@ export function preloadSounds(): void {
 
 /** Play a named sound. Does NOT check mute — caller is responsible. */
 export function playSound(name: SoundName): void {
-	getHowl(name).play();
+	const howl = getHowl(name);
+	const id = howl.play();
+	if (name === "correctChime") {
+		howl.once(
+			"play",
+			() => {
+				howl.rate(0.9 + Math.random() * 0.2, id);
+			},
+			id,
+		);
+	}
 }
 
 /**
