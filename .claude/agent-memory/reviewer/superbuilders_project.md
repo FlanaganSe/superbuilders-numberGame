@@ -8,14 +8,14 @@ Stack: Vite 7 + React 19 + ONNX Runtime Web 1.24 (WASM), Zustand 5, Motion 12 (L
 
 All 9 milestones complete as of 2026-03-12. Full codebase review conducted 2026-03-12.
 
-**Issues flagged in M6 review (2026-03-11) — status unknown:**
-1. `NEXT_ROUND` action carries a `problem` field that `game-reducer.ts` ignores. (Note: as of full review, NEXT_ROUND no longer has a problem field — appears fixed.)
-2. `SessionSummary.tsx`: `recordSession()` inside `useMemo` double-counts. (Fixed by 2026-03-12 — now uses useEffect with StrictMode guard.)
-3. `FeedbackOverlay` exit animation priority ordering — no in-code safety net. (Still present.)
-4. `GameScreen` timeout effect deps missing `attemptNumber`. (Still present — see issue #5 below.)
-5. `key`-based remount of `m.div` for pop animation. (Still present.)
-6. Zero-star session shows bare `0`. (Unknown.)
-7. Manual `useReducedMotion` branches redundant with `MotionConfig`. (Still present.)
+**Issues from M6 review (2026-03-11) — updated 2026-03-12:**
+1. ~~`NEXT_ROUND` problem field~~ — Fixed.
+2. ~~`SessionSummary.tsx` double-counts~~ — Fixed (useEffect with StrictMode guard).
+3. `FeedbackOverlay` exit animation priority — Open.
+4. `GameScreen` timeout effect deps missing `attemptNumber` — Open (see critical issue #5).
+5. `key`-based remount of `m.div` for pop animation — Open.
+6. Zero-star session shows bare `0` — Unknown.
+7. Manual `useReducedMotion` branches redundant with `MotionConfig` — Open.
 
 **Critical issues flagged in full codebase review (2026-03-12):**
 
@@ -28,7 +28,12 @@ All 9 milestones complete as of 2026-03-12. Full codebase review conducted 2026-
 **Medium issues flagged in full codebase review (2026-03-12):**
 
 6. **Post-`await` active check missing in `onVideoFrame`** (`frame-capture.ts:99–122`) — listeners notified after `stop()` is called; minor but can trigger recognize() on disposed service.
-7. **`requestCamera()` not awaited in `handleStart`** (`TapToStart.tsx:21–30`) — game enters countdown before camera succeeds; camera failure after START_SESSION leaves game running with no video.
+7. **`requestCamera()` not awaited in `handleStart`** (`TapToStart.tsx:21–30`) — game enters countdown before camera succeeds; camera failure after START_SESSION leaves game running with no video. Still open after M1/M2.
 8. **`ctx.resume()` in visibilitychange handler unhandled rejection** (`sound-manager.ts:105–108`) — can surface in browser console on iOS.
 9. **`ANSWER_COMMITTED` double-fire window** (`temporal-buffer.ts`, `game-store.ts`) — narrow but possible if two frames pass motion gate in rapid succession before Zustand flush.
 10. **Unbounded do/while in problem generator** (`problem-generator.ts:41–45, 63–66`) — no iteration cap; future constraint changes could spin indefinitely on main thread.
+
+**Issues flagged in M1/M2 review (2026-03-12):**
+
+11. **Old `WakeLockSentinel` leaked on rapid re-acquire** (`use-wake-lock.ts:25–37`) — if `acquire()` is called twice before the first system release, the first sentinel is overwritten in `sentinelRef` and never released. Re-acquire path has no test coverage.
+12. **`delay: 0.2` leaks into `whileTap` on the play button** (`TapToStart.tsx:59`) — the shared `transition` prop applies the 0.2 s delay to the tap scale-down, making it feel broken on device. Fix: move `delay` off the shared `GENTLE_SPRING` spread or add per-gesture `transition` override on `whileTap`.

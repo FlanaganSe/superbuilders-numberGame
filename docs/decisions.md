@@ -53,3 +53,16 @@ Append-only log. Read during planning, not loaded every session.
 **Decision:** Biome 2.x as the sole linter and formatter. No ESLint, no Prettier.
 
 **Consequences:** Single config file (`biome.json`), faster CI, fewer dev dependencies. Trade-off: smaller plugin ecosystem than ESLint, but the built-in React rules cover our needs.
+
+---
+
+## ADR-005: AnimatePresence Phase Transitions ≤200ms
+
+**Date:** 2026-03-12
+**Status:** Accepted
+
+**Context:** Phase transitions were instant DOM swaps. Adding `AnimatePresence mode="wait"` keeps the exiting component mounted during its exit animation. CountdownTimer owns a `setInterval` that reads phase from the store — if the exit window is too long, it could fire multiple ticks against a stale phase. The timer self-clears at `CountdownTimer.tsx:29` and the reducer guards at `game-reducer.ts:73`, making short exits safe.
+
+**Decision:** 150ms opacity-only fade via `AnimatePresence mode="wait"` + `m.div`. No springs, no scale, no y-offset on exit. Duration must not exceed 200ms.
+
+**Consequences:** Phase changes feel smooth instead of jarring. The 200ms ceiling is a hard constraint — any future change to exit animation duration or type (e.g., springs) must re-evaluate the CountdownTimer timing interaction.
