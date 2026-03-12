@@ -58,7 +58,7 @@ export function createMockRecognitionService(): MockRecognitionControl {
 			isReady = true;
 		},
 
-		async recognize(_frame: ImageBitmap): Promise<RecognitionResult> {
+		async recognize(_frame: ImageBitmap): Promise<RecognitionResult | null> {
 			_frame.close();
 			return {
 				detections: [],

@@ -99,10 +99,10 @@ export function createOnnxRecognitionService(): OnnxRecognitionService {
 			});
 		},
 
-		async recognize(frame: ImageBitmap): Promise<RecognitionResult> {
+		async recognize(frame: ImageBitmap): Promise<RecognitionResult | null> {
 			if (!worker || currentStatus !== "ready" || currentBusy) {
 				frame.close();
-				return { ...EMPTY_RESULT, frameTimestamp: Date.now() };
+				return null;
 			}
 
 			currentBusy = true;

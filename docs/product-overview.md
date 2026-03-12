@@ -108,14 +108,15 @@ src/
 ├── index.css                   # Tailwind @theme: colors, fonts, animations
 ├── vite-env.d.ts               # Vite client types
 │
-├── components/                 # React UI layer (12 components)
-│   ├── App.tsx                 # Root orchestrator: CV pipeline wiring, phase routing
-│   ├── GameScreen.tsx          # Active game: problem display, tile detection, feedback
-│   ├── TapToStart.tsx          # Idle screen: audio unlock + camera request in one gesture
-│   ├── CountdownTimer.tsx      # 3-2-1 countdown with tick sounds
+├── components/                 # React UI layer (13 components)
+│   ├── App.tsx                 # Root orchestrator: CV pipeline wiring, phase routing, fade transitions
+│   ├── GameScreen.tsx          # Active game: problem display, tile detection, feedback, progress
+│   ├── TapToStart.tsx          # Idle screen: audio unlock + camera + wake lock in one gesture
+│   ├── CountdownTimer.tsx      # 5→1 countdown with tick sounds and color urgency
 │   ├── ProgressiveLoader.tsx   # Model loading gate with child-friendly messages
 │   ├── SessionSummary.tsx      # End celebration: confetti, stars, cumulative stats
 │   ├── FeedbackOverlay.tsx     # Transient overlay: correct/timeout/tile-seen states
+│   ├── ProgressPips.tsx        # Round progress indicator (filled/unfilled dots)
 │   ├── CalibrationGuide.tsx    # One-time camera setup checklist
 │   ├── ProblemDisplay.tsx      # "3 + 4 = ?" renderer
 │   ├── MuteButton.tsx          # Fixed-position audio toggle
@@ -150,6 +151,9 @@ src/
 ├── store/                      # Zustand state management
 │   ├── game-store.ts           # Game state, CV integration, mute toggle
 │   └── cv-store.ts             # Transient CV data (detections, latency, worker status)
+│
+├── hooks/                      # Shared React hooks
+│   └── use-wake-lock.ts        # Screen Wake Lock API — prevents iPad sleep during gameplay
 │
 ├── audio/                      # Sound system
 │   ├── sound-manager.ts        # Howler.js config, AudioContext unlock, visibility resume
@@ -196,11 +200,11 @@ docs/
 
 The game is a finite state machine with six phases:
 
-1. **idle** — Welcome screen. User taps "Let's Play!" which atomically unlocks AudioContext, requests camera permission, and starts the session. All three must happen in a single user gesture (iOS requirement).
+1. **idle** — Welcome screen with disabled "Coming Soon" mode buttons (Spelling, Image Quiz). User taps "Let's Play!" which atomically does four things: (a) unlocks AudioContext, (b) requests camera permission, (c) acquires screen wake lock, (d) starts the session. All four must happen in a single user gesture (iOS requirement).
 
-2. **countdown** — 3-second countdown with tick sounds and spring-animated numbers. Generates the next problem.
+2. **countdown** — 5-second countdown with tick sounds, spring-animated numbers, and color urgency (5=blue → 4=teal → 3=amber → 2=orange → 1=red). Generates the next problem on completion.
 
-3. **scanning** — Active detection. Camera feeds frames to the CV pipeline. The problem displays with "?" as the answer. 30-second timeout per round.
+3. **scanning** — Active detection. Camera feeds frames to the CV pipeline. The problem displays with "?" as the answer. A dashed "Put your answer here" zone pulses until a tile is detected. Progress pips show the current round out of 15. 30-second timeout per round.
 
 4. **success** — Correct answer detected. Stars awarded (3/2/1 based on attempt number). Celebration animation + confetti. Auto-advances after 1.5s.
 
@@ -251,17 +255,26 @@ Difficulty adapts per-round: 3 consecutive correct promotes (max 5), 2 consecuti
 - **Direct access for non-React:** `useGameStore.getState().gameState.phase` — used in CV pipeline callbacks
 - **Transient subscription:** `useCvStore.subscribe(callback)` — used in debug components that need raw detection data at inference rate
 
-### Animation patterns
+### Animation and visual patterns
 - **Spring configs are intentional:** Buttons use `stiffness: 400, damping: 17` (snappy). Celebrations use `stiffness: 300, damping: 15` (bouncier). Tile detection pop uses `stiffness: 400, damping: 10` (very bouncy).
-- **`AnimatePresence` with `mode="wait"`** for sequential phase transitions (countdown numbers)
-- **`whileTap={{ scale: 0.9 }}`** on all interactive buttons for tactile feedback
-- **Reduced motion:** All animations check `prefers-reduced-motion`. Confetti has `disableForReducedMotion: true`. FeedbackOverlay falls back to fade-only.
+- **Phase fade transitions:** `AnimatePresence mode="wait"` + `m.div` with 150ms opacity-only fades (ADR-005). Duration must not exceed 200ms — longer exits break CountdownTimer's `setInterval` timing.
+- **`AnimatePresence` with `mode="wait"`** also used for sequential countdown numbers.
+- **`whileTap={{ scale: 0.95 }}`** on all interactive buttons for tactile feedback.
+- **Breathing background:** CSS `@property --bg-x` animates two radial gradients (warm yellow + soft pink) on a 10s `bg-drift` keyframe over the cream base. Reduced-motion disables it.
+- **Countdown color urgency:** Each countdown number renders in a phase-specific color via a `COUNTDOWN_COLORS` lookup — progresses from cool (blue) to warm (red) to build anticipation.
+- **Emoji confetti:** `canvas-confetti`'s `shapeFromText` renders star and sparkle emojis alongside circles. Session-end fires dual-cannon confetti from both edges.
+- **Reduced motion:** All animations check `prefers-reduced-motion` via `MotionConfig reducedMotion="user"`. Confetti has `disableForReducedMotion: true`. FeedbackOverlay falls back to fade-only.
+
+### Audio patterns
+- **Pitch variation:** Correct answer chime plays at a randomized rate (`0.9 + Math.random() * 0.2`) so consecutive correct answers don't sound identical.
+- **Lazy Howl instantiation:** Each sound is created on first access and cached in a `Map<SoundName, Howl>`. `preloadSounds()` triggers all of them during the start gesture.
 
 ### Error handling
 - Camera errors mapped to child-friendly messages (no technical jargon)
 - localStorage operations wrapped in try/catch with sensible defaults
 - ONNX worker errors distinguished as fatal (model load failure) vs. non-fatal (single inference failure)
 - ProgressiveLoader offers "Try Again" (page reload) and "Play Without Camera" (mock mode fallback)
+- Wake lock acquisition is best-effort — failure is silent since not all environments support it
 
 ### Feature flags (URL parameters)
 - `?recognition=mock` — Keyboard numpad instead of camera CV
@@ -312,7 +325,7 @@ Every strict flag is enabled: `strict`, `noUncheckedIndexedAccess`, `noUnusedLoc
 
 ## Testing
 
-### Unit tests (Vitest, 14 files, ~1,750 lines)
+### Unit tests (Vitest, 16 files)
 
 **Game engine (heavy coverage):**
 - `game-reducer.test.ts` — All phase transitions, invalid action handling, session completion
@@ -328,10 +341,12 @@ Every strict flag is enabled: `strict`, `noUncheckedIndexedAccess`, `noUnusedLoc
 - `motion-gate.test.ts` — Confidence threshold, empty detection handling
 - `mock-recognition.test.ts` — Mock service lifecycle, detection shape validation
 - `fixture-frame-source.test.ts` — Image replay, listener management, cleanup
+- `pipeline-regression.test.ts` — End-to-end pipeline integration: synthetic tensor → postProcess → groupDetections → matchAnswer → temporal buffer → motion gate. Covers all 10 digits, two-tile answers, 6/9 distinction, NMS dedup, confidence filtering, letterbox unscaling, stray tile handling.
 
-**Camera & utilities:**
+**Camera, hooks & utilities:**
 - `frame-capture.test.ts` — Initial state, listener management, stats snapshots
 - `use-camera.test.ts` — Type validation (CameraStatus enum shape)
+- `use-wake-lock.test.ts` — Wake lock hook API shape, supported flag
 - `feature-flags.test.ts` — URL parameter parsing, defaults, truthy values
 
 **Not tested (by design):**
@@ -404,14 +419,23 @@ The model training guide explicitly prohibits horizontal/vertical flips in data 
 
 Every sound effect exists in both MP3 and M4A format. Howler.js selects the best format for the browser. M4A (AAC) is Safari's preferred codec. MP3 is the universal fallback. This doubles the audio asset size (~500KB total) but guarantees playback on every target browser.
 
+### Phase fade transitions ≤200ms (ADR-005)
+
+Phase transitions were originally instant DOM swaps. Adding `AnimatePresence mode="wait"` with 150ms opacity fades makes them smooth. The 200ms ceiling is a hard constraint: CountdownTimer's `setInterval` reads phase from the store, and if the exit animation holds the old component mounted too long, stale timer ticks can fire. Springs or y-offsets on exit would risk exceeding this budget.
+
+### Screen wake lock
+
+iPads auto-sleep after ~2 minutes of no touch. During scanning phases, the child isn't touching the screen (they're placing physical tiles). The `useWakeLock` hook acquires `navigator.wakeLock.request("screen")` in the start gesture and re-acquires on visibility change. Failure is silent — not all environments support it, and the game still works if the screen locks (just inconvenient).
+
 ---
 
 ## Gotchas
 
 ### iOS Safari specifics
-- **AudioContext must be unlocked in a user gesture.** The "Let's Play!" button simultaneously unlocks audio, requests camera permission, and starts the session. Splitting these into separate gestures would require separate taps.
+- **The start gesture is a 4-in-1 atomic action.** The "Let's Play!" button simultaneously (a) unlocks AudioContext, (b) requests camera, (c) acquires screen wake lock, (d) starts the session. All four must happen in a single user gesture — splitting them would require separate taps and iOS would block the deferred ones.
 - **AudioContext goes to `"interrupted"` state** (not `"suspended"`) when the app backgrounds on iOS. The visibility change handler checks for both states and resumes with a 200ms delay.
 - **Camera streams die on background.** iOS kills `getUserMedia` streams when the app loses focus. The `use-camera` hook detects `track.readyState === "ended"` and sets status to `"interrupted"`, showing a "Tap to restart camera" button. You cannot call `getUserMedia` from a `visibilitychange` handler — it requires a user gesture.
+- **Wake lock also dies on background.** The `useWakeLock` hook re-acquires on `visibilitychange` (same pattern as audio resume). Wake lock must be initially acquired inside a user gesture.
 - **`Howler.autoSuspend = false` must be set before any Howl instance is created.** Setting it after causes audio dropouts. This is a module-level side effect in `sound-manager.ts`.
 
 ### ONNX Runtime Web specifics
@@ -428,6 +452,7 @@ Every sound effect exists in both MP3 and M4A format. Howler.js selects the best
 ### Game state specifics
 - **SessionSummary guards against React StrictMode double-invoke** using a module-level `Set` of session timestamps. Without this, `recordSession()` would fire twice, doubling the cumulative stats.
 - **The game reducer ignores invalid transitions.** Dispatching `ANSWER_CORRECT` during `"idle"` phase is a no-op, not an error. This is intentional — the CV pipeline might fire a detection result after a phase transition has already occurred.
+- **Phase exit animations must stay ≤200ms (ADR-005).** `AnimatePresence mode="wait"` keeps exiting components mounted during their exit. CountdownTimer owns a `setInterval` that reads phase from the store — if the exit window exceeds ~200ms, stale ticks can fire. The timer self-clears and the reducer guards against it, but only within this timing budget.
 
 ### Build and deployment
 - **The ONNX WASM files must be statically copied** — they can't be imported as ES modules. `vite-plugin-static-copy` handles this.

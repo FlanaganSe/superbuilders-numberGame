@@ -51,7 +51,8 @@ export interface PreprocessingStrategy {
 /** Model init, inference, and dispose — every backend (ORT, mock, cloud, fixture) implements this. */
 export interface RecognitionService {
 	init(modelUrl?: string): Promise<void>;
-	recognize(frame: ImageBitmap): Promise<RecognitionResult>;
+	/** Returns null when the frame was skipped (e.g. worker busy). Callers must not treat null as "no detections". */
+	recognize(frame: ImageBitmap): Promise<RecognitionResult | null>;
 	dispose(): void;
 	readonly ready: boolean;
 }

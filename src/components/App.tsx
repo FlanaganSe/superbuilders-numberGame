@@ -148,6 +148,9 @@ export function App(): React.JSX.Element {
 			const result = await service.recognize(bitmap);
 			// bitmap ownership transferred to worker (or closed if busy/not ready)
 
+			// Frame was skipped (worker busy) — don't touch cv-store or temporal buffer
+			if (!result) return;
+
 			// Guard: if service was disposed while recognize was inflight, skip
 			if (!service.ready) return;
 
