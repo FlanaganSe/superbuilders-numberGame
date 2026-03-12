@@ -34,8 +34,11 @@ export function parseFeatureFlags(params: URLSearchParams): FeatureFlags {
 	};
 }
 
-/** Read feature flags from the current page URL. */
+/** Read feature flags from the current page URL. Cached — flags can't change without a reload. */
+let cached: FeatureFlags | null = null;
 export function getFeatureFlags(): FeatureFlags {
+	if (cached) return cached;
 	if (typeof window === "undefined") return DEFAULTS;
-	return parseFeatureFlags(new URLSearchParams(window.location.search));
+	cached = parseFeatureFlags(new URLSearchParams(window.location.search));
+	return cached;
 }

@@ -2,7 +2,6 @@ import confetti from "canvas-confetti";
 import * as m from "motion/react-m";
 import { useEffect, useState } from "react";
 import { useAudio } from "../audio/use-audio";
-import { AdditionMode } from "../engine/problem-generator";
 import { loadCumulative, recordSession } from "../engine/session";
 import { useGameStore } from "../store/game-store";
 import type { SessionData } from "../types/game";
@@ -94,7 +93,7 @@ export function SessionSummary({
 
 	function handlePlayAgain(): void {
 		dispatch({ type: "RESET" });
-		dispatch({ type: "START_SESSION", mode: AdditionMode });
+		dispatch({ type: "START_SESSION" });
 	}
 
 	// Show up to 5 animated star icons for visual appeal

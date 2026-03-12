@@ -21,8 +21,7 @@ pnpm preview          # Preview production build
 @.claude/rules/stack.md
 
 ## System
-<!-- Uncomment when SYSTEM.md has real content: -->
-<!-- @docs/SYSTEM.md -->
+See `docs/product-overview.md` for architecture, domain model, patterns, and gotchas.
 
 ## Decisions
 See `docs/decisions.md` — append-only ADR log. Read during planning, not loaded every session.

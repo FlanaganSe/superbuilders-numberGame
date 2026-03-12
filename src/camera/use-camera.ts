@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { getFeatureFlags } from "../utils/feature-flags";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -113,13 +114,16 @@ export function useCamera(): CameraHandle {
 				await videoRef.current.play();
 			}
 			const elapsed = performance.now() - startTime;
-			console.log(`[camera] tap-to-preview: ${elapsed.toFixed(0)}ms`);
+			if (getFeatureFlags().debug) {
+				console.log(`[camera] tap-to-preview: ${elapsed.toFixed(0)}ms`);
+			}
 		} catch (err) {
+			stopAllTracks();
 			const cameraError = friendlyErrorMessage(err);
 			setError(cameraError);
 			setStatus(cameraError.status);
 		}
-	}, [attachStream]);
+	}, [attachStream, stopAllTracks]);
 
 	const stopCamera = useCallback((): void => {
 		stopAllTracks();
@@ -146,9 +150,11 @@ export function useCamera(): CameraHandle {
 			const anyEnded = tracks.some((t) => t.readyState === "ended");
 
 			if (anyEnded) {
-				console.log(
-					"[camera] stream ended after background — needs user gesture to recover",
-				);
+				if (getFeatureFlags().debug) {
+					console.log(
+						"[camera] stream ended after background — needs user gesture to recover",
+					);
+				}
 				stopAllTracks();
 				setStatus("interrupted");
 			}

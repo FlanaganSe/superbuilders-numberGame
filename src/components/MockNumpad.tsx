@@ -1,7 +1,8 @@
 import * as m from "motion/react-m";
+import type { Digit } from "../types/cv";
 
 interface MockNumpadProps {
-	readonly onDigit: (digit: number) => void;
+	readonly onDigit: (digit: Digit) => void;
 }
 
 const DIGITS = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9] as const;

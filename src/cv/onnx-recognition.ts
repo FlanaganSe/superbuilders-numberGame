@@ -29,6 +29,12 @@ export function createOnnxRecognitionService(): OnnxRecognitionService {
 	} | null = null;
 	let pendingInfer: ((result: RecognitionResult) => void) | null = null;
 
+	const EMPTY_RESULT: RecognitionResult = {
+		detections: [],
+		latencyMs: 0,
+		frameTimestamp: 0,
+	};
+
 	function handleMessage(e: MessageEvent<WorkerToMain>): void {
 		const msg = e.data;
 		switch (msg.type) {
@@ -55,8 +61,12 @@ export function createOnnxRecognitionService(): OnnxRecognitionService {
 				if (msg.fatal) {
 					currentStatus = "error";
 					currentError = msg.message;
+					currentBusy = false;
 					pendingInit?.reject(new Error(msg.message));
 					pendingInit = null;
+					// Unblock any pending inference so the frame loop doesn't deadlock
+					pendingInfer?.({ ...EMPTY_RESULT, frameTimestamp: Date.now() });
+					pendingInfer = null;
 				} else {
 					// Non-fatal error (inference failure) — clear busy, resolve empty
 					currentBusy = false;
@@ -71,12 +81,6 @@ export function createOnnxRecognitionService(): OnnxRecognitionService {
 			}
 		}
 	}
-
-	const EMPTY_RESULT: RecognitionResult = {
-		detections: [],
-		latencyMs: 0,
-		frameTimestamp: 0,
-	};
 
 	return {
 		async init(modelUrl?: string): Promise<void> {

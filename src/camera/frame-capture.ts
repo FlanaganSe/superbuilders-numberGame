@@ -112,8 +112,8 @@ export function createFrameCapture(): FrameCapture {
 				const clone = await createImageBitmap(bitmap);
 				cb(clone);
 			});
-			bitmap.close();
 			await Promise.all(clonePromises);
+			bitmap.close();
 		} else {
 			// No consumer — close immediately to prevent GPU memory leak
 			bitmap.close();

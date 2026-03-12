@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
-import type { DetectedDigit } from "../types/cv";
+import type { DetectedDigit, Digit } from "../types/cv";
 import { isFrameStable } from "./motion-gate";
 
-function detection(confidence: number, digit = 7): DetectedDigit {
+function detection(confidence: number, digit: Digit = 7): DetectedDigit {
 	return {
 		digit,
 		confidence,

@@ -48,7 +48,7 @@ export type GamePhase =
 // ─── Game Action (discriminated union) ───────────────────────────────────────
 
 export type GameAction =
-	| { readonly type: "START_SESSION"; readonly mode: GameMode }
+	| { readonly type: "START_SESSION" }
 	| { readonly type: "COUNTDOWN_TICK"; readonly secondsLeft: number }
 	| { readonly type: "COUNTDOWN_COMPLETE"; readonly problem: Problem }
 	| { readonly type: "ANSWER_CORRECT"; readonly stars: 1 | 2 | 3 }
@@ -69,7 +69,7 @@ export interface SessionData {
 	readonly rounds: readonly RoundResult[];
 	readonly totalStars: number;
 	readonly difficulty: DifficultyLevel;
-	readonly mode: string;
+	readonly mode: "Addition" | "Subtraction";
 	readonly startedAt: number;
 	readonly endedAt: number;
 }

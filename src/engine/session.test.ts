@@ -149,7 +149,7 @@ function makeMockSession(totalStars: number) {
 		rounds: [],
 		totalStars,
 		difficulty: 1 as const,
-		mode: "Addition",
+		mode: "Addition" as const,
 		startedAt: 0,
 		endedAt: 0,
 	};

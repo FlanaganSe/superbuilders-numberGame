@@ -1,12 +1,13 @@
 import type {
 	DetectedDigit,
+	Digit,
 	RecognitionResult,
 	RecognitionService,
 } from "../types/cv";
 
 // ─── Mock detection factory ─────────────────────────────────────────────────
 
-export function createMockDetection(digit: number): DetectedDigit {
+export function createMockDetection(digit: Digit): DetectedDigit {
 	return {
 		digit,
 		confidence: 0.99,
@@ -20,8 +21,8 @@ export function createMockDetection(digit: number): DetectedDigit {
 }
 
 export function createMockDetectionPair(
-	tens: number,
-	ones: number,
+	tens: Digit,
+	ones: Digit,
 ): readonly DetectedDigit[] {
 	return [
 		{
@@ -43,7 +44,7 @@ export type DigitCallback = (detections: readonly DetectedDigit[]) => void;
 
 export interface MockRecognitionControl {
 	readonly service: RecognitionService;
-	readonly emitDigit: (digit: number) => void;
+	readonly emitDigit: (digit: Digit) => void;
 	readonly emitDigits: (digits: readonly DetectedDigit[]) => void;
 	readonly onDetection: (cb: DigitCallback) => () => void;
 }
@@ -58,6 +59,7 @@ export function createMockRecognitionService(): MockRecognitionControl {
 		},
 
 		async recognize(_frame: ImageBitmap): Promise<RecognitionResult> {
+			_frame.close();
 			return {
 				detections: [],
 				latencyMs: 0,
@@ -78,7 +80,7 @@ export function createMockRecognitionService(): MockRecognitionControl {
 	return {
 		service,
 
-		emitDigit(digit: number): void {
+		emitDigit(digit: Digit): void {
 			const detections = [createMockDetection(digit)];
 			for (const cb of listeners) {
 				cb(detections);

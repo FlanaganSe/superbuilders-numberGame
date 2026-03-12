@@ -1,7 +1,6 @@
 import * as m from "motion/react-m";
 import { unlockAudio } from "../audio/sound-manager";
 import type { CameraError } from "../camera/use-camera";
-import { AdditionMode } from "../engine/problem-generator";
 import { useGameStore } from "../store/game-store";
 import { getFeatureFlags } from "../utils/feature-flags";
 
@@ -26,7 +25,7 @@ export function TapToStart({
 		if (flags.recognition !== "mock") {
 			requestCamera();
 		}
-		dispatch({ type: "START_SESSION", mode: AdditionMode });
+		dispatch({ type: "START_SESSION" });
 	}
 
 	return (

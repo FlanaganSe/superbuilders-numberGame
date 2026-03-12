@@ -6,6 +6,7 @@ import {
 	createMockDetectionPair,
 } from "../cv/mock-recognition";
 import { useGameStore } from "../store/game-store";
+import type { Digit } from "../types/cv";
 import type { Problem } from "../types/game";
 import { getFeatureFlags } from "../utils/feature-flags";
 import { FeedbackOverlay, type FeedbackState } from "./FeedbackOverlay";
@@ -45,7 +46,7 @@ export function GameScreen({
 	const { play } = useAudio();
 
 	const handleDigit = useCallback(
-		(digit: number): void => {
+		(digit: Digit): void => {
 			const phase = useGameStore.getState().gameState.phase;
 			if (phase.phase !== "scanning") return;
 
@@ -55,8 +56,8 @@ export function GameScreen({
 			if (answerStr.length === 1) {
 				processDetections([createMockDetection(digit)]);
 			} else if (answerStr.length === 2) {
-				const tens = Math.floor(answer / 10);
-				const ones = answer % 10;
+				const tens = Math.floor(answer / 10) as Digit;
+				const ones = (answer % 10) as Digit;
 				if (digit === tens) {
 					processDetections([...createMockDetectionPair(tens, ones)]);
 				} else {
@@ -74,7 +75,7 @@ export function GameScreen({
 		function onKeyDown(e: KeyboardEvent): void {
 			const digit = Number.parseInt(e.key, 10);
 			if (!Number.isNaN(digit) && digit >= 0 && digit <= 9) {
-				handleDigit(digit);
+				handleDigit(digit as Digit);
 			}
 		}
 
@@ -110,9 +111,11 @@ export function GameScreen({
 		if (tileSeen !== null) play("tileDetectedPop");
 	}, [tileSeen, play]);
 
-	// Timeout handling
+	// Timeout handling — `stars` in deps ensures the timer is cancelled when
+	// a correct answer arrives (otherwise the old 30s timer survives into the
+	// next round's scanning phase and fires a phantom ROUND_TIMEOUT).
 	useEffect(() => {
-		if (timedOut) return;
+		if (timedOut || stars) return;
 		const phase = useGameStore.getState().gameState.phase;
 		if (phase.phase !== "scanning") return;
 
@@ -120,7 +123,7 @@ export function GameScreen({
 			dispatch({ type: "ROUND_TIMEOUT" });
 		}, 30_000);
 		return () => clearTimeout(timer);
-	}, [timedOut, dispatch]);
+	}, [timedOut, stars, dispatch]);
 
 	// Auto-retry after timeout
 	useEffect(() => {

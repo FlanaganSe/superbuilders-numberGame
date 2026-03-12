@@ -6,7 +6,6 @@ import {
 	initialGameState,
 	MAX_PROBLEMS,
 } from "./game-reducer";
-import { AdditionMode } from "./problem-generator";
 
 const SAMPLE_PROBLEM: Problem = {
 	left: 3,
@@ -21,7 +20,7 @@ function dispatch(state: GameState, action: GameAction): GameState {
 }
 
 function startSession(state: GameState): GameState {
-	return dispatch(state, { type: "START_SESSION", mode: AdditionMode });
+	return dispatch(state, { type: "START_SESSION" });
 }
 
 function toScanning(state: GameState): GameState {

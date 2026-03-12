@@ -15,9 +15,11 @@
 
 		/* Strict */
 		"strict": true,
+		"noUncheckedIndexedAccess": true,
 		"noUnusedLocals": true,
 		"noUnusedParameters": true,
 		"noFallthroughCasesInSwitch": true,
+		"exactOptionalPropertyTypes": true,
 		"forceConsistentCasingInFileNames": true
 	},
 	"include": ["vite.config.ts", "playwright.config.ts", "e2e/**/*.ts"]

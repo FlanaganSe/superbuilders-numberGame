@@ -169,7 +169,7 @@ public/
 ├── _redirects                  # Cloudflare Pages redirects
 ├── icons/                      # SVG icons (192, 512)
 ├── models/
-│   └── yolo11n-coco.onnx       # YOLO11n model (~11MB, FP32, COCO pretrained)
+│   └── digit-tiles.onnx        # Custom YOLO11n model (~11MB, FP32, 10-class digit detector)
 └── sounds/                     # Dual-format audio (MP3 + M4A per sound)
     ├── correct.{mp3,m4a}
     ├── encourage.{mp3,m4a}
@@ -294,7 +294,7 @@ pnpm dev              # HTTPS dev server (mkcert auto-generates certs)
 HTTPS is required for `getUserMedia` camera access. The `vite-plugin-mkcert` plugin handles certificate generation automatically.
 
 ### Required for deployment
-- **Cloudflare Pages** project: `superbuildersnumbergame`
+- **Cloudflare Pages** project: `superbuilders-numbergame`
 - **GitHub Secrets:** `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`
 - CI/CD: GitHub Actions (`.github/workflows/ci.yml`) — quality → E2E → deploy pipeline
 

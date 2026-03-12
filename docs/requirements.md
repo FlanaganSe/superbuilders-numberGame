@@ -1,5 +1,7 @@
 # 1-Week Challenge: Build an OSMO Clone with Computer Vision
 
+> **Note:** This is the original PRD, preserved verbatim. The CV library was changed from TensorFlow.js to ONNX Runtime Web — see ADR-002 in `docs/decisions.md`.
+
 **Status:** Proposed
 **Category:** Ed-tech, Computer Vision, 1-Week Challenge
 **Technical Contact:** Patrick Skinner (patrick.skinner@superbuilders.school)

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { DetectedDigit } from "../types/cv";
+import type { DetectedDigit, Digit } from "../types/cv";
 import {
 	createInterpretationLayer,
 	groupDetections,
@@ -7,7 +7,7 @@ import {
 } from "./interpretation";
 
 function makeDetection(
-	digit: number,
+	digit: Digit,
 	x: number,
 	y: number,
 	width = 0.1,

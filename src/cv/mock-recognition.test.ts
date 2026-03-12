@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import type { Digit } from "../types/cv";
 import {
 	createMockDetection,
 	createMockDetectionPair,
@@ -19,7 +20,7 @@ describe("createMockDetection", () => {
 
 	it("creates detections for all digits 0-9", () => {
 		for (let d = 0; d <= 9; d++) {
-			const detection = createMockDetection(d);
+			const detection = createMockDetection(d as Digit);
 			expect(detection.digit).toBe(d);
 		}
 	});

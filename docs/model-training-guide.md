@@ -418,7 +418,7 @@ cd ~/proj/superbuilders
 pnpm dev
 ```
 
-Open `https://localhost:5173?debug=true` in Chrome.
+Open `https://localhost:5173?debug=true` in Chrome for initial debugging. **Important:** Final validation must happen in Safari/WebKit — Chrome's ONNX WASM behavior can differ from Safari, and the target platform is iPad Safari.
 
 ### What to check:
 

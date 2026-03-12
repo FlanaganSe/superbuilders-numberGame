@@ -103,7 +103,7 @@ export function setupVisibilityResume(): () => void {
 		if (state === "suspended" || state === "interrupted") {
 			// Small delay — immediate resume sometimes fails on iOS (research §4.4)
 			setTimeout(() => {
-				ctx.resume();
+				ctx.resume().catch(() => {});
 			}, 200);
 		}
 	}

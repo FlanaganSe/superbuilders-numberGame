@@ -15,7 +15,6 @@ interface GameStore {
 
 	// Active mode
 	readonly mode: GameMode;
-	readonly setMode: (mode: GameMode) => void;
 
 	// Audio preference
 	readonly muted: boolean;
@@ -43,9 +42,6 @@ export const useGameStore = create<GameStore>((set, get) => ({
 	},
 
 	mode: AdditionMode,
-	setMode(mode: GameMode): void {
-		set({ mode });
-	},
 
 	muted: loadMute(),
 	toggleMute(): void {

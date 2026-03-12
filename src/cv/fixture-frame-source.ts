@@ -42,30 +42,35 @@ export function createFixtureFrameSource(
 			return;
 		}
 
-		const response = await fetch(fixture.imageUrl);
-		const blob = await response.blob();
-		const bitmap = await createImageBitmap(blob);
+		try {
+			const response = await fetch(fixture.imageUrl);
+			const blob = await response.blob();
+			const bitmap = await createImageBitmap(blob);
 
-		if (!isActive) {
-			bitmap.close();
+			if (!isActive) {
+				bitmap.close();
+				return;
+			}
+
+			if (listeners.size === 1) {
+				// Single consumer owns the bitmap
+				for (const cb of listeners) {
+					cb(bitmap);
+				}
+			} else if (listeners.size > 1) {
+				// Multiple consumers: clone per listener, close original
+				for (const cb of listeners) {
+					const clone = await createImageBitmap(bitmap);
+					cb(clone);
+				}
+				bitmap.close();
+			} else {
+				// No listeners — close to prevent leak
+				bitmap.close();
+			}
+		} catch {
+			isActive = false;
 			return;
-		}
-
-		if (listeners.size === 1) {
-			// Single consumer owns the bitmap
-			for (const cb of listeners) {
-				cb(bitmap);
-			}
-		} else if (listeners.size > 1) {
-			// Multiple consumers: clone per listener, close original
-			for (const cb of listeners) {
-				const clone = await createImageBitmap(bitmap);
-				cb(clone);
-			}
-			bitmap.close();
-		} else {
-			// No listeners — close to prevent leak
-			bitmap.close();
 		}
 
 		currentIndex++;
