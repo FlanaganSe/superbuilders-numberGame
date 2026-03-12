@@ -279,7 +279,10 @@ describe("pipeline: temporal buffer", () => {
 
 		buffer.update(7); // frame 1: TILE_SEEN
 		buffer.update(7); // frame 2: NONE
-		buffer.update(null); // mismatch → reset
+		// Exceed miss-streak tolerance to force hard reset
+		buffer.update(null); // missStreak=1
+		buffer.update(null); // missStreak=2
+		buffer.update(null); // missStreak=3 > MAX_CONSECUTIVE_MISSES → reset
 
 		const restart1 = buffer.update(7); // frame 1 again
 		expect(restart1.type).toBe("TILE_SEEN");
