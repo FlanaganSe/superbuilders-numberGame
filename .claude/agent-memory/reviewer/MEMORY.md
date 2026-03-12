@@ -1,4 +1,4 @@
 # Memory Index
 
 ## Project
-- [superbuilders_project.md](superbuilders_project.md) — OSMO-style math game: Vite 7 + React 19 + ORT Web 1.24, M1 scaffolding reviewed 2026-03-11
+- [superbuilders_project.md](superbuilders_project.md) — OSMO-style math game: all 9 milestones complete; full codebase review 2026-03-12 with 5 critical and 5 medium issues logged
