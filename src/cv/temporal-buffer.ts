@@ -12,6 +12,9 @@ export type TemporalEvent =
 /** Consecutive matching frames required before committing an answer. At 4fps → ~750ms. Reduce to 2 if fps < 3. */
 const REQUIRED_CONSECUTIVE_FRAMES = 3;
 
+/** Max consecutive null frames tolerated before hard-resetting the buffer. */
+export const MAX_CONSECUTIVE_MISSES = 2;
+
 export interface TemporalBuffer {
 	readonly update: (matchedAnswer: number | null) => TemporalEvent;
 	readonly reset: () => void;
@@ -23,18 +26,23 @@ export function createTemporalBuffer(): TemporalBuffer {
 	let count = 0;
 	let currentAnswer: number | null = null;
 	let tileSeen = false;
+	let missStreak = 0;
 
 	return {
 		update(matchedAnswer: number | null): TemporalEvent {
 			if (matchedAnswer === null) {
-				count = 0;
-				currentAnswer = null;
-				tileSeen = false;
+				missStreak++;
+				if (missStreak > MAX_CONSECUTIVE_MISSES) {
+					count = 0;
+					currentAnswer = null;
+					tileSeen = false;
+				}
 				return { type: "NONE" };
 			}
 
+			missStreak = 0;
+
 			if (matchedAnswer !== currentAnswer) {
-				// New answer — reset counter, emit TILE_SEEN
 				count = 1;
 				currentAnswer = matchedAnswer;
 				tileSeen = true;
@@ -46,7 +54,6 @@ export function createTemporalBuffer(): TemporalBuffer {
 
 			if (!tileSeen) {
 				tileSeen = true;
-				// First time seeing this answer at all
 				if (count >= REQUIRED_CONSECUTIVE_FRAMES) {
 					return { type: "ANSWER_COMMITTED", answer: matchedAnswer };
 				}
@@ -64,6 +71,7 @@ export function createTemporalBuffer(): TemporalBuffer {
 			count = 0;
 			currentAnswer = null;
 			tileSeen = false;
+			missStreak = 0;
 		},
 
 		consecutiveCount(): number {
