@@ -27,7 +27,7 @@ The project was built as a week-long challenge to replicate the core experience 
 | **Tailwind CSS** | 4.2 | Styling | v4 uses `@theme` in CSS directly (no config file). Integrated via `@tailwindcss/vite` plugin — no PostCSS needed. Custom color palette (cream, gold, success green) designed for child-friendly aesthetics. |
 | **Biome** | 2.x | Linter + formatter | Single tool replaces ESLint + Prettier. ~20x faster. `domains.react: "all"` enables full React rule set including hooks linting (ADR-004). Tab indentation. |
 | **Playwright** | 1.58 | E2E testing | WebKit engine only — matches the iPad Safari target. Tests use mock recognition mode to avoid camera permission dialogs. |
-| **Vitest** | 4.x | Unit testing | Co-located tests (`foo.ts` → `foo.test.ts`). happy-dom environment. 16 test files covering game logic, CV pipeline math, pipeline regression, and state transitions. |
+| **Vitest** | 4.x | Unit testing | Co-located tests (`foo.ts` → `foo.test.ts`). happy-dom environment. 17 test files covering game logic, CV pipeline math, pipeline regression, state management, and state transitions. |
 | **Cloudflare Pages** | — | Hosting | Static site deployment. HTTPS guaranteed (required for camera API). Workbox service worker caches WASM runtime + ONNX model for offline use. |
 
 ### Key dependency decisions and tradeoffs
@@ -74,7 +74,6 @@ Web Worker (inference.worker.ts)
         ▼
 Main thread
   ├─ Update cv-store (raw detections, latency, debug info)
-  ├─ Motion gate: avg confidence ≥ 0.40? (skip unstable frames)
   ├─ Interpretation: group adjacent digits → candidates
   ├─ Match answer: does any candidate equal the expected answer?
   ├─ Temporal buffer: same answer 3 consecutive frames?
@@ -95,8 +94,6 @@ React UI: celebration animation, confetti, next problem
 **Two Zustand stores:** `game-store` holds game logic (phase, problems, scores, difficulty). `cv-store` holds transient CV data (raw detections, latency, worker status). They're separate because CV data updates at 4–10fps — if it lived in the game store, every component subscribing to game state would re-render at inference rate. The cv-store is only consumed by the DebugHUD and camera overlay.
 
 **Temporal buffer:** Raw CV detections are noisy. A single frame might see a "7" that's actually a hand passing over. The temporal buffer requires 3 consecutive frames with the same matched answer before committing. At ~5fps, this is ~600ms of stability — long enough to filter noise, short enough to feel responsive. The buffer emits `TILE_SEEN` on frame 1 (instant visual feedback: "I see a tile!") and `ANSWER_COMMITTED` on frame 3 (game logic fires).
-
-**Motion gate:** Before detections reach the temporal buffer, they pass through a confidence check. If the average confidence of all detections in a frame is below 0.40, the frame is skipped entirely. This filters out motion blur and partial occlusion (e.g., a hand placing a tile). The detections still update cv-store for debug visualization, but they don't advance the temporal counter.
 
 ---
 
@@ -131,7 +128,6 @@ src/
 │   ├── postprocessing.ts       # Confidence filter, NMS, unletterbox, L→R sort
 │   ├── interpretation.ts       # Group digits → candidates, match answer
 │   ├── temporal-buffer.ts      # 3-frame stability: TILE_SEEN → ANSWER_COMMITTED
-│   ├── motion-gate.ts          # Confidence-based frame stability filter
 │   ├── mock-recognition.ts     # Testing backend: emitDigit() without camera
 │   ├── fixture-frame-source.ts # Image replay for regression testing
 │   └── fixtures/
@@ -188,7 +184,8 @@ docs/
 ├── product-overview.md         # This file
 ├── decisions.md                # Append-only ADR log
 ├── requirements.md             # Original PRD
-├── research.md                 # Comprehensive technical research (~650 lines)
+├── research.md                 # Post-critical-review technical research (~160 lines)
+├── deep-analysis.md            # Extended CV pipeline analysis (~160 lines)
 └── model-training-guide.md     # Step-by-step YOLO training guide (~600 lines)
 ```
 
@@ -216,13 +213,15 @@ The game is a finite state machine with six phases:
 
 Two `GameMode` implementations (Addition, Subtraction) generate problems with difficulty-scaled operand ranges:
 
-| Difficulty | Addition range | Subtraction range | Answer range |
-|---|---|---|---|
-| Level 1 | 0–5 + 0–4 | 1–5 − 0–3 | 0–9 |
-| Level 2 | 1–7 + 1–5 | 3–9 − 1–5 | 0–12 |
-| Level 3 | 2–9 + 2–8 | 5–12 − 2–7 | 4–17 |
-| Level 4 | 3–9 + 3–9 | 7–15 − 3–9 | 6–18 |
-| Level 5 | 5–9 + 5–9 | 10–18 − 5–9 | 1–19 |
+| Difficulty | Addition operand ranges | Subtraction operand ranges |
+|---|---|---|
+| Level 1 | 0–4 + 0–4 | 1–5 − 0–3 |
+| Level 2 | 0–5 + 0–5 | 3–9 − 1–5 |
+| Level 3 | 1–6 + 1–6 | 5–12 − 2–7 |
+| Level 4 | 2–7 + 2–7 | 7–15 − 3–9 |
+| Level 5 | 3–7 + 3–6 | 10–18 − 5–9 |
+
+All answers are constrained to 0–9 (`MAX_ANSWER = 9`). Addition re-rolls if `left + right > 9`. Subtraction re-rolls if `left − right < 0` or `> 9`. This is a hard constraint: the child places one physical tile in front of the camera, and the CV system recognizes individual digits.
 
 Difficulty adapts per-round: 3 consecutive correct promotes (max 5), 2 consecutive wrong demotes (min 1).
 
@@ -236,9 +235,7 @@ Difficulty adapts per-round: 3 consecutive correct promotes (max 5), 2 consecuti
 
 4. **Interpretation** — Group adjacent detections into multi-digit candidates (e.g., a "1" tile next to a "3" tile → candidate value 13). Vertical alignment and horizontal proximity thresholds determine grouping.
 
-5. **Temporal stabilization** — 3-frame consecutive counter prevents false positives. Frame 1 emits `TILE_SEEN` (instant visual feedback). Frame 3 emits `ANSWER_COMMITTED` (game logic fires).
-
-6. **Motion gate** — Average confidence below 0.40 skips the temporal buffer entirely. Acts as a proxy for motion blur and hand occlusion.
+5. **Temporal stabilization** — 3-frame consecutive counter prevents false positives. Frame 1 emits `TILE_SEEN` (instant visual feedback). Frame 3 emits `ANSWER_COMMITTED` (game logic fires). Tolerates up to 2 consecutive missed frames before resetting.
 
 ---
 
@@ -325,7 +322,7 @@ Every strict flag is enabled: `strict`, `noUncheckedIndexedAccess`, `noUnusedLoc
 
 ## Testing
 
-### Unit tests (Vitest, 16 files)
+### Unit tests (Vitest, 17 files)
 
 **Game engine (heavy coverage):**
 - `game-reducer.test.ts` — All phase transitions, invalid action handling, session completion
@@ -337,11 +334,14 @@ Every strict flag is enabled: `strict`, `noUncheckedIndexedAccess`, `noUnusedLoc
 - `postprocessing.test.ts` — IoU calculation, NMS, confidence filtering, letterbox math, L→R sorting
 - `preprocessing.test.ts` — Letterbox aspect ratios, RGBA→planar RGB, normalization
 - `interpretation.test.ts` — Digit grouping, spatial constraints, answer matching
-- `temporal-buffer.test.ts` — 3-frame counting, reset on mismatch, event emission
-- `motion-gate.test.ts` — Confidence threshold, empty detection handling
+- `temporal-buffer.test.ts` — 3-frame counting, miss-streak tolerance, reset on mismatch, event emission
 - `mock-recognition.test.ts` — Mock service lifecycle, detection shape validation
 - `fixture-frame-source.test.ts` — Image replay, listener management, cleanup
-- `pipeline-regression.test.ts` — End-to-end pipeline integration: synthetic tensor → postProcess → groupDetections → matchAnswer → temporal buffer → motion gate. Covers all 10 digits, two-tile answers, 6/9 distinction, NMS dedup, confidence filtering, letterbox unscaling, stray tile handling.
+- `pipeline-regression.test.ts` — End-to-end pipeline integration: synthetic tensor → postProcess → groupDetections → matchAnswer → temporal buffer. Covers all 10 digits, two-tile answers, 6/9 distinction, NMS dedup, confidence filtering, letterbox unscaling, stray tile handling.
+
+**State management:**
+- `game-store.test.ts` — `tileSeen` clearing/preservation, `processDetections()` pipeline result shape, wrong answer handling
+- `cv-store.test.ts` — Pipeline stats tracking, detection/candidate/match counters, camera settings, reset behavior
 
 **Camera, hooks & utilities:**
 - `frame-capture.test.ts` — Initial state, listener management, stats snapshots
