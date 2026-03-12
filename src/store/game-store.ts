@@ -80,6 +80,12 @@ export const useGameStore = create<GameStore>((set, get) => ({
 				set({ tileSeen: null });
 				break;
 			case "NONE":
+				if (
+					temporalBuffer.consecutiveCount() === 0 &&
+					get().tileSeen !== null
+				) {
+					set({ tileSeen: null });
+				}
 				break;
 		}
 	},
