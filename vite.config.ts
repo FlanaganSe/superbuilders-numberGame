@@ -18,6 +18,10 @@ export default defineConfig({
 					src: "node_modules/onnxruntime-web/dist/ort-wasm-simd-threaded.wasm",
 					dest: ".",
 				},
+				{
+					src: "node_modules/onnxruntime-web/dist/ort-wasm-simd-threaded.mjs",
+					dest: ".",
+				},
 			],
 		}),
 	].filter(Boolean) as import("vite").PluginOption[],
