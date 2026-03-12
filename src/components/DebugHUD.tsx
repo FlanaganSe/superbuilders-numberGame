@@ -1,9 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { FrameCaptureStats } from "../camera/frame-capture";
 import {
+	type CameraSettings,
+	selectCameraSettings,
 	selectDetections,
 	selectLastMatchedAnswer,
 	selectLatencyMs,
+	selectPipelineStats,
 	selectTemporalCount,
 	selectWorkerStatus,
 	useCvStore,
@@ -41,6 +44,15 @@ export function DebugHUD({
 }
 
 // Separate inner component so cv-store subscriptions only activate when visible
+function pct(count: number, total: number): string {
+	if (total === 0) return "—";
+	return `${Math.round((count / total) * 100)}%`;
+}
+
+function formatCameraSettings(settings: CameraSettings): string {
+	return `${settings.width}×${settings.height} @${Math.round(settings.frameRate)}fps ${settings.facingMode}`;
+}
+
 function DebugHUDInner({
 	captureStats,
 	videoRef,
@@ -53,6 +65,8 @@ function DebugHUDInner({
 	const workerStatus = useCvStore(selectWorkerStatus);
 	const temporalCount = useCvStore(selectTemporalCount);
 	const lastMatchedAnswer = useCvStore(selectLastMatchedAnswer);
+	const cameraSettings = useCvStore(selectCameraSettings);
+	const pipelineStats = useCvStore(selectPipelineStats);
 
 	const avgConfidence =
 		detections.length > 0
@@ -79,6 +93,22 @@ function DebugHUDInner({
 					temporal: {temporalCount}/3{" "}
 					{lastMatchedAnswer !== null ? `[${lastMatchedAnswer}]` : ""}
 				</span>
+				{cameraSettings && (
+					<span>cam: {formatCameraSettings(cameraSettings)}</span>
+				)}
+				{pipelineStats.totalFrames > 0 && (
+					<>
+						<span className="mt-1 text-green-600">─ pipeline ─</span>
+						<span>
+							det:{" "}
+							{pct(pipelineStats.withDetections, pipelineStats.totalFrames)}{" "}
+							cand:{" "}
+							{pct(pipelineStats.withCandidates, pipelineStats.totalFrames)}{" "}
+							match: {pct(pipelineStats.withMatch, pipelineStats.totalFrames)}
+						</span>
+						<span>n={pipelineStats.totalFrames}</span>
+					</>
+				)}
 			</div>
 			{videoRef && (
 				<FixtureCaptureButton videoRef={videoRef} detections={detections} />

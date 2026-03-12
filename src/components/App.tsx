@@ -159,16 +159,27 @@ export function App(): React.JSX.Element {
 				.updateDetections(result.detections, result.latencyMs);
 
 			// Process through interpretation → temporal buffer → game store
-			useGameStore.getState().processDetections(result.detections);
-
-			// Update temporal state in cv-store
-			useCvStore
+			const pipelineResult = useGameStore
 				.getState()
-				.updateTemporalState(getTemporalCount(), getLastMatchedAnswer());
+				.processDetections(result.detections);
+
+			// Update cv-store with pipeline stage + temporal state
+			const cvState = useCvStore.getState();
+			if (pipelineResult) {
+				cvState.updatePipelineStage(pipelineResult);
+			}
+			cvState.updateTemporalState(getTemporalCount(), getLastMatchedAnswer());
 		});
 
 		return unsubscribe;
 	}, [isMockMode]);
+
+	// Bridge camera settings to cv-store for DebugHUD
+	useEffect(() => {
+		if (camera.cameraSettings) {
+			useCvStore.getState().updateCameraSettings(camera.cameraSettings);
+		}
+	}, [camera.cameraSettings]);
 
 	// Poll capture stats for DebugHUD
 	useEffect(() => {

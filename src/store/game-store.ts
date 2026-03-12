@@ -4,6 +4,7 @@ import { createTemporalBuffer } from "../cv/temporal-buffer";
 import { gameReducer, initialGameState } from "../engine/game-reducer";
 import { AdditionMode } from "../engine/problem-generator";
 import { loadMute, saveMute, starsForAttempt } from "../engine/session";
+import type { PipelineStageInfo } from "../store/cv-store";
 import type { GameAction, GameMode, GameState } from "../types/game";
 
 // ─── Store shape ────────────────────────────────────────────────────────────
@@ -24,7 +25,7 @@ interface GameStore {
 	readonly tileSeen: number | null;
 	readonly processDetections: (
 		detections: readonly import("../types/cv").DetectedDigit[],
-	) => void;
+	) => PipelineStageInfo | null;
 	readonly resetCvState: () => void;
 }
 
@@ -54,9 +55,9 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
 	tileSeen: null,
 
-	processDetections(detections): void {
+	processDetections(detections): PipelineStageInfo | null {
 		const { gameState, dispatch } = get();
-		if (gameState.phase.phase !== "scanning") return;
+		if (gameState.phase.phase !== "scanning") return null;
 
 		const { problem, attemptNumber } = gameState.phase;
 
@@ -88,6 +89,13 @@ export const useGameStore = create<GameStore>((set, get) => ({
 				}
 				break;
 		}
+
+		return {
+			detectionCount: detections.length,
+			candidateCount: candidates.length,
+			matchFound: matched !== null,
+			temporalEvent: event.type,
+		};
 	},
 
 	resetCvState(): void {
