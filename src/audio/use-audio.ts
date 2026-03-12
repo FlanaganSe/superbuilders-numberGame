@@ -1,6 +1,6 @@
 import { useCallback, useRef } from "react";
 import { selectMuted, useGameStore } from "../store/game-store";
-import { playSound, stopSound, type SoundName } from "./sound-manager";
+import { playSound, type SoundName, stopSound } from "./sound-manager";
 
 export type { SoundName } from "./sound-manager";
 
