@@ -1,4 +1,10 @@
-import { domAnimation, LazyMotion, MotionConfig } from "motion/react";
+import {
+	AnimatePresence,
+	domAnimation,
+	LazyMotion,
+	MotionConfig,
+} from "motion/react";
+import * as m from "motion/react-m";
 import { useEffect, useRef, useState } from "react";
 import { setupVisibilityResume } from "../audio/sound-manager";
 import { CameraOverlay } from "../camera/camera-overlay";
@@ -214,20 +220,38 @@ export function App(): React.JSX.Element {
 						</div>
 					)}
 					<div className="relative z-10">
-						{showLoader ? (
-							<ProgressiveLoader
-								status={workerStatus === "error" ? "error" : "loading"}
-								errorMessage={workerError}
-								onRetry={handleRetry}
-								onFallbackMock={handleFallbackMock}
-							/>
-						) : (
-							<PhaseRouter
-								phase={phase}
-								requestCamera={camera.requestCamera}
-								cameraError={camera.error}
-							/>
-						)}
+						<AnimatePresence mode="wait">
+							{showLoader ? (
+								<m.div
+									key="loader"
+									initial={{ opacity: 0 }}
+									animate={{ opacity: 1 }}
+									exit={{ opacity: 0 }}
+									transition={{ duration: 0.15 }}
+								>
+									<ProgressiveLoader
+										status={workerStatus === "error" ? "error" : "loading"}
+										errorMessage={workerError}
+										onRetry={handleRetry}
+										onFallbackMock={handleFallbackMock}
+									/>
+								</m.div>
+							) : (
+								<m.div
+									key={phase.phase}
+									initial={{ opacity: 0 }}
+									animate={{ opacity: 1 }}
+									exit={{ opacity: 0 }}
+									transition={{ duration: 0.15 }}
+								>
+									<PhaseRouter
+										phase={phase}
+										requestCamera={camera.requestCamera}
+										cameraError={camera.error}
+									/>
+								</m.div>
+							)}
+						</AnimatePresence>
 					</div>
 
 					{/* Mute button — visible in all phases except idle */}

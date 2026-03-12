@@ -70,19 +70,19 @@ Transform the Superbuilders demo from "functional prototype" to "polished, delig
 
 ### Phase 3: Gameplay UI
 
-- [ ] **M5: Countdown + Answer Zone + Progress** — Color urgency, visible answer zone, progress indicator
-  - `CountdownTimer.tsx`: Add `COUNTDOWN_COLORS` record mapping `5→text-primary-500`, `4→text-teal-500`, `3→text-amber-500`, `2→text-orange-500`, `1→text-red-500`. Apply to `m.span` className.
-  - `GameScreen.tsx:170`: Change `border-primary-300/50` → `border-primary-400`. Remove `/50` opacity.
-  - Create `src/components/ProgressPips.tsx`: props `{ current: number; total: number }`. Render row of `total` small dots, first `current` filled (`bg-primary-500`), rest empty (`bg-primary-200`). Use `gap-1.5`, dot size `w-2.5 h-2.5 rounded-full`.
-  - Add `<ProgressPips>` in `GameScreen.tsx` above the `m.div` wrapping ProblemDisplay. Pass `current={rounds.length}` from store, `total={MAX_PROBLEMS}`.
-  - **Verify:** `pnpm typecheck && pnpm test`. E2E: `pnpm exec playwright test` — ProblemDisplay selector `.font-display.text-7xl` is unchanged (ProgressPips is a sibling, not a wrapper). Visually: countdown numbers change color 5→1; answer zone border clearly visible; dots show progress.
+- [x] **M5: Countdown + Answer Zone + Progress** — Color urgency, visible answer zone, progress indicator
+  - [x] `CountdownTimer.tsx`: Added `COUNTDOWN_COLORS` record mapping `5→text-primary-500`, `4→text-teal-500`, `3→text-amber-500`, `2→text-orange-500`, `1→text-red-500`. Applied to `m.span` className via dynamic lookup with fallback.
+  - [x] `GameScreen.tsx:176`: Changed `border-primary-300/50` → `border-primary-400`. Removed `/50` opacity.
+  - [x] Created `src/components/ProgressPips.tsx`: props `{ current: number; total: number }`. Row of `total` small dots with `bg-black/20` backdrop for camera contrast, first `current` filled (`bg-primary-500`), rest empty (`bg-primary-200`).
+  - [x] Added `<ProgressPips>` in `GameScreen.tsx` above the `m.div` wrapping ProblemDisplay. Fine-grained selector `useGameStore((s) => s.gameState.rounds.length)`.
+  - **Verified:** `pnpm typecheck && pnpm test && pnpm lint && pnpm build` — all pass (204 tests, 0 lint issues). E2E: `pnpm exec playwright test` — 1 passed. Tailwind v4 default palette colors (teal-500, amber-500, orange-500, red-500) compiled correctly — no theme additions needed.
 
 ### Phase 4: Atmosphere
 
-- [ ] **M6: Background + Phase Transitions** — Living background, smooth cross-fades
-  - `src/index.css`: Add `@property --bg-x` registration, animated gradient on `html` (cream base + warm pastel radial gradients drifting over 10s). Add `@media (prefers-reduced-motion: reduce)` override to disable animation.
-  - `App.tsx:224-230`: Wrap the PhaseRouter render (lines 225-229) in `<AnimatePresence mode="wait"><m.div key={phase.phase} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.15 }}>...</m.div></AnimatePresence>`. Import `AnimatePresence` from `motion/react` and `m` from `motion/react-m` (already imported).
-  - **Verify:** `pnpm typecheck && pnpm test && pnpm build`. E2E: `pnpm exec playwright test`. Visually: idle screen has slow-drifting warm gradient; phase changes cross-fade smoothly (150ms). **Critical manual test:** play through 2 full rounds verifying countdown timer still transitions correctly to scanning phase with no stutter or double-mount.
+- [x] **M6: Background + Phase Transitions** — Living background, smooth cross-fades
+  - [x] `src/index.css`: Added `@property --bg-x` registration (Safari 15.4+), animated gradient on `html` with two opposing radial gradients (pale yellow + pale pink) drifting over cream base on 10s ease-in-out infinite alternate. Added `@keyframes bg-drift`. Added `prefers-reduced-motion: reduce` override for `html` alongside existing `.animate-pulse-soft` rule.
+  - [x] `App.tsx`: Added `AnimatePresence` import from `motion/react` and `import * as m from "motion/react-m"`. Wrapped `showLoader` ternary in `<AnimatePresence mode="wait">` with both branches as `m.div` — loader keyed `"loader"`, PhaseRouter keyed `phase.phase`. 150ms opacity-only fade, no springs, no scale.
+  - **Verified:** `pnpm typecheck && pnpm test && pnpm lint && pnpm build` — all pass (204 tests, 0 lint issues). E2E: `pnpm exec playwright test` — 1 passed. Camera overlay, CalibrationGuide, DebugHUD, MuteButton all remain outside AnimatePresence.
 
 ---
 

@@ -26,10 +26,28 @@
 	--animate-pulse-soft: pulse-soft 2s ease-in-out infinite;
 }
 
+@property --bg-x {
+	syntax: "<percentage>";
+	inherits: false;
+	initial-value: 30%;
+}
+
 html {
 	font-family: var(--font-body);
-	background-color: var(--color-cream);
+	background:
+		radial-gradient(
+			ellipse at var(--bg-x) 40%,
+			rgba(255, 249, 196, 0.5) 0%,
+			transparent 50%
+		),
+		radial-gradient(
+			ellipse at calc(100% - var(--bg-x)) 60%,
+			rgba(252, 228, 236, 0.3) 0%,
+			transparent 50%
+		),
+		var(--color-cream);
 	color: #1e293b;
+	animation: bg-drift 10s ease-in-out infinite alternate;
 }
 
 body {
@@ -54,7 +72,17 @@ body {
 	}
 }
 
+@keyframes bg-drift {
+	to {
+		--bg-x: 70%;
+	}
+}
+
 @media (prefers-reduced-motion: reduce) {
+	html {
+		animation: none;
+	}
+
 	.animate-pulse-soft {
 		animation: none;
 		opacity: 0.8;
