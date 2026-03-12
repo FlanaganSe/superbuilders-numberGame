@@ -103,6 +103,21 @@ describe("groupDetections", () => {
 		expect(candidates.find((c) => c.digits === "11")).toBeDefined();
 	});
 
+	it("groups real tile pair even when a tiny spurious detection is present", () => {
+		// Real tiles (width=0.10) with gap=0.08 (just under 1.0× pairAvgWidth=0.10).
+		// Add two tiny spurious detections (width=0.01 each) that drag scene-wide
+		// avgWidth down to 0.055, making gap(0.08) > avgWidth(0.055) → grouping
+		// fails with scene-wide averages. Pair-local averages (0.10) keep grouping.
+		const detections = [
+			makeDetection(1, 0.3, 0.4, 0.1, 0.15), // real tile
+			makeDetection(5, 0.48, 0.4, 0.1, 0.15), // real tile (gap = 0.48 - 0.40 = 0.08)
+			makeDetection(3, 0.01, 0.1, 0.01, 0.02), // tiny spurious
+			makeDetection(7, 0.95, 0.1, 0.01, 0.02), // tiny spurious
+		];
+		const candidates = groupDetections(detections);
+		expect(candidates.find((c) => c.digits === "15")).toBeDefined();
+	});
+
 	it("handles mixed grouped and ungrouped tiles", () => {
 		const detections = [
 			makeDetection(1, 0.3, 0.4, 0.1, 0.15),

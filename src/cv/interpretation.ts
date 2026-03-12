@@ -59,11 +59,6 @@ export function groupDetections(
 	// Sort left-to-right by center x
 	const sorted = [...detections].sort((a, b) => centerX(a) - centerX(b));
 
-	const avgHeight =
-		sorted.reduce((sum, d) => sum + d.bbox.height, 0) / sorted.length;
-	const avgWidth =
-		sorted.reduce((sum, d) => sum + d.bbox.width, 0) / sorted.length;
-
 	const candidates: AnswerCandidate[] = [];
 	const grouped = new Set<number>();
 
@@ -79,9 +74,11 @@ export function groupDetections(
 		const gap = right.bbox.x - rightEdge(left);
 		if (left.digit === right.digit && gap < 0) continue;
 
+		const pairAvgHeight = (left.bbox.height + right.bbox.height) / 2;
+		const pairAvgWidth = (left.bbox.width + right.bbox.width) / 2;
 		if (
-			areVerticallyAligned(left, right, avgHeight) &&
-			areHorizontallyProximate(left, right, avgWidth)
+			areVerticallyAligned(left, right, pairAvgHeight) &&
+			areHorizontallyProximate(left, right, pairAvgWidth)
 		) {
 			const digits = `${left.digit}${right.digit}`;
 			candidates.push({ digits, value: Number.parseInt(digits, 10) });
