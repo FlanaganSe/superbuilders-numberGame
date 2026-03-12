@@ -1,8 +1,9 @@
 import confetti from "canvas-confetti";
 import * as m from "motion/react-m";
-import { useEffect, useMemo } from "react";
+import { useEffect, useState } from "react";
+import { useAudio } from "../audio/use-audio";
 import { AdditionMode } from "../engine/problem-generator";
-import { recordSession } from "../engine/session";
+import { loadCumulative, recordSession } from "../engine/session";
 import { useGameStore } from "../store/game-store";
 import type { SessionData } from "../types/game";
 
@@ -41,6 +42,12 @@ const starVariants = {
 	},
 };
 
+// ─── StrictMode guard ───────────────────────────────────────────────────────
+// Prevent recordSession (localStorage side effect) from double-firing in
+// React StrictMode. Module-level Set keyed by session.startedAt timestamp.
+
+const recordedSessions = new Set<number>();
+
 // ─── Component ──────────────────────────────────────────────────────────────
 
 interface SessionSummaryProps {
@@ -51,9 +58,19 @@ export function SessionSummary({
 	session,
 }: SessionSummaryProps): React.JSX.Element {
 	const dispatch = useGameStore((s) => s.dispatch);
+	const { play } = useAudio();
 
-	// Record session exactly once, not on every render
-	const cumulative = useMemo(() => recordSession(session), [session]);
+	// Initialize with pre-existing cumulative; update after recording.
+	const [cumulative, setCumulative] = useState(() => loadCumulative());
+
+	// Record session and play fanfare — exactly once per session, guarded
+	// against StrictMode double-invoke.
+	useEffect(() => {
+		if (recordedSessions.has(session.startedAt)) return;
+		recordedSessions.add(session.startedAt);
+		play("sessionEndFanfare");
+		setCumulative(recordSession(session));
+	}, [session, play]);
 
 	// Fire session-end double cannon confetti on mount
 	useEffect(() => {

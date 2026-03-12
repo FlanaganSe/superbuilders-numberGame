@@ -1,5 +1,6 @@
 import { domAnimation, LazyMotion, MotionConfig } from "motion/react";
 import { useEffect, useRef, useState } from "react";
+import { setupVisibilityResume } from "../audio/sound-manager";
 import { CameraOverlay } from "../camera/camera-overlay";
 import {
 	createFrameCapture,
@@ -12,7 +13,7 @@ import {
 	createRecognitionBackend,
 	type RecognitionBackend,
 } from "../cv/recognition-service";
-import { useCvStore } from "../store/cv-store";
+import { selectWorkerStatus, useCvStore } from "../store/cv-store";
 import {
 	getLastMatchedAnswer,
 	getTemporalCount,
@@ -24,6 +25,8 @@ import { CalibrationGuide } from "./CalibrationGuide";
 import { CountdownTimer } from "./CountdownTimer";
 import { DebugHUD } from "./DebugHUD";
 import { GameScreen } from "./GameScreen";
+import { MuteButton } from "./MuteButton";
+import { ProgressiveLoader } from "./ProgressiveLoader";
 import { SessionSummary } from "./SessionSummary";
 import { TapToStart } from "./TapToStart";
 
@@ -45,6 +48,10 @@ export function App(): React.JSX.Element {
 	const [captureStats, setCaptureStats] =
 		useState<FrameCaptureStats>(EMPTY_STATS);
 
+	// CV worker status for ProgressiveLoader
+	const workerStatus = useCvStore(selectWorkerStatus);
+	const workerError = useCvStore((s) => s.errorMessage);
+
 	// Create frame capture instance once
 	if (!frameCaptureRef.current) {
 		frameCaptureRef.current = createFrameCapture();
@@ -54,6 +61,9 @@ export function App(): React.JSX.Element {
 	if (!backendRef.current) {
 		backendRef.current = createRecognitionBackend(flags);
 	}
+
+	// Set up audio visibilitychange resume (iOS backgrounding — research §4.4)
+	useEffect(() => setupVisibilityResume(), []);
 
 	// Init ONNX service (load model in background)
 	useEffect(() => {
@@ -170,6 +180,12 @@ export function App(): React.JSX.Element {
 		return () => clearInterval(id);
 	}, []);
 
+	// ─── Progressive loader gate ──────────────────────────────────────────
+	// Show ProgressiveLoader when the model isn't ready and the user has
+	// tapped start. In mock mode, no model loading occurs.
+	const showLoader =
+		!isMockMode && workerStatus !== "ready" && phase.phase !== "idle";
+
 	return (
 		<LazyMotion features={domAnimation}>
 			<MotionConfig reducedMotion="user">
@@ -198,12 +214,29 @@ export function App(): React.JSX.Element {
 						</div>
 					)}
 					<div className="relative z-10">
-						<PhaseRouter
-							phase={phase}
-							requestCamera={camera.requestCamera}
-							cameraError={camera.error}
-						/>
+						{showLoader ? (
+							<ProgressiveLoader
+								status={workerStatus === "error" ? "error" : "loading"}
+								errorMessage={workerError}
+								onRetry={handleRetry}
+								onFallbackMock={handleFallbackMock}
+							/>
+						) : (
+							<PhaseRouter
+								phase={phase}
+								requestCamera={camera.requestCamera}
+								cameraError={camera.error}
+							/>
+						)}
 					</div>
+
+					{/* Mute button — visible in all phases except idle */}
+					{phase.phase !== "idle" && (
+						<div className="fixed bottom-6 right-6 z-30">
+							<MuteButton />
+						</div>
+					)}
+
 					<DebugHUD
 						captureStats={captureStats}
 						videoRef={isMockMode ? undefined : camera.videoRef}
@@ -213,6 +246,20 @@ export function App(): React.JSX.Element {
 		</LazyMotion>
 	);
 }
+
+// ─── Retry / fallback handlers ──────────────────────────────────────────────
+
+function handleRetry(): void {
+	window.location.reload();
+}
+
+function handleFallbackMock(): void {
+	const url = new URL(window.location.href);
+	url.searchParams.set("recognition", "mock");
+	window.location.href = url.toString();
+}
+
+// ─── Phase router ───────────────────────────────────────────────────────────
 
 function PhaseRouter({
 	phase,

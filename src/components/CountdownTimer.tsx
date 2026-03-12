@@ -1,6 +1,7 @@
 import { AnimatePresence } from "motion/react";
 import * as m from "motion/react-m";
 import { useEffect, useRef } from "react";
+import { useAudio } from "../audio/use-audio";
 import { useGameStore } from "../store/game-store";
 
 interface CountdownTimerProps {
@@ -20,6 +21,7 @@ export function CountdownTimer({
 	const mode = useGameStore((s) => s.mode);
 	const difficulty = useGameStore((s) => s.gameState.difficulty);
 	const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+	const { play } = useAudio();
 
 	useEffect(() => {
 		intervalRef.current = setInterval(() => {
@@ -35,6 +37,7 @@ export function CountdownTimer({
 				const problem = mode.generate(difficulty);
 				dispatch({ type: "COUNTDOWN_COMPLETE", problem });
 			} else {
+				play("countdownTick");
 				dispatch({ type: "COUNTDOWN_TICK", secondsLeft: next });
 			}
 		}, 1000);
@@ -42,7 +45,7 @@ export function CountdownTimer({
 		return () => {
 			if (intervalRef.current) clearInterval(intervalRef.current);
 		};
-	}, [dispatch, mode, difficulty]);
+	}, [dispatch, mode, difficulty, play]);
 
 	return (
 		<div className="flex flex-col items-center gap-4">

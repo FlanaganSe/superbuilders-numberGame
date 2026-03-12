@@ -1,5 +1,6 @@
 import * as m from "motion/react-m";
 import { useCallback, useEffect } from "react";
+import { useAudio } from "../audio/use-audio";
 import {
 	createMockDetection,
 	createMockDetectionPair,
@@ -41,6 +42,7 @@ export function GameScreen({
 	const resetCvState = useGameStore((s) => s.resetCvState);
 	const tileSeen = useGameStore((s) => s.tileSeen);
 	const flags = getFeatureFlags();
+	const { play } = useAudio();
 
 	const handleDigit = useCallback(
 		(digit: number): void => {
@@ -93,6 +95,23 @@ export function GameScreen({
 		}, 1500);
 		return () => clearTimeout(timer);
 	}, [stars, dispatch, resetCvState]);
+
+	// ─── Sound effects ──────────────────────────────────────────────────────
+
+	// Correct answer → chime
+	useEffect(() => {
+		if (stars) play("correctChime");
+	}, [stars, play]);
+
+	// Timeout → encouragement
+	useEffect(() => {
+		if (timedOut) play("encouragement");
+	}, [timedOut, play]);
+
+	// Tile first detected → pop
+	useEffect(() => {
+		if (tileSeen !== null) play("tileDetectedPop");
+	}, [tileSeen, play]);
 
 	// Timeout handling
 	useEffect(() => {

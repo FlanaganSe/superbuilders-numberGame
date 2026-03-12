@@ -229,15 +229,10 @@ Files to **update** during the plan:
   Commit: "feat: add visual design, animations, confetti, and FeedbackOverlay for children's game UX"
 
 - [ ] **M7: Audio + session flow + progressive loading** — Complete polished experience from start to finish
-  - Howler.js setup with audio sprites (MP3 + M4A): correctChime, encouragement, tileDetectedPop, sessionEndFanfare, countdownTick
-  - iOS AudioContext unlock in "Tap to Start" handler (`Howler.ctx.resume()`)
-  - `visibilitychange` audio resume (handle both `'suspended'` and `'interrupted'` states)
-  - `Howler.autoSuspend = false`
-  - `MuteButton` with localStorage persistence
-  - `SessionSummary` component: animated stars (Motion stagger), cumulative total, "Play Again" button
-  - `ProgressiveLoader` component: friendly loading text during model download ("Getting ready..." → "Almost there..." → "Let's go!")
-  - Model download progress via `fetch` + `ReadableStream`
-  - **Verify:** Sounds play on correct/incorrect/tile-detected events; audio works after backgrounding and returning; mute persists across page reloads; session summary shows stars with staggered animation; progressive loader shows during model download; no sound plays when muted
+  - [x] Step 1 — Sound infrastructure: create `src/audio/sound-manager.ts` (Howler setup with individual MP3+M4A files, autoSuspend=false, iOS unlock, visibility resume), `src/audio/use-audio.ts` (hook with stable play ref, mute-aware), `src/components/MuteButton.tsx` (toggle with speaker icons, ≥80px touch target) → verify: `pnpm typecheck`
+  - [x] Step 2 — Wire audio to game events: update TapToStart (AudioContext unlock in gesture), CountdownTimer (tick each second), GameScreen (correctChime/encouragement/tileDetectedPop), SessionSummary (fix useMemo StrictMode bug, add fanfare), add MuteButton + visibility resume to App → verify: `pnpm typecheck && pnpm test`
+  - [x] Step 3 — Progressive loader: create `src/components/ProgressiveLoader.tsx` (time-based friendly text, error state with retry/mock fallback), wire into App.tsx (show when workerStatus !== ready && phase !== idle) → verify: `pnpm typecheck && pnpm test && pnpm lint && pnpm build`
+  Commit: "feat: add audio system, mute toggle, progressive loader, and session flow polish"
 
 ### Phase 4: Ship (Day 5–7)
 

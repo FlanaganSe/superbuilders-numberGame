@@ -1,4 +1,5 @@
 import * as m from "motion/react-m";
+import { unlockAudio } from "../audio/sound-manager";
 import type { CameraError } from "../camera/use-camera";
 import { AdditionMode } from "../engine/problem-generator";
 import { useGameStore } from "../store/game-store";
@@ -17,8 +18,11 @@ export function TapToStart({
 	const flags = getFeatureFlags();
 
 	function handleStart(): void {
+		// AudioContext unlock MUST happen in user gesture (research §4.2).
 		// Camera unlock MUST happen in the same user gesture handler (PRD §5.5).
-		// In mock mode, skip camera setup entirely.
+		// One tap does both: (a) unlock AudioContext, (b) unlock camera, (c) start game.
+		unlockAudio();
+
 		if (flags.recognition !== "mock") {
 			requestCamera();
 		}
