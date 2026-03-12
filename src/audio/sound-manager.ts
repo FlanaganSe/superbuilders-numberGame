@@ -80,6 +80,12 @@ export function playSound(name: SoundName): void {
 	}
 }
 
+/** Stop all instances of a named sound. */
+export function stopSound(name: SoundName): void {
+	const howl = howls.get(name);
+	if (howl) howl.stop();
+}
+
 /**
  * Unlock iOS AudioContext and preload sounds.
  * MUST be called inside a user gesture handler (tap/click).

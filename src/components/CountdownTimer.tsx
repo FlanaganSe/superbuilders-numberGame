@@ -29,9 +29,11 @@ export function CountdownTimer({
 	const mode = useGameStore((s) => s.mode);
 	const difficulty = useGameStore((s) => s.gameState.difficulty);
 	const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
-	const { play } = useAudio();
+	const { play, stop } = useAudio();
 
 	useEffect(() => {
+		play("countdownTick");
+
 		intervalRef.current = setInterval(() => {
 			const currentPhase = useGameStore.getState().gameState.phase;
 			if (currentPhase.phase !== "countdown") {
@@ -42,18 +44,19 @@ export function CountdownTimer({
 			const next = currentPhase.secondsLeft - 1;
 			if (next <= 0) {
 				if (intervalRef.current) clearInterval(intervalRef.current);
+				stop("countdownTick");
 				const problem = mode.generate(difficulty);
 				dispatch({ type: "COUNTDOWN_COMPLETE", problem });
 			} else {
-				play("countdownTick");
 				dispatch({ type: "COUNTDOWN_TICK", secondsLeft: next });
 			}
 		}, 1000);
 
 		return () => {
 			if (intervalRef.current) clearInterval(intervalRef.current);
+			stop("countdownTick");
 		};
-	}, [dispatch, mode, difficulty, play]);
+	}, [dispatch, mode, difficulty, play, stop]);
 
 	return (
 		<div className="flex flex-col items-center gap-4">
