@@ -94,6 +94,17 @@ export const useGameStore = create<GameStore>((set, get) => ({
 	},
 }));
 
+// ─── Temporal buffer accessors ──────────────────────────────────────────────
+// Exposed for cv-store to read temporal state without coupling stores.
+
+export function getTemporalCount(): number {
+	return temporalBuffer.consecutiveCount();
+}
+
+export function getLastMatchedAnswer(): number | null {
+	return temporalBuffer.lastAnswer();
+}
+
 // ─── Selectors ──────────────────────────────────────────────────────────────
 
 export const selectPhase = (s: GameStore): string => s.gameState.phase.phase;

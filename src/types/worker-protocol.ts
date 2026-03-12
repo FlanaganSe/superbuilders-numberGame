@@ -4,12 +4,7 @@ import type { DetectedDigit } from "./cv";
 
 export type MainToWorker =
 	| { readonly type: "init"; readonly modelUrl: string }
-	| {
-			readonly type: "infer";
-			readonly bitmap: ImageBitmap;
-			readonly width: number;
-			readonly height: number;
-	  }
+	| { readonly type: "infer"; readonly bitmap: ImageBitmap }
 	| { readonly type: "terminate" };
 
 // ─── Worker → Main Thread ────────────────────────────────────────────────────

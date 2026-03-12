@@ -7,8 +7,20 @@ import {
 	type FrameCaptureStats,
 } from "../camera/frame-capture";
 import { useCamera } from "../camera/use-camera";
-import { selectGamePhase, useGameStore } from "../store/game-store";
+import { isFrameStable } from "../cv/motion-gate";
+import {
+	createRecognitionBackend,
+	type RecognitionBackend,
+} from "../cv/recognition-service";
+import { useCvStore } from "../store/cv-store";
+import {
+	getLastMatchedAnswer,
+	getTemporalCount,
+	selectGamePhase,
+	useGameStore,
+} from "../store/game-store";
 import { getFeatureFlags } from "../utils/feature-flags";
+import { CalibrationGuide } from "./CalibrationGuide";
 import { CountdownTimer } from "./CountdownTimer";
 import { DebugHUD } from "./DebugHUD";
 import { GameScreen } from "./GameScreen";
@@ -29,6 +41,7 @@ export function App(): React.JSX.Element {
 
 	const camera = useCamera();
 	const frameCaptureRef = useRef<FrameCapture | null>(null);
+	const backendRef = useRef<RecognitionBackend | null>(null);
 	const [captureStats, setCaptureStats] =
 		useState<FrameCaptureStats>(EMPTY_STATS);
 
@@ -36,6 +49,34 @@ export function App(): React.JSX.Element {
 	if (!frameCaptureRef.current) {
 		frameCaptureRef.current = createFrameCapture();
 	}
+
+	// Create recognition backend once
+	if (!backendRef.current) {
+		backendRef.current = createRecognitionBackend(flags);
+	}
+
+	// Init ONNX service (load model in background)
+	useEffect(() => {
+		const backend = backendRef.current;
+		if (!backend || backend.type !== "onnx") return;
+
+		const { service } = backend;
+		useCvStore.getState().updateWorkerStatus("loading");
+
+		service
+			.init()
+			.then(() => {
+				useCvStore.getState().updateWorkerStatus("ready");
+			})
+			.catch((err: unknown) => {
+				useCvStore.getState().updateWorkerStatus("error", String(err));
+			});
+
+		return () => {
+			service.dispose();
+			useCvStore.getState().reset();
+		};
+	}, []);
 
 	// Start/stop frame capture based on camera status
 	useEffect(() => {
@@ -70,6 +111,53 @@ export function App(): React.JSX.Element {
 		};
 	}, [camera.status, camera.videoRef, isMockMode]);
 
+	// Wire CV pipeline: frame capture → ONNX worker → motion gate → game store
+	useEffect(() => {
+		if (isMockMode) return;
+
+		const backend = backendRef.current;
+		const fc = frameCaptureRef.current;
+		if (!backend || backend.type !== "onnx" || !fc) return;
+
+		const { service } = backend;
+
+		const unsubscribe = fc.onFrame(async (bitmap: ImageBitmap) => {
+			// CV only active during scanning phase (PRD §3.5, §3.15)
+			const gamePhase = useGameStore.getState().gameState.phase;
+			if (gamePhase.phase !== "scanning") {
+				bitmap.close();
+				return;
+			}
+
+			const result = await service.recognize(bitmap);
+			// bitmap ownership transferred to worker (or closed if busy/not ready)
+
+			// Guard: if service was disposed while recognize was inflight, skip
+			if (!service.ready) return;
+
+			// Update cv-store with raw detections + latency (fresh getState per frame)
+			useCvStore
+				.getState()
+				.updateDetections(result.detections, result.latencyMs);
+
+			// Motion gate: skip processing for unstable frames
+			// (don't reset temporal buffer — just ignore the frame)
+			// isFrameStable returns true for empty arrays, so empty frames pass through
+			// and correctly reset the temporal buffer via processDetections(null match)
+			if (!isFrameStable(result.detections)) return;
+
+			// Process through interpretation → temporal buffer → game store
+			useGameStore.getState().processDetections(result.detections);
+
+			// Update temporal state in cv-store
+			useCvStore
+				.getState()
+				.updateTemporalState(getTemporalCount(), getLastMatchedAnswer());
+		});
+
+		return unsubscribe;
+	}, [isMockMode]);
+
 	// Poll capture stats for DebugHUD
 	useEffect(() => {
 		const fc = frameCaptureRef.current;
@@ -92,6 +180,12 @@ export function App(): React.JSX.Element {
 							active={camera.status === "active"}
 						/>
 					)}
+					{!isMockMode && camera.status === "active" && (
+						<CalibrationGuide
+							captureStats={captureStats}
+							onComplete={() => {}}
+						/>
+					)}
 					{camera.status === "interrupted" && (
 						<div className="absolute inset-0 z-20 flex items-center justify-center bg-black/50">
 							<button
@@ -110,7 +204,10 @@ export function App(): React.JSX.Element {
 							cameraError={camera.error}
 						/>
 					</div>
-					<DebugHUD captureStats={captureStats} />
+					<DebugHUD
+						captureStats={captureStats}
+						videoRef={isMockMode ? undefined : camera.videoRef}
+					/>
 				</div>
 			</MotionConfig>
 		</LazyMotion>

@@ -100,14 +100,20 @@ export function createFrameCapture(): FrameCapture {
 
 		frameCount++;
 
-		if (listeners.size > 0) {
-			// IMPORTANT: Single bitmap shared across listeners. Currently only one
-			// consumer expected at a time. If M4 adds multiple consumers, either
-			// clone per listener (createImageBitmap(bitmap)) or use ref-counting.
+		if (listeners.size === 1) {
+			// Fast path: single consumer owns the bitmap (no clone needed).
 			// Consumer is responsible for calling bitmap.close() (PRD §5.12).
 			for (const cb of listeners) {
 				cb(bitmap);
 			}
+		} else if (listeners.size > 1) {
+			// Multiple consumers: clone per listener, then close the original.
+			const clonePromises = [...listeners].map(async (cb) => {
+				const clone = await createImageBitmap(bitmap);
+				cb(clone);
+			});
+			bitmap.close();
+			await Promise.all(clonePromises);
 		} else {
 			// No consumer — close immediately to prevent GPU memory leak
 			bitmap.close();

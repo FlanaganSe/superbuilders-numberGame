@@ -214,16 +214,11 @@ Files to **update** during the plan:
   Commit: "feat: implement inference worker with preprocessing, postprocessing, and synthetic test fixtures"
 
 - [ ] **M5: Full CV loop + auto-check** — Camera → worker → interpretation → game transitions working end-to-end
-  - Implement `OnnxRecognitionService` (wraps worker lifecycle, implements `RecognitionService` interface)
-  - Wire frame capture → worker transfer (ImageBitmap zero-copy) → detections back
-  - Connect interpretation layer to temporal buffer to game reducer
-  - Implement `motion-gate.ts` (confidence-drop proxy: avg < 0.40 → frame unstable)
-  - Implement `CalibrationGuide` (camera positioning/lighting check on first run)
-  - Zustand `cv-store` for transient detection state (subscribe-only)
-  - Implement `FixtureFrameSource` (implements `FrameSource` interface — loads labeled test images, feeds them through the pipeline for regression testing). This builds the infrastructure M9's fixture tests depend on
-  - DebugHUD updates: inference latency, confidence scores, detection bounding box overlays, temporal buffer state. Fixture capture button (saves current frame + detections as labeled test fixture, PRD §3.31)
-  - Feature flags: `?overlay=boxes` shows bounding boxes; `?recognition=mock` bypasses camera
-  - **Verify:** `?recognition=mock` exercises full interpretation → temporal buffer → game store dispatch wiring with keyboard/numpad input; `OnnxRecognitionService` instantiates and correctly wraps worker lifecycle (custom digit model integration is M9); `FixtureFrameSource` loads a test image and feeds it through the pipeline; debug HUD shows frame capture rate and inference stats; `?recognition=mock` still works for pure keyboard/numpad play; no memory leaks (bitmap.close called); frame dropping works under pressure
+  - [x] Step 1 — Core modules: `motion-gate.ts` + test, `cv-store.ts`, `onnx-recognition.ts`, clean worker-protocol (remove unused width/height from infer), update recognition-service factory, expose temporal buffer state from game-store → verify: `pnpm typecheck`
+  - [x] Step 2 — Wire full pipeline in App.tsx: frame capture → OnnxRecognitionService → motion gate → processDetections → cv-store updates. CV only active during scanning phase. → verify: `pnpm typecheck && pnpm test`
+  - [x] Step 3 — Create `FixtureFrameSource` (implements `FrameSource`, loads labeled test images for M9 regression) + test. Create `CalibrationGuide` (first-run camera/lighting check, localStorage gated). → verify: `pnpm typecheck && pnpm test`
+  - [x] Step 4 — DebugHUD updates: real inference latency, confidence, detection count, temporal buffer state, worker status. `?overlay=boxes` bounding box drawing on CameraOverlay. Fixture capture button. → verify: `pnpm typecheck && pnpm test && pnpm lint && pnpm build`
+  Commit: "feat: wire full CV pipeline with ONNX recognition, motion gate, and auto-check"
 
 ### Phase 3: UX Polish (Day 3–4)
 
