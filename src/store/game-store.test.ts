@@ -85,3 +85,52 @@ describe("game-store tileSeen clearing", () => {
 		expect(useGameStore.getState().tileSeen).toBeNull();
 	});
 });
+
+describe("game-store processDetections pipeline result", () => {
+	beforeEach(() => {
+		const { dispatch, resetCvState } = useGameStore.getState();
+		dispatch({ type: "RESET" });
+		resetCvState();
+	});
+
+	it("returns null when not in scanning phase", () => {
+		const result = useGameStore.getState().processDetections([]);
+		expect(result).toBeNull();
+	});
+
+	it("returns pipeline stage info with detection counts", () => {
+		enterScanningPhase();
+		const result = useGameStore.getState().processDetections(makeDetection(7));
+
+		expect(result).toEqual({
+			detectionCount: 1,
+			candidateCount: 1,
+			matchFound: true,
+			temporalEvent: "TILE_SEEN",
+		});
+	});
+
+	it("returns matchFound false for wrong answer", () => {
+		enterScanningPhase();
+		const result = useGameStore.getState().processDetections(makeDetection(5));
+
+		expect(result).toEqual({
+			detectionCount: 1,
+			candidateCount: 1,
+			matchFound: false,
+			temporalEvent: "NONE",
+		});
+	});
+
+	it("returns zero counts for empty detections", () => {
+		enterScanningPhase();
+		const result = useGameStore.getState().processDetections([]);
+
+		expect(result).toEqual({
+			detectionCount: 0,
+			candidateCount: 0,
+			matchFound: false,
+			temporalEvent: "NONE",
+		});
+	});
+});

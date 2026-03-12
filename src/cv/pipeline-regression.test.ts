@@ -1,14 +1,13 @@
 // ─── Pipeline Regression Tests ──────────────────────────────────────────────
 //
 // End-to-end tests of the CV pipeline: synthetic tensor → postProcess →
-// groupDetections → matchAnswer → temporal buffer → motion gate.
+// groupDetections → matchAnswer → temporal buffer.
 //
 // These cover the scenarios M9 requires for fixture-based regression:
 // - All 10 digits individually (0–9)
 // - Two-tile answers (e.g., "15")
 // - Empty play surface (no detections)
 // - Low-confidence filtering
-// - Motion gate suppression (hand over tiles)
 // - 6 vs 9 distinction
 // - NMS deduplication
 // - Temporal buffer commit behavior
@@ -19,7 +18,6 @@ import {
 	type SyntheticDetection,
 } from "./fixtures/synthetic-tensor";
 import { groupDetections, matchAnswer } from "./interpretation";
-import { isFrameStable } from "./motion-gate";
 import { postProcess } from "./postprocessing";
 import { createTemporalBuffer } from "./temporal-buffer";
 
@@ -172,43 +170,6 @@ describe("pipeline: confidence filtering", () => {
 	});
 });
 
-// ─── Motion gate suppression ───────────────────────────────────────────────
-
-describe("pipeline: motion gate", () => {
-	it("marks frame as stable with high-confidence detections", () => {
-		const tensor = createSyntheticTensor(NUM_CLASSES, NUM_ANCHORS, [
-			digit(7, 320, 1000, { score: 0.92 }),
-		]);
-		const results = postProcess({
-			output: tensor,
-			numAnchors: NUM_ANCHORS,
-			numClasses: NUM_CLASSES,
-			...ID_LETTERBOX,
-		});
-		expect(isFrameStable(results)).toBe(true);
-	});
-
-	it("marks frame as unstable when hand occludes (low avg confidence)", () => {
-		// Simulates hand partially covering tiles — detection confidence drops
-		const tensor = createSyntheticTensor(NUM_CLASSES, NUM_ANCHORS, [
-			digit(7, 320, 1000, { score: 0.25 }),
-			digit(3, 500, 2000, { score: 0.3 }),
-		]);
-		const results = postProcess({
-			output: tensor,
-			numAnchors: NUM_ANCHORS,
-			numClasses: NUM_CLASSES,
-			...ID_LETTERBOX,
-			confThreshold: 0.2, // Lower threshold to let low-conf through for gate testing
-		});
-		expect(isFrameStable(results)).toBe(false);
-	});
-
-	it("treats empty detections as stable (no false trigger)", () => {
-		expect(isFrameStable([])).toBe(true);
-	});
-});
-
 // ─── 6 vs 9 distinction ───────────────────────────────────────────────────
 
 describe("pipeline: 6 vs 9 distinction", () => {
@@ -303,20 +264,6 @@ describe("pipeline: temporal buffer", () => {
 		expect(buffer.consecutiveCount()).toBe(1);
 	});
 
-	it("continues counting across motion-gate-skipped frames", () => {
-		// When the motion gate suppresses a frame, the buffer is NOT updated.
-		// The consecutive count continues from where it left off on the next
-		// stable frame, eventually reaching the commit threshold.
-		const buffer = createTemporalBuffer();
-
-		buffer.update(7); // frame 1: count=1
-		buffer.update(7); // frame 2: count=2
-		// Motion gate fires — unstable frame skipped (no update call)
-		buffer.update(7); // frame 3 (next stable frame): count=3
-		expect(buffer.consecutiveCount()).toBe(3);
-		// Buffer reached threshold → would emit ANSWER_COMMITTED
-	});
-
 	it("full pipeline: 3 frames of same detection → commit", () => {
 		const buffer = createTemporalBuffer();
 		const dets = [digit(7, 320, 1000)];
@@ -329,8 +276,6 @@ describe("pipeline: temporal buffer", () => {
 				numClasses: NUM_CLASSES,
 				...ID_LETTERBOX,
 			});
-
-			if (!isFrameStable(results)) continue;
 
 			const candidates = groupDetections(results);
 			const match = matchAnswer(candidates, 7);

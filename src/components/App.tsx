@@ -14,7 +14,6 @@ import {
 	type FrameCaptureStats,
 } from "../camera/frame-capture";
 import { useCamera } from "../camera/use-camera";
-import { isFrameStable } from "../cv/motion-gate";
 import {
 	createRecognitionBackend,
 	type RecognitionBackend,
@@ -127,7 +126,7 @@ export function App(): React.JSX.Element {
 		};
 	}, [camera.status, camera.videoRef, isMockMode]);
 
-	// Wire CV pipeline: frame capture → ONNX worker → motion gate → game store
+	// Wire CV pipeline: frame capture → ONNX worker → game store
 	useEffect(() => {
 		if (isMockMode) return;
 
@@ -159,23 +158,28 @@ export function App(): React.JSX.Element {
 				.getState()
 				.updateDetections(result.detections, result.latencyMs);
 
-			// Motion gate: skip processing for unstable frames
-			// (don't reset temporal buffer — just ignore the frame)
-			// isFrameStable returns true for empty arrays, so empty frames pass through
-			// and correctly reset the temporal buffer via processDetections(null match)
-			if (!isFrameStable(result.detections)) return;
-
 			// Process through interpretation → temporal buffer → game store
-			useGameStore.getState().processDetections(result.detections);
-
-			// Update temporal state in cv-store
-			useCvStore
+			const pipelineResult = useGameStore
 				.getState()
-				.updateTemporalState(getTemporalCount(), getLastMatchedAnswer());
+				.processDetections(result.detections);
+
+			// Update cv-store with pipeline stage + temporal state
+			const cvState = useCvStore.getState();
+			if (pipelineResult) {
+				cvState.updatePipelineStage(pipelineResult);
+			}
+			cvState.updateTemporalState(getTemporalCount(), getLastMatchedAnswer());
 		});
 
 		return unsubscribe;
 	}, [isMockMode]);
+
+	// Bridge camera settings to cv-store for DebugHUD
+	useEffect(() => {
+		if (camera.cameraSettings) {
+			useCvStore.getState().updateCameraSettings(camera.cameraSettings);
+		}
+	}, [camera.cameraSettings]);
 
 	// Poll capture stats for DebugHUD
 	useEffect(() => {

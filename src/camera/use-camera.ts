@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import type { CameraSettings } from "../store/cv-store";
 import { getFeatureFlags } from "../utils/feature-flags";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -20,6 +21,7 @@ export interface CameraHandle {
 	readonly status: CameraStatus;
 	readonly error: CameraError | null;
 	readonly videoRef: React.RefObject<HTMLVideoElement | null>;
+	readonly cameraSettings: CameraSettings | null;
 	readonly requestCamera: () => Promise<void>;
 	readonly stopCamera: () => void;
 }
@@ -82,6 +84,9 @@ export function useCamera(): CameraHandle {
 	const streamRef = useRef<MediaStream | null>(null);
 	const [status, setStatus] = useState<CameraStatus>("idle");
 	const [error, setError] = useState<CameraError | null>(null);
+	const [cameraSettings, setCameraSettings] = useState<CameraSettings | null>(
+		null,
+	);
 
 	const stopAllTracks = useCallback((): void => {
 		const stream = streamRef.current;
@@ -109,6 +114,17 @@ export function useCamera(): CameraHandle {
 			attachStream(stream);
 			setStatus("active");
 
+			const track = stream.getVideoTracks()[0];
+			if (track) {
+				const raw = track.getSettings();
+				setCameraSettings({
+					width: raw.width ?? 0,
+					height: raw.height ?? 0,
+					frameRate: raw.frameRate ?? 0,
+					facingMode: raw.facingMode ?? "unknown",
+				});
+			}
+
 			const startTime = performance.now();
 			if (videoRef.current) {
 				await videoRef.current.play();
@@ -119,6 +135,7 @@ export function useCamera(): CameraHandle {
 			}
 		} catch (err) {
 			stopAllTracks();
+			setCameraSettings(null);
 			const cameraError = friendlyErrorMessage(err);
 			setError(cameraError);
 			setStatus(cameraError.status);
@@ -176,6 +193,7 @@ export function useCamera(): CameraHandle {
 		status,
 		error,
 		videoRef,
+		cameraSettings,
 		requestCamera,
 		stopCamera,
 	};
