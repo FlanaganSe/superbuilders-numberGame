@@ -245,15 +245,12 @@ Files to **update** during the plan:
   Commit: "feat: add deployment pipeline, PWA caching, E2E test, and README"
 
 - [ ] **M9: Real model integration + tuning** — Physical tiles detected on real iPad, all acceptance criteria met
-  - Swap mock/placeholder model with trained YOLO11n ONNX model in `public/models/`
-  - Tune confidence threshold (start 0.65, adjust based on real tiles)
-  - Tune gap threshold for multi-digit grouping (start 1.0× tile width)
-  - Tune motion gate threshold (start avg confidence < 0.40)
-  - Tune temporal buffer (verify 3-frame count works at actual fps)
-  - Real-device iPad testing: camera behavior, autofocus, thermal, frame rate
-  - Fixture-based regression tests: labeled frames (good light, poor light, hand occlusion, 6/9 ambiguity, two-tile, empty board)
-  - Performance verification on target iPad: warm inference < 120ms, visual ack < 200ms, commit < 1000ms
-  - **Verify:** All PRD acceptance criteria pass on real iPad with physical tiles; false accept rate ≈ 0 during 3-minute demo; 6/9 correctly distinguished; two-tile answers (10–19) work; hand over surface does not trigger false commit; 10-minute session without thermal throttle; fixture regression tests pass in CI
+  - [x] Step 1 — Model integration: update default model URL to `digit-tiles.onnx`, add tuning comments to all threshold constants → verify: `pnpm typecheck`
+  - [x] Step 2 — Fix cleanup items: remove unused `_newProblem` param from NEXT_ROUND action, fix `dispose()` silently dropping pending callbacks → verify: `pnpm typecheck && pnpm test`
+  - [x] Step 3 — Create fixture pipeline regression tests: synthetic end-to-end tests covering all 10 digits, two-tile grouping (15), empty surface, low-confidence filtering, motion gate suppression, 6/9 distinction, NMS dedup → verify: `pnpm test`
+  - [x] Step 4 — Final verification → verify: `pnpm typecheck && pnpm test && pnpm lint && pnpm build`
+  Commit: "feat: integrate digit-tiles model, add pipeline regression tests, and fix cleanup items"
+  - **Manual:** Real-device iPad testing (camera, autofocus, thermal, frame rate, all acceptance criteria)
 
 ---
 

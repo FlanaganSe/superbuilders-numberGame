@@ -53,7 +53,7 @@ export type GameAction =
 	| { readonly type: "COUNTDOWN_COMPLETE"; readonly problem: Problem }
 	| { readonly type: "ANSWER_CORRECT"; readonly stars: 1 | 2 | 3 }
 	| { readonly type: "ROUND_TIMEOUT" }
-	| { readonly type: "NEXT_ROUND"; readonly problem: Problem }
+	| { readonly type: "NEXT_ROUND" }
 	| { readonly type: "END_SESSION" }
 	| { readonly type: "RESET" };
 

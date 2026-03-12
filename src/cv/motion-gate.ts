@@ -6,6 +6,7 @@
 
 import type { DetectedDigit } from "../types/cv";
 
+/** Average confidence below this → frame is unstable (hand occlusion, motion blur). Lower to 0.30 if too sensitive. */
 const MOTION_GATE_THRESHOLD = 0.4;
 
 /**

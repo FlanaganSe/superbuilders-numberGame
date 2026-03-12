@@ -16,14 +16,6 @@ const SAMPLE_PROBLEM: Problem = {
 	displayAnswer: "7",
 };
 
-const SAMPLE_PROBLEM_2: Problem = {
-	left: 5,
-	right: 2,
-	operator: "+",
-	answer: 7,
-	displayAnswer: "7",
-};
-
 function dispatch(state: GameState, action: GameAction): GameState {
 	return gameReducer(state, action);
 }
@@ -129,7 +121,6 @@ describe("gameReducer", () => {
 			state = dispatch(state, { type: "ANSWER_CORRECT", stars: 3 });
 			state = dispatch(state, {
 				type: "NEXT_ROUND",
-				problem: SAMPLE_PROBLEM_2,
 			});
 			expect(state.phase.phase).toBe("countdown");
 		});
@@ -141,7 +132,6 @@ describe("gameReducer", () => {
 			state = dispatch(state, { type: "ROUND_TIMEOUT" });
 			state = dispatch(state, {
 				type: "NEXT_ROUND",
-				problem: SAMPLE_PROBLEM_2,
 			});
 			expect(state.phase.phase).toBe("scanning");
 			if (state.phase.phase === "scanning") {
@@ -180,7 +170,6 @@ describe("gameReducer", () => {
 
 			const next = dispatch(filledState, {
 				type: "NEXT_ROUND",
-				problem: SAMPLE_PROBLEM_2,
 			});
 			expect(next.phase.phase).toBe("session-end");
 		});
@@ -221,7 +210,6 @@ describe("gameReducer", () => {
 			const state = initialGameState();
 			const next = dispatch(state, {
 				type: "NEXT_ROUND",
-				problem: SAMPLE_PROBLEM,
 			});
 			expect(next.phase.phase).toBe("idle");
 		});
@@ -250,7 +238,6 @@ describe("gameReducer", () => {
 			state = dispatch(state, { type: "ANSWER_CORRECT", stars: 3 });
 			state = dispatch(state, {
 				type: "NEXT_ROUND",
-				problem: SAMPLE_PROBLEM,
 			});
 			// Now in countdown — complete it
 			state = dispatch(state, {
@@ -262,7 +249,6 @@ describe("gameReducer", () => {
 			state = dispatch(state, { type: "ANSWER_CORRECT", stars: 3 });
 			state = dispatch(state, {
 				type: "NEXT_ROUND",
-				problem: SAMPLE_PROBLEM,
 			});
 			state = dispatch(state, {
 				type: "COUNTDOWN_COMPLETE",
@@ -294,7 +280,6 @@ describe("gameReducer", () => {
 			// Retry goes back to scanning with same problem
 			state = dispatch(state, {
 				type: "NEXT_ROUND",
-				problem: SAMPLE_PROBLEM_2,
 			});
 			// Timeout 2 — should demote
 			state = dispatch(state, { type: "ROUND_TIMEOUT" });

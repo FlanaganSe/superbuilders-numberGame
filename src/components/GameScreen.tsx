@@ -86,12 +86,9 @@ export function GameScreen({
 	// because frame handler in App.tsx gates on phase !== "scanning")
 	useEffect(() => {
 		if (!stars) return;
-		const mode = useGameStore.getState().mode;
-		const difficulty = useGameStore.getState().gameState.difficulty;
 		const timer = setTimeout(() => {
 			resetCvState();
-			const nextProblem = mode.generate(difficulty);
-			dispatch({ type: "NEXT_ROUND", problem: nextProblem });
+			dispatch({ type: "NEXT_ROUND" });
 		}, 1500);
 		return () => clearTimeout(timer);
 	}, [stars, dispatch, resetCvState]);
@@ -130,10 +127,10 @@ export function GameScreen({
 		if (!timedOut) return;
 		const timer = setTimeout(() => {
 			resetCvState();
-			dispatch({ type: "NEXT_ROUND", problem });
+			dispatch({ type: "NEXT_ROUND" });
 		}, 2000);
 		return () => clearTimeout(timer);
-	}, [timedOut, dispatch, problem, resetCvState]);
+	}, [timedOut, dispatch, resetCvState]);
 
 	// ─── Derive feedback state ──────────────────────────────────────────────
 	// Priority: correct > timeout > tile-seen.

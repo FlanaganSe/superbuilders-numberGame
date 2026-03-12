@@ -7,9 +7,14 @@ export interface AnswerCandidate {
 	readonly value: number;
 }
 
-// ─── Constants ──────────────────────────────────────────────────────────────
+// ─── Tuning Constants ────────────────────────────────────────────────────────
+// Tune with physical tiles: place "1"+"5" adjacent → should group as "15".
+// Place them apart → should NOT group. Adjust multiplier if needed.
 
+/** Two tiles must be within 0.5× avg height vertically to be considered on the same line. */
 const VERTICAL_ALIGNMENT_FACTOR = 0.5;
+
+/** Two tiles must have gap < 1.0× avg width to form a multi-digit number. Raise to 1.5 if adjacent tiles aren't grouping. */
 const HORIZONTAL_PROXIMITY_FACTOR = 1.0;
 
 // ─── Grouping algorithm ─────────────────────────────────────────────────────

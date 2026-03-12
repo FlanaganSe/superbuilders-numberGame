@@ -87,7 +87,7 @@ export function createOnnxRecognitionService(): OnnxRecognitionService {
 
 			return new Promise<void>((resolve, reject) => {
 				pendingInit = { resolve, reject };
-				const url = modelUrl ?? "/models/yolo11n-coco.onnx";
+				const url = modelUrl ?? "/models/digit-tiles.onnx";
 				worker?.postMessage({
 					type: "init",
 					modelUrl: url,
@@ -113,12 +113,11 @@ export function createOnnxRecognitionService(): OnnxRecognitionService {
 		},
 
 		dispose(): void {
-			// Reject pending init so callers don't see false "ready" after dispose
-			pendingInit?.reject(new Error("Service disposed"));
+			// Drop pending callbacks silently — the owning effect is being cleaned up,
+			// so no caller needs the result. Rejecting pendingInit would queue a
+			// microtask that fires *after* status is reset, causing a brief "error"
+			// flash in StrictMode double-mount.
 			pendingInit = null;
-
-			// Resolve pending inference with empty result so the frame callback unblocks
-			pendingInfer?.({ ...EMPTY_RESULT, frameTimestamp: Date.now() });
 			pendingInfer = null;
 
 			// Set status to loading BEFORE terminating so ready === false

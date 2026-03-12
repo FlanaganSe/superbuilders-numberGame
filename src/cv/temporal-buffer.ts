@@ -9,6 +9,7 @@ export type TemporalEvent =
 	| { readonly type: "ANSWER_COMMITTED"; readonly answer: number }
 	| { readonly type: "NONE" };
 
+/** Consecutive matching frames required before committing an answer. At 4fps → ~750ms. Reduce to 2 if fps < 3. */
 const REQUIRED_CONSECUTIVE_FRAMES = 3;
 
 export interface TemporalBuffer {

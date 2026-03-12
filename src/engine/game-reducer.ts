@@ -46,7 +46,7 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
 			return handleRoundTimeout(state);
 
 		case "NEXT_ROUND":
-			return handleNextRound(state, action.problem);
+			return handleNextRound(state);
 
 		case "END_SESSION":
 			return handleEndSession(state);
@@ -135,7 +135,7 @@ function handleRoundTimeout(state: GameState): GameState {
 	};
 }
 
-function handleNextRound(state: GameState, _newProblem: Problem): GameState {
+function handleNextRound(state: GameState): GameState {
 	if (state.phase.phase !== "success" && state.phase.phase !== "timeout") {
 		return state;
 	}

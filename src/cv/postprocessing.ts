@@ -9,9 +9,15 @@
 
 import type { BoundingBox, DetectedDigit } from "../types/cv";
 
-// ─── Configuration ───────────────────────────────────────────────────────────
+// ─── Tuning Constants ────────────────────────────────────────────────────────
+// Tune on real iPad with physical tiles via ?debug=true HUD.
+// If tiles are missed → lower CONF. If false positives appear → raise CONF.
+// If duplicate detections leak through → lower IOU.
 
+/** Minimum confidence score to keep a detection. Start 0.65; lower to 0.50 if tiles missed, raise to 0.75 if false positives. */
 export const DEFAULT_CONF_THRESHOLD = 0.65;
+
+/** NMS IoU threshold. Physical tiles don't overlap, so this mainly filters duplicate detections. Lower to 0.35 if duplicates leak. */
 export const DEFAULT_IOU_THRESHOLD = 0.45;
 
 // ─── Internal types ──────────────────────────────────────────────────────────
