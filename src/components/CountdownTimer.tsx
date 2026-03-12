@@ -8,6 +8,14 @@ interface CountdownTimerProps {
 	readonly secondsLeft: number;
 }
 
+const COUNTDOWN_COLORS: Record<number, string> = {
+	5: "text-primary-500",
+	4: "text-teal-500",
+	3: "text-amber-500",
+	2: "text-orange-500",
+	1: "text-red-500",
+} as const;
+
 const COUNTDOWN_SPRING = {
 	type: "spring" as const,
 	stiffness: 300,
@@ -53,7 +61,7 @@ export function CountdownTimer({
 			<AnimatePresence mode="wait">
 				<m.span
 					key={secondsLeft}
-					className="inline-block font-display text-9xl text-primary-500"
+					className={`inline-block font-display text-9xl ${COUNTDOWN_COLORS[secondsLeft] ?? "text-primary-500"}`}
 					initial={{ scale: 0, opacity: 0 }}
 					animate={{ scale: 1, opacity: 1 }}
 					exit={{ scale: 0.5, opacity: 0 }}

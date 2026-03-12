@@ -5,6 +5,7 @@ import {
 	createMockDetection,
 	createMockDetectionPair,
 } from "../cv/mock-recognition";
+import { MAX_PROBLEMS } from "../engine/game-reducer";
 import { useGameStore } from "../store/game-store";
 import type { Digit } from "../types/cv";
 import type { Problem } from "../types/game";
@@ -12,6 +13,7 @@ import { getFeatureFlags } from "../utils/feature-flags";
 import { FeedbackOverlay, type FeedbackState } from "./FeedbackOverlay";
 import { MockNumpad } from "./MockNumpad";
 import { ProblemDisplay } from "./ProblemDisplay";
+import { ProgressPips } from "./ProgressPips";
 
 // ─── Spring config for tile-detected pop (research §3.3) ───────────────────
 
@@ -42,6 +44,7 @@ export function GameScreen({
 	const processDetections = useGameStore((s) => s.processDetections);
 	const resetCvState = useGameStore((s) => s.resetCvState);
 	const tileSeen = useGameStore((s) => s.tileSeen);
+	const roundsCompleted = useGameStore((s) => s.gameState.rounds.length);
 	const flags = getFeatureFlags();
 	const { play } = useAudio();
 
@@ -153,6 +156,9 @@ export function GameScreen({
 
 	return (
 		<div className="flex flex-col items-center gap-6">
+			{/* Progress indicator */}
+			<ProgressPips current={roundsCompleted} total={MAX_PROBLEMS} />
+
 			{/* Problem display with tile-detected pop animation */}
 			<m.div
 				key={tileSeen !== null ? `pop-${tileSeen}` : "idle"}
@@ -167,7 +173,7 @@ export function GameScreen({
 
 			{/* Answer zone hint — only during scanning with no tile detected */}
 			{isScanning && tileSeen === null && (
-				<div className="animate-pulse-soft rounded-3xl border-4 border-dashed border-primary-300/50 px-12 py-5">
+				<div className="animate-pulse-soft rounded-3xl border-4 border-dashed border-primary-400 px-12 py-5">
 					<p className="font-body text-2xl text-primary-400/80">
 						Put your answer here
 					</p>
