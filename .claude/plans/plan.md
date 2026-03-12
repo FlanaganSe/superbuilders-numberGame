@@ -213,7 +213,7 @@ Files to **update** during the plan:
   - [x] Step 5 — Implement `inference.worker.ts`: module worker importing onnxruntime-web/wasm, ORT bootstrap (wasmPaths='/', numThreads=1, simd=true, proxy=false), session create with graphOptimizationLevel='all', MainToWorker/WorkerToMain protocol via switch+satisfies, busy-flag frame dropping (isInferring guard), try/catch around session.run() with finally clearing flag, exhaustive default case, bitmap.close() on all paths → verify: `pnpm typecheck && pnpm test && pnpm lint && pnpm build`
   Commit: "feat: implement inference worker with preprocessing, postprocessing, and synthetic test fixtures"
 
-- [ ] **M5: Full CV loop + auto-check** — Camera → worker → interpretation → game transitions working end-to-end
+- [x] **M5: Full CV loop + auto-check** — Camera → worker → interpretation → game transitions working end-to-end
   - [x] Step 1 — Core modules: `motion-gate.ts` + test, `cv-store.ts`, `onnx-recognition.ts`, clean worker-protocol (remove unused width/height from infer), update recognition-service factory, expose temporal buffer state from game-store → verify: `pnpm typecheck`
   - [x] Step 2 — Wire full pipeline in App.tsx: frame capture → OnnxRecognitionService → motion gate → processDetections → cv-store updates. CV only active during scanning phase. → verify: `pnpm typecheck && pnpm test`
   - [x] Step 3 — Create `FixtureFrameSource` (implements `FrameSource`, loads labeled test images for M9 regression) + test. Create `CalibrationGuide` (first-run camera/lighting check, localStorage gated). → verify: `pnpm typecheck && pnpm test`
