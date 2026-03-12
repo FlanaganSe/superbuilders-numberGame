@@ -83,4 +83,5 @@ export interface GameState {
 	readonly consecutiveWrong: number;
 	readonly rounds: readonly RoundResult[];
 	readonly currentRoundStartedAt: number | null;
+	readonly sessionStartedAt: number | null;
 }

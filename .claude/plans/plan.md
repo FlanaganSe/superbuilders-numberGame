@@ -188,17 +188,12 @@ Files to **update** during the plan:
   Commit: "feat: scaffold project with Vite 7, React 19, TypeScript, Tailwind v4, Biome v2, and core type definitions"
 
 - [ ] **M2: Game loop with mock recognition** — Full game playable via keyboard input, no camera or CV needed
-  - Implement `gameReducer` as a pure function (`idle → countdown → scanning → success/timeout → session-end`). Zustand store wraps it as the single source of truth: `dispatch: (action) => set(state => gameReducer(state, action))`. This preserves the PRD's reducer pattern (explicit transitions, no impossible states) while enabling dispatch from outside React (CV pipeline calls `gameStore.getState().dispatch()` directly). `useReducer` hook is NOT used — Zustand hosts the reducer instead
-  - Implement `AdditionMode` and `SubtractionMode` problem generators
-  - Implement adaptive difficulty (increase after 3 correct, decrease after 2 wrong)
-  - Implement `MockRecognitionService` (keyboard digits + on-screen numpad for iPad — target device has no physical keyboard; gated by `?recognition=mock`)
-  - Implement `InterpretationLayer` (digit grouping with vertical alignment check, digit-count gate, answer matching). **Design note:** InterpretationLayer runs on the main thread, not in the worker — grouping/matching is ~5μs/frame (trivial), and main-thread placement gives direct access to game state without bidirectional worker messaging. This diverges from `research-auto-check.md §10` by design; the immutable rule ("CV processing must not block UI thread") targets ORT inference (20–80ms), not microsecond game logic
-  - Implement `TemporalBuffer` (3-frame consecutive counter, two-phase feedback)
-  - Implement star calculation (3/2/1 per attempt, never 0) + localStorage persistence
-  - Build Zustand game store wrapping `gameReducer` (single owner — components use selectors, CV pipeline dispatches via `getState().dispatch()`)
-  - Build skeleton UI: `TapToStart` → `GameScreen` → `ProblemDisplay` → `CountdownTimer` → `SessionSummary`
-  - `App.tsx` with `LazyMotion` + `MotionConfig reducedMotion="user"` wrapping
-  - **Verify:** Full game loop playable with keyboard and on-screen numpad; state machine transitions correctly via Zustand dispatch; star tracking works; difficulty adapts; all unit tests pass (game-reducer as pure function, problem-generator, difficulty, interpretation, temporal-buffer, session); `?recognition=mock` flag works
+  - [ ] Step 1 — Engine layer: game-reducer.ts, problem-generator.ts, difficulty.ts, session.ts + all tests → verify: `pnpm test`
+  - [ ] Step 2 — CV pipeline stubs: interpretation.ts, temporal-buffer.ts, mock-recognition.ts, recognition-service.ts + tests → verify: `pnpm test`
+  - [ ] Step 3 — Zustand game-store.ts wrapping gameReducer → verify: `pnpm typecheck`
+  - [ ] Step 4 — Skeleton UI: App.tsx (LazyMotion), TapToStart, GameScreen, ProblemDisplay, CountdownTimer, SessionSummary → verify: `pnpm typecheck && pnpm build`
+  - [ ] Step 5 — Final verification: all tests + lint + build pass → verify: `pnpm typecheck && pnpm test && pnpm lint && pnpm build`
+  Commit: "feat: implement game loop with mock recognition, CV stubs, and skeleton UI"
 
 ### Phase 2: Camera & CV Infrastructure (Day 2–3)
 
