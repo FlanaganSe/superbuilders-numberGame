@@ -20,7 +20,7 @@ interface CameraOverlayProps {
 export function CameraOverlay({
 	videoRef,
 	active,
-}: CameraOverlayProps): React.JSX.Element | null {
+}: CameraOverlayProps): React.JSX.Element {
 	const canvasRef = useRef<HTMLCanvasElement>(null);
 	const showBoxes = getFeatureFlags().overlay === "boxes";
 
@@ -65,10 +65,10 @@ export function CameraOverlay({
 		return unsubscribe;
 	}, [showBoxes]);
 
-	if (!active) return null;
-
 	return (
-		<div className="absolute inset-0 overflow-hidden rounded-2xl">
+		<div
+			className={`absolute inset-0 overflow-hidden rounded-2xl${active ? "" : " invisible"}`}
+		>
 			<video
 				ref={videoRef}
 				autoPlay
@@ -76,10 +76,12 @@ export function CameraOverlay({
 				muted
 				className="h-full w-full object-cover"
 			/>
-			<canvas
-				ref={canvasRef}
-				className="pointer-events-none absolute inset-0 h-full w-full"
-			/>
+			{active && (
+				<canvas
+					ref={canvasRef}
+					className="pointer-events-none absolute inset-0 h-full w-full"
+				/>
+			)}
 		</div>
 	);
 }
