@@ -27,7 +27,7 @@ The project was built as a week-long challenge to replicate the core experience 
 | **Tailwind CSS** | 4.2 | Styling | v4 uses `@theme` in CSS directly (no config file). Integrated via `@tailwindcss/vite` plugin — no PostCSS needed. Custom color palette (cream, gold, success green) designed for child-friendly aesthetics. |
 | **Biome** | 2.x | Linter + formatter | Single tool replaces ESLint + Prettier. ~20x faster. `domains.react: "all"` enables full React rule set including hooks linting (ADR-004). Tab indentation. |
 | **Playwright** | 1.58 | E2E testing | WebKit engine only — matches the iPad Safari target. Tests use mock recognition mode to avoid camera permission dialogs. |
-| **Vitest** | 4.x | Unit testing | Co-located tests (`foo.ts` → `foo.test.ts`). happy-dom environment. 14 test files covering game logic, CV pipeline math, and state transitions. |
+| **Vitest** | 4.x | Unit testing | Co-located tests (`foo.ts` → `foo.test.ts`). happy-dom environment. 16 test files covering game logic, CV pipeline math, pipeline regression, and state transitions. |
 | **Cloudflare Pages** | — | Hosting | Static site deployment. HTTPS guaranteed (required for camera API). Workbox service worker caches WASM runtime + ONNX model for offline use. |
 
 ### Key dependency decisions and tradeoffs
