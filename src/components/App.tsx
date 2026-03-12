@@ -191,7 +191,7 @@ export function App(): React.JSX.Element {
 							<button
 								type="button"
 								onClick={() => camera.requestCamera()}
-								className="rounded-2xl bg-primary-500 px-8 py-4 font-display text-2xl text-white shadow-lg active:scale-95"
+								className="min-h-20 rounded-3xl bg-primary-500 px-10 py-6 font-display text-2xl text-white shadow-xl active:scale-95"
 							>
 								Tap to restart camera
 							</button>

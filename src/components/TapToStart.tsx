@@ -1,3 +1,4 @@
+import * as m from "motion/react-m";
 import type { CameraError } from "../camera/use-camera";
 import { AdditionMode } from "../engine/problem-generator";
 import { useGameStore } from "../store/game-store";
@@ -26,21 +27,25 @@ export function TapToStart({
 
 	return (
 		<div className="flex flex-col items-center gap-8">
-			<h1 className="font-display text-6xl text-primary-600">Superbuilders</h1>
+			<h1 className="font-display text-7xl text-primary-600 drop-shadow-sm">
+				Superbuilders
+			</h1>
 
 			{cameraError && (
-				<p className="max-w-sm text-center font-body text-lg text-amber-600">
+				<p className="max-w-sm text-center font-body text-2xl text-amber-600">
 					{cameraError.message}
 				</p>
 			)}
 
-			<button
+			<m.button
 				type="button"
 				onClick={handleStart}
-				className="rounded-2xl bg-primary-500 px-12 py-6 font-display text-4xl text-white shadow-lg active:scale-95"
+				whileTap={{ scale: 0.95 }}
+				transition={{ type: "spring", stiffness: 400, damping: 17 }}
+				className="min-h-20 rounded-3xl bg-primary-500 px-14 py-6 font-display text-4xl text-white shadow-xl"
 			>
 				Let's Play!
-			</button>
+			</m.button>
 		</div>
 	);
 }

@@ -222,17 +222,11 @@ Files to **update** during the plan:
 
 ### Phase 3: UX Polish (Day 3–4)
 
-- [ ] **M6: Visual design + animations** — App looks and feels like a children's game
-  - Tailwind theme: color palette (primary blue, success green/gold, cream background, celebration accents)
-  - Typography: Lexend for body/instructions (≥24pt), Fredoka One for numbers (≥48pt)
-  - Landscape layout with touch targets ≥ 80×80pt
-  - Motion animations: correct-answer scale bounce, gentle encouragement wobble, countdown number scale, tile-detected pop
-  - `canvas-confetti` integration: correct-answer burst, session-end double cannon
-  - `FeedbackOverlay` component: animated overlays for correct/incorrect/tile-detected states
-  - Pause CV inference during celebration window (1.5s)
-  - `prefers-reduced-motion`: all springs → opacity fades via `MotionConfig` + `useReducedMotion`
-  - Soft answer zone visual hint (rounded rectangle, labeled "Put your answer here", subtle pulse)
-  - **Verify:** Correct answer triggers confetti + bounce + green feedback; timeout shows gentle wobble + encouragement text; `prefers-reduced-motion` replaces all animations with fades; touch targets are ≥ 80×80pt; numbers are ≥ 48pt; layout is landscape; no red X/buzzer/punitive language anywhere
+- [x] **M6: Visual design + animations** — App looks and feels like a children's game
+  - [x] Step 1 — Tailwind theme + typography + layout: enhance index.css color palette, verify font sizes (Fredoka ≥48pt numbers, Lexend ≥24pt body), update all components for landscape iPad layout, touch targets ≥80×80pt → verify: `pnpm typecheck`
+  - [x] Step 2 — Create `FeedbackOverlay.tsx` with confetti integration: three states (correct/tile-seen/timeout), Motion animations (scale bounce, wobble, pop), canvas-confetti bursts, randomized child-friendly text, `useReducedMotion` fallbacks, answer zone hint with pulse → verify: `pnpm typecheck`
+  - [x] Step 3 — Wire FeedbackOverlay into GameScreen + App: integrate overlay, add session-end confetti, pause CV inference during success phase (1.5s), update component styles for visual polish → verify: `pnpm typecheck && pnpm test && pnpm lint && pnpm build`
+  Commit: "feat: add visual design, animations, confetti, and FeedbackOverlay for children's game UX"
 
 - [ ] **M7: Audio + session flow + progressive loading** — Complete polished experience from start to finish
   - Howler.js setup with audio sprites (MP3 + M4A): correctChime, encouragement, tileDetectedPop, sessionEndFanfare, countdownTick

@@ -48,12 +48,12 @@ export function CalibrationGuide({
 
 	return (
 		<div className="absolute inset-0 z-30 flex items-center justify-center bg-black/60">
-			<div className="mx-4 max-w-md rounded-2xl bg-white p-8 text-center shadow-xl">
-				<h2 className="mb-4 font-display text-3xl text-primary-600">
+			<div className="mx-4 max-w-lg rounded-3xl bg-white p-8 text-center shadow-xl">
+				<h2 className="mb-4 font-display text-4xl text-primary-600">
 					Set Up Your Camera
 				</h2>
 
-				<div className="mb-6 flex flex-col gap-3 text-left font-body text-lg text-gray-700">
+				<div className="mb-6 flex flex-col gap-3 text-left font-body text-2xl text-gray-700">
 					<div className="flex items-center gap-3">
 						<span
 							className={`text-2xl ${cameraReady ? "text-success-600" : "text-gray-400"}`}
@@ -76,12 +76,12 @@ export function CalibrationGuide({
 					<button
 						type="button"
 						onClick={handleComplete}
-						className="rounded-2xl bg-success-500 px-8 py-4 font-display text-2xl text-white shadow-lg active:scale-95"
+						className="min-h-20 rounded-3xl bg-success-500 px-10 py-6 font-display text-2xl text-white shadow-lg active:scale-95"
 					>
 						Looks good!
 					</button>
 				) : (
-					<p className="font-body text-base text-gray-500">
+					<p className="font-body text-2xl text-gray-500">
 						Waiting for camera...
 					</p>
 				)}

@@ -1,9 +1,17 @@
+import { AnimatePresence } from "motion/react";
+import * as m from "motion/react-m";
 import { useEffect, useRef } from "react";
 import { useGameStore } from "../store/game-store";
 
 interface CountdownTimerProps {
 	readonly secondsLeft: number;
 }
+
+const COUNTDOWN_SPRING = {
+	type: "spring" as const,
+	stiffness: 300,
+	damping: 20,
+};
 
 export function CountdownTimer({
 	secondsLeft,
@@ -38,10 +46,19 @@ export function CountdownTimer({
 
 	return (
 		<div className="flex flex-col items-center gap-4">
-			<p className="font-body text-2xl text-slate-600">Get ready!</p>
-			<span className="font-display text-9xl text-primary-500">
-				{secondsLeft}
-			</span>
+			<p className="font-body text-3xl text-slate-600">Get ready!</p>
+			<AnimatePresence mode="wait">
+				<m.span
+					key={secondsLeft}
+					className="inline-block font-display text-9xl text-primary-500"
+					initial={{ scale: 0, opacity: 0 }}
+					animate={{ scale: 1, opacity: 1 }}
+					exit={{ scale: 0.5, opacity: 0 }}
+					transition={COUNTDOWN_SPRING}
+				>
+					{secondsLeft}
+				</m.span>
+			</AnimatePresence>
 		</div>
 	);
 }

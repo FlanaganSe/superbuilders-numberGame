@@ -1,3 +1,4 @@
+import * as m from "motion/react-m";
 import { useCallback, useEffect } from "react";
 import {
 	createMockDetection,
@@ -6,8 +7,19 @@ import {
 import { useGameStore } from "../store/game-store";
 import type { Problem } from "../types/game";
 import { getFeatureFlags } from "../utils/feature-flags";
+import { FeedbackOverlay, type FeedbackState } from "./FeedbackOverlay";
 import { MockNumpad } from "./MockNumpad";
 import { ProblemDisplay } from "./ProblemDisplay";
+
+// ─── Spring config for tile-detected pop (research §3.3) ───────────────────
+
+const POP_SPRING = {
+	type: "spring" as const,
+	stiffness: 400,
+	damping: 10,
+};
+
+// ─── Props ──────────────────────────────────────────────────────────────────
 
 interface GameScreenProps {
 	readonly problem: Problem;
@@ -15,6 +27,8 @@ interface GameScreenProps {
 	readonly stars?: 1 | 2 | 3;
 	readonly timedOut?: boolean;
 }
+
+// ─── Component ──────────────────────────────────────────────────────────────
 
 export function GameScreen({
 	problem,
@@ -39,13 +53,9 @@ export function GameScreen({
 			if (answerStr.length === 1) {
 				processDetections([createMockDetection(digit)]);
 			} else if (answerStr.length === 2) {
-				// For two-digit answers, if the user presses the tens digit,
-				// wait for ones. For simplicity in mock mode, if the full
-				// number is typed we simulate the pair.
 				const tens = Math.floor(answer / 10);
 				const ones = answer % 10;
 				if (digit === tens) {
-					// User typed tens digit — emit pair (assume ones follows)
 					processDetections([...createMockDetectionPair(tens, ones)]);
 				} else {
 					processDetections([createMockDetection(digit)]);
@@ -70,7 +80,8 @@ export function GameScreen({
 		return () => window.removeEventListener("keydown", onKeyDown);
 	}, [handleDigit, flags.recognition]);
 
-	// Auto-advance after success
+	// Auto-advance after success (1.5s celebration window — CV is paused
+	// because frame handler in App.tsx gates on phase !== "scanning")
 	useEffect(() => {
 		if (!stars) return;
 		const mode = useGameStore.getState().mode;
@@ -105,32 +116,47 @@ export function GameScreen({
 		return () => clearTimeout(timer);
 	}, [timedOut, dispatch, problem, resetCvState]);
 
+	// ─── Derive feedback state ──────────────────────────────────────────────
+	// Priority: correct > timeout > tile-seen.
+	// This is guaranteed by game phases: stars/timedOut are mutually exclusive
+	// (set by phase router in App.tsx), and tileSeen is only set during scanning.
+	// FeedbackOverlay's AnimatePresence depends on this mutual exclusivity.
+
+	const feedback: FeedbackState = stars
+		? { type: "correct", stars }
+		: timedOut
+			? { type: "timeout", problem }
+			: tileSeen !== null
+				? { type: "tile-seen", answer: tileSeen }
+				: null;
+
+	const isScanning = !stars && !timedOut;
+
 	return (
-		<div className="flex flex-col items-center gap-8">
-			<ProblemDisplay problem={problem} />
+		<div className="flex flex-col items-center gap-6">
+			{/* Problem display with tile-detected pop animation */}
+			<m.div
+				key={tileSeen !== null ? `pop-${tileSeen}` : "idle"}
+				animate={tileSeen !== null ? { scale: [1, 1.05, 1] } : { scale: 1 }}
+				transition={tileSeen !== null ? POP_SPRING : { duration: 0 }}
+			>
+				<ProblemDisplay problem={problem} showAnswer={!!stars} />
+			</m.div>
 
-			{tileSeen !== null && !stars && !timedOut && (
-				<p className="font-body text-2xl text-primary-400">I see a tile!</p>
-			)}
+			{/* Feedback overlay: correct / timeout / tile-seen */}
+			<FeedbackOverlay feedback={feedback} />
 
-			{stars && (
-				<div className="flex flex-col items-center gap-2">
-					<p className="font-body text-3xl text-success-600">Great job!</p>
-					<p className="font-display text-4xl text-gold-500">
-						{"★".repeat(stars)}
+			{/* Answer zone hint — only during scanning with no tile detected */}
+			{isScanning && tileSeen === null && (
+				<div className="animate-pulse-soft rounded-3xl border-4 border-dashed border-primary-300/50 px-12 py-5">
+					<p className="font-body text-2xl text-primary-400/80">
+						Put your answer here
 					</p>
 				</div>
 			)}
 
-			{timedOut && (
-				<div className="flex flex-col items-center gap-2">
-					<p className="font-body text-2xl text-primary-400">
-						The answer is {problem.answer}. Let's try again!
-					</p>
-				</div>
-			)}
-
-			{flags.recognition === "mock" && !stars && !timedOut && (
+			{/* Mock numpad — only during scanning */}
+			{flags.recognition === "mock" && isScanning && (
 				<MockNumpad onDigit={handleDigit} />
 			)}
 		</div>
