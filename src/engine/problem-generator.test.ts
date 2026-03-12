@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { DifficultyLevel } from "../types/game";
-import { AdditionMode, SubtractionMode } from "./problem-generator";
+import { AdditionMode, MAX_ANSWER, SubtractionMode } from "./problem-generator";
 
 const ALL_LEVELS: readonly DifficultyLevel[] = [1, 2, 3, 4, 5];
 
@@ -16,7 +16,7 @@ describe("AdditionMode", () => {
 			expect(problem.operator).toBe("+");
 			expect(problem.answer).toBe(problem.left + problem.right);
 			expect(problem.answer).toBeGreaterThanOrEqual(0);
-			expect(problem.answer).toBeLessThanOrEqual(19);
+			expect(problem.answer).toBeLessThanOrEqual(MAX_ANSWER);
 			expect(problem.left).toBeGreaterThanOrEqual(0);
 			expect(problem.right).toBeGreaterThanOrEqual(0);
 			expect(problem.displayAnswer).toBe(problem.answer.toString());
@@ -45,6 +45,7 @@ describe("SubtractionMode", () => {
 			expect(problem.operator).toBe("-");
 			expect(problem.answer).toBe(problem.left - problem.right);
 			expect(problem.answer).toBeGreaterThanOrEqual(0);
+			expect(problem.answer).toBeLessThanOrEqual(MAX_ANSWER);
 			expect(problem.left).toBeGreaterThanOrEqual(problem.right);
 			expect(problem.displayAnswer).toBe(problem.answer.toString());
 		}

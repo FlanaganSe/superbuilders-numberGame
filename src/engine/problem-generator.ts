@@ -1,5 +1,11 @@
 import type { DifficultyLevel, GameMode, Problem } from "../types/game";
 
+// ─── Answer constraint ──────────────────────────────────────────────────────
+// Answers must be a single digit (0-9) because the child places one physical
+// tile in front of the camera and the CV system recognises individual digits.
+
+export const MAX_ANSWER = 9;
+
 // ─── Difficulty Ranges ──────────────────────────────────────────────────────
 
 interface OperandRange {
@@ -9,14 +15,17 @@ interface OperandRange {
 	readonly maxRight: number;
 }
 
+// Difficulty progression: larger minimum operands → fewer "trivial" sums.
 const ADDITION_RANGES: Record<DifficultyLevel, OperandRange> = {
-	1: { minLeft: 0, maxLeft: 5, minRight: 0, maxRight: 4 },
-	2: { minLeft: 1, maxLeft: 7, minRight: 1, maxRight: 5 },
-	3: { minLeft: 2, maxLeft: 9, minRight: 2, maxRight: 8 },
-	4: { minLeft: 3, maxLeft: 9, minRight: 3, maxRight: 9 },
-	5: { minLeft: 5, maxLeft: 9, minRight: 5, maxRight: 9 },
+	1: { minLeft: 0, maxLeft: 4, minRight: 0, maxRight: 4 },
+	2: { minLeft: 0, maxLeft: 5, minRight: 0, maxRight: 5 },
+	3: { minLeft: 1, maxLeft: 6, minRight: 1, maxRight: 6 },
+	4: { minLeft: 2, maxLeft: 7, minRight: 2, maxRight: 7 },
+	5: { minLeft: 3, maxLeft: 7, minRight: 3, maxRight: 6 },
 };
 
+// Subtraction left operand is displayed on screen (can exceed 9).
+// Only the answer (left − right) must be 0-9.
 const SUBTRACTION_RANGES: Record<DifficultyLevel, OperandRange> = {
 	1: { minLeft: 1, maxLeft: 5, minRight: 0, maxRight: 3 },
 	2: { minLeft: 3, maxLeft: 9, minRight: 1, maxRight: 5 },
@@ -38,11 +47,10 @@ function generateAddition(difficulty: DifficultyLevel): Problem {
 	let left: number;
 	let right: number;
 
-	// Ensure sum is in 0–19 range (appropriate for ages 5–8)
 	do {
 		left = randomInt(range.minLeft, range.maxLeft);
 		right = randomInt(range.minRight, range.maxRight);
-	} while (left + right > 19);
+	} while (left + right > MAX_ANSWER);
 
 	const answer = left + right;
 	return {
@@ -59,11 +67,10 @@ function generateSubtraction(difficulty: DifficultyLevel): Problem {
 	let left: number;
 	let right: number;
 
-	// Ensure no negative results
 	do {
 		left = randomInt(range.minLeft, range.maxLeft);
 		right = randomInt(range.minRight, range.maxRight);
-	} while (left - right < 0);
+	} while (left - right < 0 || left - right > MAX_ANSWER);
 
 	const answer = left - right;
 	return {
