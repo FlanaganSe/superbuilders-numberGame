@@ -25,7 +25,6 @@ export interface TemporalBuffer {
 export function createTemporalBuffer(): TemporalBuffer {
 	let count = 0;
 	let currentAnswer: number | null = null;
-	let tileSeen = false;
 	let missStreak = 0;
 
 	return {
@@ -35,7 +34,6 @@ export function createTemporalBuffer(): TemporalBuffer {
 				if (missStreak > MAX_CONSECUTIVE_MISSES) {
 					count = 0;
 					currentAnswer = null;
-					tileSeen = false;
 				}
 				return { type: "NONE" };
 			}
@@ -45,20 +43,11 @@ export function createTemporalBuffer(): TemporalBuffer {
 			if (matchedAnswer !== currentAnswer) {
 				count = 1;
 				currentAnswer = matchedAnswer;
-				tileSeen = true;
 				return { type: "TILE_SEEN", answer: matchedAnswer };
 			}
 
 			// Same answer as before
 			count++;
-
-			if (!tileSeen) {
-				tileSeen = true;
-				if (count >= REQUIRED_CONSECUTIVE_FRAMES) {
-					return { type: "ANSWER_COMMITTED", answer: matchedAnswer };
-				}
-				return { type: "TILE_SEEN", answer: matchedAnswer };
-			}
 
 			if (count >= REQUIRED_CONSECUTIVE_FRAMES) {
 				return { type: "ANSWER_COMMITTED", answer: matchedAnswer };
@@ -70,7 +59,6 @@ export function createTemporalBuffer(): TemporalBuffer {
 		reset(): void {
 			count = 0;
 			currentAnswer = null;
-			tileSeen = false;
 			missStreak = 0;
 		},
 
