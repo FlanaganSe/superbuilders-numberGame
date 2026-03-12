@@ -1,0 +1,34 @@
+# Personal overrides (not shared with team)
+CLAUDE.local.md
+
+# Local agent memory (machine-specific)
+.claude/agent-memory-local/
+
+# OS
+.DS_Store
+
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+.next/
+out/
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# TypeScript
+*.tsbuildinfo
+
+# Logs
+*.log
+npm-debug.log*
