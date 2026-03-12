@@ -205,17 +205,13 @@ Files to **update** during the plan:
   - [x] Step 5 — Wire into existing UI: update TapToStart to call getUserMedia on tap, update App/GameScreen to show camera preview behind game UI when active, skip camera in mock mode, add tests for use-camera, fix reviewer issues (visibilitychange gesture requirement, loadedmetadata listener leak, remove stale stream field) → verify: `pnpm typecheck && pnpm test && pnpm lint && pnpm build`
   Commit: "feat: implement camera pipeline with frame capture, debug HUD, and camera overlay"
 
-- [ ] **M4: Inference worker + processing pipeline** — Worker loads ORT, processes synthetic input, returns detections
-  - Implement `inference.worker.ts` with full ORT bootstrap (wasmPaths, numThreads, session create)
-  - Implement `preprocessing.ts` (letterbox resize, RGBA→planar RGB Float32, pre-allocation)
-  - Implement `postprocessing.ts` (confidence filter ≥ 0.65, NMS IoU 0.45, box decode, unletterbox, left-to-right sort)
-  - Create synthetic test tensor matching YOLO11n output format `[1, 14, 8400]`
-  - Copy `ort-wasm-simd-threaded.wasm` to public via static-copy plugin
-  - Worker message protocol with discriminated unions and `satisfies` operator
-  - Busy-flag frame dropping in worker (`isInferring` guard); try/catch around `session.run()` to prevent busy-flag deadlock on WASM exceptions
-  - **ORT integration smoke test:** Export stock `yolo11n.pt` to ONNX (`yolo export model=yolo11n.pt format=onnx imgsz=640 opset=17 half=False batch=1`), place in `public/models/yolo11n-coco.onnx` (~10MB). This validates the highest-risk path — ORT WASM + opset=17 + Safari Worker — before custom training completes. Output shape is `[1, 84, 8400]` (80 COCO classes); postprocessing is parameterized by `numClasses` from output dims so no code change is needed
-  - Test smoke model on real iPad via cloudflared tunnel — validates Risk #1 (ORT WASM in Safari Worker)
-  - **Verify:** Preprocessing and postprocessing unit tests pass (pure functions, no model needed); synthetic tensor processed correctly → expected detections via direct `postProcess()` call; NMS unit tests pass; `InferenceSession.create` succeeds with stock COCO model in Safari Worker via cloudflared; `session.run()` returns tensor output; `pnpm build` bundles worker correctly; WASM binary is served from `/`. Custom digit model integration is M9
+- [x] **M4: Inference worker + processing pipeline** — Worker loads ORT, processes synthetic input, returns detections
+  - [x] Step 1 — Implement `preprocessing.ts`: computeLetterbox (pure math), preprocess (OffscreenCanvas letterbox + RGBA→planar RGB), rgbaToPlanarRgb (testable without canvas), pre-allocated buffers, resetBuffers for testing → verify: `pnpm typecheck`
+  - [x] Step 2 — Implement `postprocessing.ts`: computeIoU, nms (class-agnostic greedy), postProcess (confidence filter ≥0.65, channel-major decode, unletterbox, NMS IoU 0.45, left-to-right sort, normalized BoundingBox output). numAnchors/numClasses from dims, not hardcoded → verify: `pnpm typecheck`
+  - [x] Step 3 — Create `src/cv/fixtures/synthetic-tensor.ts` with createSyntheticTensor factory + pre-built fixtures (DIGIT_7, DIGIT_3, multi-digit 1+3, low-confidence, NMS duplicate). Create `src/cv/fixtures/README.md` → verify: `pnpm typecheck`
+  - [x] Step 4 — Write `preprocessing.test.ts` (12 tests: letterbox math, pixel normalization, channel order, alpha ignored, 2×2 grid) + `postprocessing.test.ts` (25 tests: IoU, NMS, synthetic tensor→detections, unletterbox, confidence filter, left-to-right sort, edge clamping, COCO 80-class, 320×320 anchors) → verify: `pnpm test` (144 pass)
+  - [x] Step 5 — Implement `inference.worker.ts`: module worker importing onnxruntime-web/wasm, ORT bootstrap (wasmPaths='/', numThreads=1, simd=true, proxy=false), session create with graphOptimizationLevel='all', MainToWorker/WorkerToMain protocol via switch+satisfies, busy-flag frame dropping (isInferring guard), try/catch around session.run() with finally clearing flag, exhaustive default case, bitmap.close() on all paths → verify: `pnpm typecheck && pnpm test && pnpm lint && pnpm build`
+  Commit: "feat: implement inference worker with preprocessing, postprocessing, and synthetic test fixtures"
 
 - [ ] **M5: Full CV loop + auto-check** — Camera → worker → interpretation → game transitions working end-to-end
   - Implement `OnnxRecognitionService` (wraps worker lifecycle, implements `RecognitionService` interface)
