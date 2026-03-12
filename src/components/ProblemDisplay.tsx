@@ -13,7 +13,7 @@ export function ProblemDisplay({
 			<span className="text-primary-500">{problem.operator}</span>
 			<span>{problem.right}</span>
 			<span className="text-primary-500">=</span>
-			<span className="text-4xl text-slate-400">?</span>
+			<span className="text-slate-400">?</span>
 		</div>
 	);
 }
