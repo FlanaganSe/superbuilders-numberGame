@@ -74,6 +74,11 @@ export function groupDetections(
 		const right = sorted[i + 1];
 		if (!left || !right) continue;
 
+		// Overlapping same-digit detections are duplicates of one physical tile
+		// (model emitted multiple anchor boxes). Don't group as multi-digit.
+		const gap = right.bbox.x - rightEdge(left);
+		if (left.digit === right.digit && gap < 0) continue;
+
 		if (
 			areVerticallyAligned(left, right, avgHeight) &&
 			areHorizontallyProximate(left, right, avgWidth)

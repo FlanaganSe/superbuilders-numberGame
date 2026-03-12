@@ -68,6 +68,41 @@ describe("groupDetections", () => {
 		expect(candidates.every((c) => c.digits.length === 1)).toBe(true);
 	});
 
+	it("does not group overlapping same-digit detections (duplicate anchors)", () => {
+		// Model produces two overlapping boxes for the same "5" tile
+		const detections = [
+			makeDetection(5, 0.3, 0.4, 0.12, 0.15),
+			makeDetection(5, 0.35, 0.4, 0.12, 0.15),
+		];
+		// gap = 0.35 - (0.30 + 0.12) = -0.07 → overlapping
+		const candidates = groupDetections(detections);
+		expect(candidates.every((c) => c.digits === "5")).toBe(true);
+		expect(candidates.find((c) => c.digits === "55")).toBeUndefined();
+	});
+
+	it("groups same-digit detections when not overlapping (e.g. answer 11)", () => {
+		// Two separate "1" tiles with physical gap
+		const detections = [
+			makeDetection(1, 0.3, 0.4, 0.1, 0.15),
+			makeDetection(1, 0.42, 0.4, 0.1, 0.15),
+		];
+		// gap = 0.42 - (0.30 + 0.10) = 0.02 → not overlapping
+		const candidates = groupDetections(detections);
+		expect(candidates.find((c) => c.digits === "11")).toBeDefined();
+	});
+
+	it("handles duplicate + legitimate same-digit for multi-digit answer", () => {
+		// Two "1" tiles, but first tile has a duplicate detection
+		const detections = [
+			makeDetection(1, 0.3, 0.4, 0.1, 0.15), // tile A
+			makeDetection(1, 0.33, 0.4, 0.1, 0.15), // duplicate of tile A (overlapping)
+			makeDetection(1, 0.45, 0.4, 0.1, 0.15), // tile B (separate)
+		];
+		const candidates = groupDetections(detections);
+		// The non-overlapping pair should group as "11"
+		expect(candidates.find((c) => c.digits === "11")).toBeDefined();
+	});
+
 	it("handles mixed grouped and ungrouped tiles", () => {
 		const detections = [
 			makeDetection(1, 0.3, 0.4, 0.1, 0.15),
