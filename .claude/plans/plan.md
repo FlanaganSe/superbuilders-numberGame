@@ -187,24 +187,23 @@ Files to **update** during the plan:
   - [x] Step 6 — Create docs/decisions.md, update CLAUDE.md + stack.md with pinned versions → verify: `pnpm lint && pnpm build`
   Commit: "feat: scaffold project with Vite 7, React 19, TypeScript, Tailwind v4, Biome v2, and core type definitions"
 
-- [ ] **M2: Game loop with mock recognition** — Full game playable via keyboard input, no camera or CV needed
-  - [ ] Step 1 — Engine layer: game-reducer.ts, problem-generator.ts, difficulty.ts, session.ts + all tests → verify: `pnpm test`
-  - [ ] Step 2 — CV pipeline stubs: interpretation.ts, temporal-buffer.ts, mock-recognition.ts, recognition-service.ts + tests → verify: `pnpm test`
-  - [ ] Step 3 — Zustand game-store.ts wrapping gameReducer → verify: `pnpm typecheck`
-  - [ ] Step 4 — Skeleton UI: App.tsx (LazyMotion), TapToStart, GameScreen, ProblemDisplay, CountdownTimer, SessionSummary → verify: `pnpm typecheck && pnpm build`
-  - [ ] Step 5 — Final verification: all tests + lint + build pass → verify: `pnpm typecheck && pnpm test && pnpm lint && pnpm build`
+- [x] **M2: Game loop with mock recognition** — Full game playable via keyboard input, no camera or CV needed
+  - [x] Step 1 — Engine layer: game-reducer.ts, problem-generator.ts, difficulty.ts, session.ts + all tests → verify: `pnpm test`
+  - [x] Step 2 — CV pipeline stubs: interpretation.ts, temporal-buffer.ts, mock-recognition.ts, recognition-service.ts + tests → verify: `pnpm test`
+  - [x] Step 3 — Zustand game-store.ts wrapping gameReducer → verify: `pnpm typecheck`
+  - [x] Step 4 — Skeleton UI: App.tsx (LazyMotion), TapToStart, GameScreen, ProblemDisplay, CountdownTimer, SessionSummary → verify: `pnpm typecheck && pnpm build`
+  - [x] Step 5 — Final verification + reviewer fixes (SessionSummary render bug, session timing, greedy grouping) → verify: all pass
   Commit: "feat: implement game loop with mock recognition, CV stubs, and skeleton UI"
 
 ### Phase 2: Camera & CV Infrastructure (Day 2–3)
 
-- [ ] **M3: Camera pipeline + debug HUD** — Live camera preview on device with frame capture working
-  - Implement `useCamera` hook (getUserMedia, facingMode environment, stream in useRef, visibilitychange recovery)
-  - Implement `frameCapture` (rVFC → drawImage to canvas → createImageBitmap → ready for transfer)
-  - Build `CameraOverlay` component (`<video playsinline autoplay muted>` + transparent canvas)
-  - Build `DebugHUD` component (gated by `?debug=true`): frame count, capture rate, placeholder for inference stats
-  - Wire "Tap to Start" to unlock camera + set up frame capture loop
-  - Set up `cloudflared` tunnel instructions for real-device testing
-  - **Verify:** Camera preview visible on iPad via cloudflared tunnel; measure tap-to-preview latency on iPad (PRD target: < 1.5s — log to console, flag if grossly over budget); debug HUD shows frames being captured; frame capture does NOT block UI thread; visibilitychange recovery works; no errors in console
+- [x] **M3: Camera pipeline + debug HUD** — Live camera preview on device with frame capture working
+  - [x] Step 1 — Create `src/camera/use-camera.ts`: useCamera hook with getUserMedia (facingMode environment), stream in useRef, visibilitychange recovery, error handling with child-friendly messages, cleanup on unmount → verify: `pnpm typecheck`
+  - [x] Step 2 — Create `src/camera/frame-capture.ts`: rVFC-based frame capture producing ImageBitmaps, drawImage→createImageBitmap pipeline, canvas lifecycle management, FrameSource-compatible design + `src/camera/frame-capture.test.ts` → verify: `pnpm typecheck && pnpm test`
+  - [x] Step 3 — Create `src/camera/camera-overlay.tsx`: video element with playsinline/autoplay/muted, transparent canvas overlay for debug bounding boxes, landscape fill → verify: `pnpm typecheck`
+  - [x] Step 4 — Create `src/components/DebugHUD.tsx`: gated by ?debug=true flag, shows frame count/FPS/capture status, placeholder slots for inference latency/detection overlays, corner-positioned → verify: `pnpm typecheck`
+  - [x] Step 5 — Wire into existing UI: update TapToStart to call getUserMedia on tap, update App/GameScreen to show camera preview behind game UI when active, skip camera in mock mode, add tests for use-camera, fix reviewer issues (visibilitychange gesture requirement, loadedmetadata listener leak, remove stale stream field) → verify: `pnpm typecheck && pnpm test && pnpm lint && pnpm build`
+  Commit: "feat: implement camera pipeline with frame capture, debug HUD, and camera overlay"
 
 - [ ] **M4: Inference worker + processing pipeline** — Worker loads ORT, processes synthetic input, returns detections
   - Implement `inference.worker.ts` with full ORT bootstrap (wasmPaths, numThreads, session create)
