@@ -47,6 +47,7 @@ export function GameScreen({
 	const resetCvState = useGameStore((s) => s.resetCvState);
 	const tileSeen = useGameStore((s) => s.tileSeen);
 	const cameraUncertain = useGameStore((s) => s.cameraUncertain);
+	const wrongTileSeen = useGameStore((s) => s.wrongTileSeen);
 	const roundsCompleted = useGameStore((s) => s.gameState.rounds.length);
 	const flags = getFeatureFlags();
 	const { play } = useAudio();
@@ -142,10 +143,10 @@ export function GameScreen({
 	}, [timedOut, dispatch, resetCvState]);
 
 	// ─── Derive feedback state ──────────────────────────────────────────────
-	// Priority: correct > timeout > tile-seen.
-	// This is guaranteed by game phases: stars/timedOut are mutually exclusive
-	// (set by phase router in App.tsx), and tileSeen is only set during scanning.
-	// FeedbackOverlay's AnimatePresence depends on this mutual exclusivity.
+	// Priority: correct > timeout > tile-seen > wrong-tile.
+	// correct/timeout are phase-level (mutually exclusive with scanning).
+	// tile-seen means CORRECT answer detected — always takes priority.
+	// wrong-tile means a wrong answer stabilized for 2+ frames.
 
 	const feedback: FeedbackState = stars
 		? { type: "correct", stars }
@@ -153,7 +154,13 @@ export function GameScreen({
 			? { type: "timeout", problem }
 			: tileSeen !== null
 				? { type: "tile-seen", answer: tileSeen }
-				: null;
+				: wrongTileSeen !== null
+					? {
+							type: "wrong-tile",
+							wrongValue: wrongTileSeen,
+							expectedValue: problem.answer,
+						}
+					: null;
 
 	const isScanning = !stars && !timedOut;
 
@@ -181,14 +188,17 @@ export function GameScreen({
 				)}
 			</AnimatePresence>
 
-			{/* Answer zone hint — only during scanning with no tile detected */}
-			{isScanning && !cameraUncertain && tileSeen === null && (
-				<div className="animate-pulse-soft rounded-3xl border-4 border-dashed border-primary-400 px-12 py-5">
-					<p className="font-body text-2xl text-primary-400/80">
-						Put your answer here
-					</p>
-				</div>
-			)}
+			{/* Answer zone hint — only during scanning with no feedback showing */}
+			{isScanning &&
+				!cameraUncertain &&
+				tileSeen === null &&
+				wrongTileSeen === null && (
+					<div className="animate-pulse-soft rounded-3xl border-4 border-dashed border-primary-400 px-12 py-5">
+						<p className="font-body text-2xl text-primary-400/80">
+							Put your answer here
+						</p>
+					</div>
+				)}
 
 			{/* Mock numpad — only during scanning */}
 			{flags.recognition === "mock" && isScanning && (

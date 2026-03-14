@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { MAX_CONSECUTIVE_MISSES } from "../cv/temporal-buffer";
 import { MAX_SPELLING_WORDS } from "../engine/spelling-words";
 import type { DetectedDigit } from "../types/cv";
@@ -388,5 +388,101 @@ describe("game-store spelling processDetections", () => {
 		const result = useGameStore.getState().processDetections([]);
 		expect(result?.matchFound).toBe(false);
 		expect(result?.candidateCount).toBe(0);
+	});
+});
+
+// ─── Wrong-answer detection tests ───────────────────────────────────────────
+
+describe("game-store wrong-answer detection", () => {
+	beforeEach(() => {
+		const { dispatch, resetCvState, setGameKind } = useGameStore.getState();
+		dispatch({ type: "RESET" });
+		resetCvState();
+		setGameKind("math");
+	});
+
+	afterEach(() => {
+		vi.restoreAllMocks();
+	});
+
+	function enterScanningAndAdvanceTime(): void {
+		enterScanningPhase();
+		// Mock Date.now to be 3.1s after round started
+		const roundStart =
+			useGameStore.getState().gameState.currentRoundStartedAt ?? 0;
+		vi.spyOn(Date, "now").mockReturnValue(roundStart + 3100);
+	}
+
+	it("wrongTileSeen is null initially", () => {
+		expect(useGameStore.getState().wrongTileSeen).toBeNull();
+	});
+
+	it("sets wrongTileSeen after 2 consecutive frames of same wrong value (>3s)", () => {
+		enterScanningAndAdvanceTime();
+		const { processDetections } = useGameStore.getState();
+
+		processDetections(makeDetection(8)); // Frame 1: wrongConsecutive=1
+		expect(useGameStore.getState().wrongTileSeen).toBeNull();
+
+		processDetections(makeDetection(8)); // Frame 2: wrongConsecutive=2 → wrongTileSeen=8
+		expect(useGameStore.getState().wrongTileSeen).toBe(8);
+	});
+
+	it("clears wrongTileSeen when detections become empty", () => {
+		enterScanningAndAdvanceTime();
+		const { processDetections } = useGameStore.getState();
+
+		processDetections(makeDetection(8));
+		processDetections(makeDetection(8));
+		expect(useGameStore.getState().wrongTileSeen).toBe(8);
+
+		processDetections([]); // No detections → reset
+		expect(useGameStore.getState().wrongTileSeen).toBeNull();
+	});
+
+	it("clears wrongTileSeen when correct answer is detected", () => {
+		enterScanningAndAdvanceTime();
+		const { processDetections } = useGameStore.getState();
+
+		processDetections(makeDetection(8));
+		processDetections(makeDetection(8));
+		expect(useGameStore.getState().wrongTileSeen).toBe(8);
+
+		processDetections(makeDetection(7)); // Correct answer (problem.answer = 7)
+		expect(useGameStore.getState().wrongTileSeen).toBeNull();
+	});
+
+	it("does NOT activate within the first 3 seconds", () => {
+		enterScanningPhase();
+		// Do NOT advance past 3s
+		const { processDetections } = useGameStore.getState();
+
+		processDetections(makeDetection(8));
+		processDetections(makeDetection(8));
+		expect(useGameStore.getState().wrongTileSeen).toBeNull();
+	});
+
+	it("resets wrongTileSeen on resetCvState", () => {
+		enterScanningAndAdvanceTime();
+		const { processDetections, resetCvState } = useGameStore.getState();
+
+		processDetections(makeDetection(8));
+		processDetections(makeDetection(8));
+		expect(useGameStore.getState().wrongTileSeen).toBe(8);
+
+		resetCvState();
+		expect(useGameStore.getState().wrongTileSeen).toBeNull();
+	});
+
+	it("resets tracker when wrong value changes", () => {
+		enterScanningAndAdvanceTime();
+		const { processDetections } = useGameStore.getState();
+
+		processDetections(makeDetection(8)); // Frame 1: tracking 8
+		processDetections(makeDetection(5)); // Frame 2: different value → restart at 1
+		expect(useGameStore.getState().wrongTileSeen).toBeNull();
+
+		processDetections(makeDetection(5)); // Frame 3: consecutive=2 for 5
+		expect(useGameStore.getState().wrongTileSeen).toBe(5);
 	});
 });

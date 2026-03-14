@@ -59,6 +59,11 @@ export type FeedbackState =
 	| { readonly type: "correct"; readonly stars: 1 | 2 | 3 }
 	| { readonly type: "timeout"; readonly problem: Problem }
 	| { readonly type: "tile-seen"; readonly answer: number | string }
+	| {
+			readonly type: "wrong-tile";
+			readonly wrongValue: number;
+			readonly expectedValue: number;
+	  }
 	| null;
 
 interface FeedbackOverlayProps {
@@ -82,6 +87,13 @@ export function FeedbackOverlay({
 				<TileSeenFeedback
 					key={`tile-${String(feedback.answer)}`}
 					answer={feedback.answer}
+				/>
+			)}
+			{feedback?.type === "wrong-tile" && (
+				<WrongTileFeedback
+					key={`wrong-${feedback.wrongValue}`}
+					wrongValue={feedback.wrongValue}
+					expectedValue={feedback.expectedValue}
 				/>
 			)}
 		</AnimatePresence>
@@ -193,5 +205,37 @@ function TileSeenFeedback({
 		>
 			I see {answer}!
 		</m.p>
+	);
+}
+
+// ─── Wrong-tile feedback ────────────────────────────────────────────────────
+
+function WrongTileFeedback({
+	wrongValue,
+	expectedValue,
+}: {
+	readonly wrongValue: number;
+	readonly expectedValue: number;
+}): React.JSX.Element {
+	const reduced = useReducedMotion();
+
+	return (
+		<m.div
+			className="flex flex-col items-center gap-2"
+			initial={{ opacity: 0 }}
+			animate={reduced ? { opacity: 1 } : { opacity: 1, scale: [0.9, 1.05, 1] }}
+			exit={{ opacity: 0 }}
+			transition={{ duration: 0.3 }}
+		>
+			<p className="font-body text-2xl text-amber-600">
+				You made <span className="font-display text-3xl">{wrongValue}</span>. We
+				need{" "}
+				<span className="font-display text-3xl text-primary-600">
+					{expectedValue}
+				</span>
+				.
+			</p>
+			<p className="font-body text-xl text-slate-500">Try again!</p>
+		</m.div>
 	);
 }

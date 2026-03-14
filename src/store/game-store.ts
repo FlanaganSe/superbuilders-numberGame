@@ -48,6 +48,7 @@ interface GameStore {
 	readonly cameraUncertain: boolean;
 	readonly cameraMissStreak: number;
 	readonly hadTileThisRound: boolean;
+	readonly wrongTileSeen: number | null;
 	readonly processDetections: (
 		detections: readonly import("../types/cv").DetectedDigit[],
 	) => PipelineStageInfo | null;
@@ -62,6 +63,10 @@ const interpretationLayer = createInterpretationLayer();
 
 /** Track the current problem to reset temporal buffer on problem change. */
 let lastProblemRef: object | null = null;
+
+/** Wrong-answer tracker state (separate from temporal buffer). */
+let wrongCandidate: number | null = null;
+let wrongConsecutive = 0;
 
 export const useGameStore = create<GameStore>((set, get) => ({
 	gameState: initialGameState(),
@@ -108,6 +113,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
 	cameraUncertain: false,
 	cameraMissStreak: 0,
 	hadTileThisRound: false,
+	wrongTileSeen: null,
 
 	processDetections(detections): PipelineStageInfo | null {
 		const { gameState, gameKind } = get();
@@ -125,12 +131,15 @@ export const useGameStore = create<GameStore>((set, get) => ({
 		spellingTemporalBuffer.reset();
 		// Only clear CV-transient state between rounds — NOT spellingWordsUsed
 		// or spellingProblem, which persist across rounds within a session.
+		wrongCandidate = null;
+		wrongConsecutive = 0;
 		set({
 			tileSeen: null,
 			detectedLetters: [],
 			cameraUncertain: false,
 			cameraMissStreak: 0,
 			hadTileThisRound: false,
+			wrongTileSeen: null,
 		});
 	},
 }));
@@ -152,7 +161,9 @@ function processMathDetections(
 	if (problem !== lastProblemRef) {
 		temporalBuffer.reset();
 		lastProblemRef = problem;
-		set({ tileSeen: null });
+		wrongCandidate = null;
+		wrongConsecutive = 0;
+		set({ tileSeen: null, wrongTileSeen: null });
 	}
 
 	// Run interpretation with digit-count gate
@@ -197,6 +208,34 @@ function processMathDetections(
 		cameraMissStreak: missStreak,
 		hadTileThisRound: hadTile,
 	});
+
+	// Wrong-answer tracking: separate from temporal buffer.
+	// Only activate > 3s into scanning to avoid false triggers during initial placement.
+	// Note: wrongTileSeen and cameraUncertain are mutually exclusive by construction —
+	// cameraUncertain requires hadTileThisRound (set only on TILE_SEEN for correct answers),
+	// while wrongTileSeen requires !matched (wrong answers). They occupy the same UI space.
+	const roundStartedAt = gameState.currentRoundStartedAt;
+	const scanningTime = roundStartedAt ? Date.now() - roundStartedAt : 0;
+
+	const wrongValue = values[0];
+	if (wrongValue !== undefined && !matched && scanningTime > 3000) {
+		if (wrongValue === wrongCandidate) {
+			wrongConsecutive++;
+		} else {
+			wrongCandidate = wrongValue;
+			wrongConsecutive = 1;
+		}
+		if (wrongConsecutive >= 2 && get().wrongTileSeen !== wrongValue) {
+			set({ wrongTileSeen: wrongValue });
+		}
+	} else {
+		// Reset when: correct match found, no values, or too early in round
+		if (wrongConsecutive > 0 || get().wrongTileSeen !== null) {
+			wrongCandidate = null;
+			wrongConsecutive = 0;
+			set({ wrongTileSeen: null });
+		}
+	}
 
 	return {
 		detectionCount: detections.length,
@@ -317,6 +356,8 @@ export const selectSpellingProblem = (s: GameStore): SpellingProblem | null =>
 	s.spellingProblem;
 export const selectDetectedLetters = (s: GameStore): readonly string[] =>
 	s.detectedLetters;
+export const selectWrongTileSeen = (s: GameStore): number | null =>
+	s.wrongTileSeen;
 export const selectCameraUncertain = (s: GameStore): boolean =>
 	s.cameraUncertain;
 export const selectCameraMissStreak = (s: GameStore): number =>
