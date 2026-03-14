@@ -29,6 +29,7 @@ interface GameStore {
 
 	// Active mode
 	readonly mode: GameMode;
+	readonly setMode: (mode: GameMode) => void;
 	readonly gameKind: GameKind;
 	readonly setGameKind: (kind: GameKind) => void;
 
@@ -69,6 +70,9 @@ export const useGameStore = create<GameStore>((set, get) => ({
 	},
 
 	mode: AdditionMode,
+	setMode(mode: GameMode): void {
+		set({ mode });
+	},
 	gameKind: "math",
 
 	setGameKind(kind: GameKind): void {
@@ -279,6 +283,7 @@ export const selectRounds = (s: GameStore): GameState["rounds"] =>
 export const selectMuted = (s: GameStore): boolean => s.muted;
 export const selectTileSeen = (s: GameStore): number | string | null =>
 	s.tileSeen;
+export const selectMode = (s: GameStore): GameMode => s.mode;
 export const selectGameKind = (s: GameStore): GameKind => s.gameKind;
 export const selectSpellingProblem = (s: GameStore): SpellingProblem | null =>
 	s.spellingProblem;

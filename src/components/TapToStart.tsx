@@ -1,6 +1,7 @@
 import * as m from "motion/react-m";
 import { unlockAudio } from "../audio/sound-manager";
 import type { CameraError } from "../camera/use-camera";
+import { AdditionMode, SubtractionMode } from "../engine/problem-generator";
 import { MAX_SPELLING_WORDS } from "../engine/spelling-words";
 import { useWakeLock } from "../hooks/use-wake-lock";
 import { useGameStore } from "../store/game-store";
@@ -18,11 +19,12 @@ export function TapToStart({
 	cameraError,
 }: TapToStartProps): React.JSX.Element {
 	const dispatch = useGameStore((s) => s.dispatch);
+	const setMode = useGameStore((s) => s.setMode);
 	const setGameKind = useGameStore((s) => s.setGameKind);
 	const flags = getFeatureFlags();
 	const { acquire } = useWakeLock();
 
-	function handleStart(): void {
+	function startMathSession(modeName: "Addition" | "Subtraction"): void {
 		// AudioContext unlock MUST happen in user gesture (research §4.2).
 		// Camera unlock MUST happen in the same user gesture handler (PRD §5.5).
 		// One tap does both: (a) unlock AudioContext, (b) unlock camera, (c) wake lock, (d) start game.
@@ -34,7 +36,17 @@ export function TapToStart({
 		}
 
 		setGameKind("math");
-		dispatch({ type: "START_SESSION" });
+		dispatch({ type: "START_SESSION", modeName });
+	}
+
+	function handleStart(): void {
+		setMode(AdditionMode);
+		startMathSession("Addition");
+	}
+
+	function handleSubtractionStart(): void {
+		setMode(SubtractionMode);
+		startMathSession("Subtraction");
 	}
 
 	function handleSpellingStart(): void {
@@ -70,20 +82,35 @@ export function TapToStart({
 				</p>
 			)}
 
-			<m.button
-				type="button"
-				onClick={handleStart}
+			<m.div
 				initial={{ opacity: 0, y: 10 }}
 				animate={{ opacity: 1, y: 0 }}
-				whileTap={{
-					scale: 0.95,
-					transition: { type: "spring", stiffness: 400, damping: 17 },
-				}}
 				transition={{ delay: 0.2, ...GENTLE_SPRING }}
-				className="min-h-20 rounded-3xl bg-primary-500 px-14 py-6 font-display text-4xl text-white shadow-xl"
+				className="flex gap-4"
 			>
-				Math Game
-			</m.button>
+				<m.button
+					type="button"
+					onClick={handleStart}
+					whileTap={{
+						scale: 0.95,
+						transition: { type: "spring", stiffness: 400, damping: 17 },
+					}}
+					className="min-h-20 rounded-3xl bg-primary-500 px-14 py-6 font-display text-4xl text-white shadow-xl"
+				>
+					Math Game
+				</m.button>
+				<m.button
+					type="button"
+					onClick={handleSubtractionStart}
+					whileTap={{
+						scale: 0.95,
+						transition: { type: "spring", stiffness: 400, damping: 17 },
+					}}
+					className="min-h-20 rounded-3xl bg-orange-500 px-14 py-6 font-display text-4xl text-white shadow-xl"
+				>
+					Subtraction
+				</m.button>
+			</m.div>
 
 			<m.div
 				initial={{ opacity: 0, y: 10 }}
