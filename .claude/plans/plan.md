@@ -150,11 +150,19 @@ The highest-leverage new problem type (0/18 apps — Marx et al. 2025).
   - [x] Step 5 — Add missing-addend handling to `explanation-generator.ts` (before existing operator checks) + tests. → verify: `pnpm typecheck && pnpm test && pnpm lint`
   Commit: "feat: add missing-addend problems with part-whole reasoning"
 
-- [ ] M7: Missing-addend polish + Make-10 — Add math language for missing-addend: "What's the missing part?", "How many more to make [target]?". Create Make-10 variant: constrain `target = 10`, dedicated prompt "How many more to make ten?". Add part-whole explanatory feedback: "3 and 4 make 7!" Verify all 6 feedback paths work for missing-addend and Make-10 contexts. **Verification:** End-to-end session exercising wrong tile, timeout, strategy hint, worked support — all contextually correct for part-whole reasoning.
+- [x] M7: Missing-addend polish + Make-10 — Add math language for missing-addend: "What's the missing part?", "How many more to make [target]?". Create Make-10 variant: constrain `target = 10`, dedicated prompt "How many more to make ten?". Add part-whole explanatory feedback: "3 and 4 make 7!" Verify all 6 feedback paths work for missing-addend and Make-10 contexts. **Verification:** End-to-end session exercising wrong tile, timeout, strategy hint, worked support — all contextually correct for part-whole reasoning.
   - [ ] Step 1 — Add `generateMake10` + `Make10Mode` to `problem-generator.ts`, extend `SessionData["mode"]` with `"Make 10"`. Add tests. → verify: `pnpm typecheck && pnpm test`
   - [ ] Step 2 — Add "Make 10" button to `TapToStart.tsx` (emerald-500, 2×2 grid for math buttons). Update `startMathSession` type. → verify: `pnpm typecheck`
   - [ ] Step 3 — Specialize math language in `ProblemDisplay.tsx`: "How many more to make ten?" when `target === 10`. Specialize explanation templates in `explanation-generator.ts` for Make-10 ("X and Y make ten!"). Add tests. → verify: `pnpm typecheck && pnpm test && pnpm lint`
-  Commit: "feat: add Make-10 mode with complement-to-ten problems"
+  Commit: 51f2dc8 "feat: add Make-10 mode with complement-to-ten problems"
+
+### Phase 4: UI Polish
+
+- [ ] M8: UI polish + quality of life — Remove Image Quiz placeholder, fix "Play Again" bug (return to mode selection), reorder buttons, show difficulty level + mode name during gameplay, cumulative stars on home screen, number word audio on correct answer (Mayer dual coding).
+  - [ ] Step 1 — Convert number word MP3s to M4A (iOS compat). TapToStart polish: remove Image Quiz, reorder buttons, add cumulative stars. Fix SessionSummary "Play Again" bug. → verify: `pnpm typecheck`
+  - [ ] Step 2 — GameScreen: add mode name + difficulty level badge + level-up animation (invisible demotion). → verify: `pnpm typecheck`
+  - [ ] Step 3 — Number word audio: extend SoundName, add to sound-manager, play on correct answer alongside chime. → verify: `pnpm typecheck && pnpm test && pnpm lint`
+  Commit: "feat: UI polish with difficulty display, mode labels, and number word audio"
 
 ---
 

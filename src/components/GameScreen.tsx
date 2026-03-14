@@ -1,6 +1,7 @@
 import { AnimatePresence } from "motion/react";
 import * as m from "motion/react-m";
-import { useCallback, useEffect } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import type { SoundName } from "../audio/sound-manager";
 import { useAudio } from "../audio/use-audio";
 import {
 	createMockDetection,
@@ -50,8 +51,24 @@ export function GameScreen({
 	const wrongTileSeen = useGameStore((s) => s.wrongTileSeen);
 	const roundsCompleted = useGameStore((s) => s.gameState.rounds.length);
 	const difficulty = useGameStore((s) => s.gameState.difficulty);
+	const modeName = useGameStore((s) => s.gameState.modeName);
 	const flags = getFeatureFlags();
 	const { play } = useAudio();
+
+	// Track difficulty promotions — show "Level Up!", hide demotions (math anxiety research)
+	const prevDifficultyRef = useRef(difficulty);
+	const [showLevelUp, setShowLevelUp] = useState(false);
+
+	useEffect(() => {
+		if (difficulty > prevDifficultyRef.current) {
+			prevDifficultyRef.current = difficulty;
+			setShowLevelUp(true);
+			const timer = setTimeout(() => setShowLevelUp(false), 1500);
+			return () => clearTimeout(timer);
+		}
+		// Demotion: invisible — no feedback
+		prevDifficultyRef.current = difficulty;
+	}, [difficulty]);
 
 	const handleDigit = useCallback(
 		(digit: Digit): void => {
@@ -104,10 +121,18 @@ export function GameScreen({
 
 	// ─── Sound effects ──────────────────────────────────────────────────────
 
-	// Correct answer → chime
+	// Correct answer → chime + number word (Mayer dual coding)
 	useEffect(() => {
-		if (stars) play("correctChime");
-	}, [stars, play]);
+		if (!stars) return;
+		play("correctChime");
+		// Play number word slightly delayed so it doesn't overlap the chime
+		if (problem.answer >= 0 && problem.answer <= 9) {
+			const timer = setTimeout(() => {
+				play(`number${problem.answer}` as SoundName);
+			}, 300);
+			return () => clearTimeout(timer);
+		}
+	}, [stars, play, problem.answer]);
 
 	// Timeout → encouragement
 	useEffect(() => {
@@ -170,8 +195,30 @@ export function GameScreen({
 
 	return (
 		<div className="flex flex-col items-center gap-6">
-			{/* Progress indicator */}
-			<ProgressPips current={roundsCompleted} total={MAX_PROBLEMS} />
+			{/* Progress + mode + difficulty */}
+			<div className="flex items-center gap-3">
+				<span className="font-body text-sm text-white/70">{modeName}</span>
+				<ProgressPips current={roundsCompleted} total={MAX_PROBLEMS} />
+				<span className="rounded-full bg-black/20 px-2.5 py-1 font-body text-sm text-white">
+					Level {difficulty}
+				</span>
+			</div>
+
+			{/* Level Up! indicator — only on promotion, never demotion */}
+			<AnimatePresence>
+				{showLevelUp && (
+					<m.p
+						key="level-up"
+						initial={{ opacity: 0, scale: 0.8 }}
+						animate={{ opacity: 1, scale: [0.8, 1.15, 1] }}
+						exit={{ opacity: 0 }}
+						transition={{ duration: 0.4 }}
+						className="font-display text-2xl text-gold-500"
+					>
+						Level Up!
+					</m.p>
+				)}
+			</AnimatePresence>
 
 			{/* Problem display with tile-detected pop animation */}
 			<m.div

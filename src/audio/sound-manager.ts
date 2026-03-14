@@ -22,7 +22,17 @@ export type SoundName =
 	| "encouragement"
 	| "tileDetectedPop"
 	| "sessionEndFanfare"
-	| "countdownTick";
+	| "countdownTick"
+	| "number0"
+	| "number1"
+	| "number2"
+	| "number3"
+	| "number4"
+	| "number5"
+	| "number6"
+	| "number7"
+	| "number8"
+	| "number9";
 
 // ─── File mapping ───────────────────────────────────────────────────────────
 // Individual files (not sprites). Swap to a single sprite by changing
@@ -35,6 +45,16 @@ const SOUND_FILES: Record<SoundName, string> = {
 	tileDetectedPop: "tile-pop",
 	sessionEndFanfare: "fanfare",
 	countdownTick: "countdown-tick",
+	number0: "zero",
+	number1: "one",
+	number2: "two",
+	number3: "three",
+	number4: "four",
+	number5: "five",
+	number6: "six",
+	number7: "seven",
+	number8: "eight",
+	number9: "nine",
 };
 
 // ─── Howl instance cache ────────────────────────────────────────────────────

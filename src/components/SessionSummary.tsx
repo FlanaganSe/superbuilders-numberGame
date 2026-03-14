@@ -93,7 +93,6 @@ export function SessionSummary({
 
 	function handlePlayAgain(): void {
 		dispatch({ type: "RESET" });
-		dispatch({ type: "START_SESSION" });
 	}
 
 	// Show up to 5 animated star icons for visual appeal
@@ -161,7 +160,7 @@ export function SessionSummary({
 				transition={{ type: "spring", stiffness: 400, damping: 17 }}
 				className="min-h-20 rounded-3xl bg-primary-500 px-12 py-6 font-display text-3xl text-white shadow-xl"
 			>
-				Play Again!
+				Play More!
 			</m.button>
 		</div>
 	);

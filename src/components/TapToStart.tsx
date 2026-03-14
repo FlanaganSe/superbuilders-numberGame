@@ -1,4 +1,5 @@
 import * as m from "motion/react-m";
+import { useState } from "react";
 import { unlockAudio } from "../audio/sound-manager";
 import type { CameraError } from "../camera/use-camera";
 import {
@@ -7,6 +8,7 @@ import {
 	MissingAddendMode,
 	SubtractionMode,
 } from "../engine/problem-generator";
+import { loadCumulative } from "../engine/session";
 import { MAX_SPELLING_WORDS } from "../engine/spelling-words";
 import { useWakeLock } from "../hooks/use-wake-lock";
 import { useGameStore } from "../store/game-store";
@@ -28,6 +30,7 @@ export function TapToStart({
 	const setGameKind = useGameStore((s) => s.setGameKind);
 	const flags = getFeatureFlags();
 	const { acquire } = useWakeLock();
+	const [cumulative] = useState(() => loadCumulative());
 
 	function startMathSession(
 		modeName: "Addition" | "Subtraction" | "Missing Part" | "Make 10",
@@ -93,6 +96,12 @@ export function TapToStart({
 				Superbuilders
 			</m.h1>
 
+			{cumulative.totalStars > 0 && (
+				<p className="font-display text-2xl text-gold-500">
+					{"★"} {cumulative.totalStars} stars collected
+				</p>
+			)}
+
 			{cameraError && (
 				<p className="max-w-sm text-center font-body text-2xl text-amber-600">
 					{cameraError.message}
@@ -129,17 +138,6 @@ export function TapToStart({
 				</m.button>
 				<m.button
 					type="button"
-					onClick={handleMissingPartStart}
-					whileTap={{
-						scale: 0.95,
-						transition: { type: "spring", stiffness: 400, damping: 17 },
-					}}
-					className="min-h-20 rounded-3xl bg-violet-500 px-14 py-6 font-display text-4xl text-white shadow-xl"
-				>
-					Missing Part
-				</m.button>
-				<m.button
-					type="button"
 					onClick={handleMake10Start}
 					whileTap={{
 						scale: 0.95,
@@ -149,41 +147,36 @@ export function TapToStart({
 				>
 					Make 10
 				</m.button>
+				<m.button
+					type="button"
+					onClick={handleMissingPartStart}
+					whileTap={{
+						scale: 0.95,
+						transition: { type: "spring", stiffness: 400, damping: 17 },
+					}}
+					className="min-h-20 rounded-3xl bg-violet-500 px-14 py-6 font-display text-4xl text-white shadow-xl"
+				>
+					Missing Part
+				</m.button>
 			</m.div>
 
-			<m.div
+			<m.button
+				type="button"
+				onClick={handleSpellingStart}
 				initial={{ opacity: 0, y: 10 }}
 				animate={{ opacity: 1, y: 0 }}
 				transition={{ delay: 0.4, ...GENTLE_SPRING }}
-				className="flex gap-4"
+				whileTap={{
+					scale: 0.95,
+					transition: { type: "spring", stiffness: 400, damping: 17 },
+				}}
+				className="rounded-2xl bg-teal-500 px-6 py-3 font-display text-xl text-white shadow-lg"
 			>
-				<m.button
-					type="button"
-					onClick={handleSpellingStart}
-					whileTap={{
-						scale: 0.95,
-						transition: {
-							type: "spring",
-							stiffness: 400,
-							damping: 17,
-						},
-					}}
-					className="rounded-2xl bg-teal-500 px-6 py-3 font-display text-xl text-white shadow-lg"
-				>
-					Spelling
-					<span className="block font-body text-sm">
-						{MAX_SPELLING_WORDS} words
-					</span>
-				</m.button>
-				<button
-					type="button"
-					disabled
-					className="rounded-2xl bg-slate-200 px-6 py-3 font-display text-xl text-slate-400 opacity-60"
-				>
-					Image Quiz
-					<span className="block font-body text-sm">Coming Soon</span>
-				</button>
-			</m.div>
+				Spelling
+				<span className="block font-body text-sm">
+					{MAX_SPELLING_WORDS} words
+				</span>
+			</m.button>
 		</div>
 	);
 }
