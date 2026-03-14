@@ -2,7 +2,11 @@ import confetti from "canvas-confetti";
 import { AnimatePresence, useReducedMotion } from "motion/react";
 import * as m from "motion/react-m";
 import { useEffect, useMemo } from "react";
-import type { Problem } from "../types/game";
+import {
+	getCorrectExplanation,
+	getTimeoutHint,
+} from "../engine/explanation-generator";
+import type { DifficultyLevel, Problem } from "../types/game";
 
 // ─── Child-friendly text ────────────────────────────────────────────────────
 
@@ -56,8 +60,18 @@ function pickRandom<T>(items: readonly [T, ...T[]]): T {
 // ─── Types ──────────────────────────────────────────────────────────────────
 
 export type FeedbackState =
-	| { readonly type: "correct"; readonly stars: 1 | 2 | 3 }
-	| { readonly type: "timeout"; readonly problem: Problem }
+	| {
+			readonly type: "correct";
+			readonly stars: 1 | 2 | 3;
+			readonly problem: Problem;
+			readonly difficulty: DifficultyLevel;
+	  }
+	| {
+			readonly type: "timeout";
+			readonly problem: Problem;
+			readonly attemptNumber: number;
+			readonly difficulty: DifficultyLevel;
+	  }
 	| { readonly type: "tile-seen"; readonly answer: number | string }
 	| {
 			readonly type: "wrong-tile";
@@ -78,10 +92,20 @@ export function FeedbackOverlay({
 	return (
 		<AnimatePresence>
 			{feedback?.type === "correct" && (
-				<CorrectFeedback key="correct" stars={feedback.stars} />
+				<CorrectFeedback
+					key="correct"
+					stars={feedback.stars}
+					problem={feedback.problem}
+					difficulty={feedback.difficulty}
+				/>
 			)}
 			{feedback?.type === "timeout" && (
-				<TimeoutFeedback key="timeout" problem={feedback.problem} />
+				<TimeoutFeedback
+					key="timeout"
+					problem={feedback.problem}
+					attemptNumber={feedback.attemptNumber}
+					difficulty={feedback.difficulty}
+				/>
 			)}
 			{feedback?.type === "tile-seen" && (
 				<TileSeenFeedback
@@ -129,11 +153,19 @@ function fireCorrectConfetti(): void {
 
 function CorrectFeedback({
 	stars,
+	problem,
+	difficulty,
 }: {
 	readonly stars: 1 | 2 | 3;
+	readonly problem: Problem;
+	readonly difficulty: DifficultyLevel;
 }): React.JSX.Element {
 	const reduced = useReducedMotion();
 	const text = useMemo(() => pickRandom(CELEBRATION_TEXTS), []);
+	const explanation = useMemo(
+		() => getCorrectExplanation(problem, difficulty, stars),
+		[problem, difficulty, stars],
+	);
 
 	useEffect(() => {
 		fireCorrectConfetti();
@@ -151,6 +183,9 @@ function CorrectFeedback({
 				{text}
 			</p>
 			<p className="font-display text-6xl text-gold-500">{"★".repeat(stars)}</p>
+			{explanation && (
+				<p className="font-body text-xl text-slate-500">{explanation}</p>
+			)}
 		</m.div>
 	);
 }
@@ -159,11 +194,19 @@ function CorrectFeedback({
 
 function TimeoutFeedback({
 	problem,
+	attemptNumber,
+	difficulty,
 }: {
 	readonly problem: Problem;
+	readonly attemptNumber: number;
+	readonly difficulty: DifficultyLevel;
 }): React.JSX.Element {
 	const reduced = useReducedMotion();
 	const text = useMemo(() => pickRandom(ENCOURAGEMENT_TEXTS), []);
+	const hint = useMemo(
+		() => getTimeoutHint(problem, difficulty, attemptNumber),
+		[problem, difficulty, attemptNumber],
+	);
 
 	return (
 		<m.div
@@ -176,12 +219,7 @@ function TimeoutFeedback({
 			transition={reduced ? { duration: 0.3 } : WOBBLE_TRANSITION}
 		>
 			<p className="font-display text-4xl text-primary-500">{text}</p>
-			<p className="font-body text-3xl text-slate-600">
-				{problem.answer >= 0 ? "The answer is" : "The word is"}{" "}
-				<span className="font-display text-4xl text-primary-600">
-					{problem.answer >= 0 ? problem.answer : problem.displayAnswer}
-				</span>
-			</p>
+			<p className="font-body text-2xl text-slate-600">{hint}</p>
 		</m.div>
 	);
 }

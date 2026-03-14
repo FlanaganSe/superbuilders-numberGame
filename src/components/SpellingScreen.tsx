@@ -32,7 +32,7 @@ interface SpellingScreenProps {
 
 export function SpellingScreen({
 	problem,
-	attemptNumber: _attemptNumber,
+	attemptNumber,
 	stars,
 	timedOut,
 }: SpellingScreenProps): React.JSX.Element {
@@ -40,6 +40,7 @@ export function SpellingScreen({
 	const resetCvState = useGameStore((s) => s.resetCvState);
 	const tileSeen = useGameStore((s) => s.tileSeen);
 	const roundsCompleted = useGameStore((s) => s.gameState.rounds.length);
+	const difficulty = useGameStore((s) => s.gameState.difficulty);
 	const spellingProblem = useGameStore(selectSpellingProblem);
 	const detectedLetters = useGameStore(selectDetectedLetters);
 	const { play } = useAudio();
@@ -94,9 +95,9 @@ export function SpellingScreen({
 	// ─── Derive feedback state ──────────────────────────────────────────────
 
 	const feedback: FeedbackState = stars
-		? { type: "correct", stars }
+		? { type: "correct", stars, problem, difficulty }
 		: timedOut
-			? { type: "timeout", problem }
+			? { type: "timeout", problem, attemptNumber, difficulty }
 			: tileSeen !== null
 				? { type: "tile-seen", answer: tileSeen }
 				: null;

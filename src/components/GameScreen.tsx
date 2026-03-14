@@ -38,7 +38,7 @@ interface GameScreenProps {
 
 export function GameScreen({
 	problem,
-	attemptNumber: _attemptNumber,
+	attemptNumber,
 	stars,
 	timedOut,
 }: GameScreenProps): React.JSX.Element {
@@ -49,6 +49,7 @@ export function GameScreen({
 	const cameraUncertain = useGameStore((s) => s.cameraUncertain);
 	const wrongTileSeen = useGameStore((s) => s.wrongTileSeen);
 	const roundsCompleted = useGameStore((s) => s.gameState.rounds.length);
+	const difficulty = useGameStore((s) => s.gameState.difficulty);
 	const flags = getFeatureFlags();
 	const { play } = useAudio();
 
@@ -149,9 +150,9 @@ export function GameScreen({
 	// wrong-tile means a wrong answer stabilized for 2+ frames.
 
 	const feedback: FeedbackState = stars
-		? { type: "correct", stars }
+		? { type: "correct", stars, problem, difficulty }
 		: timedOut
-			? { type: "timeout", problem }
+			? { type: "timeout", problem, attemptNumber, difficulty }
 			: tileSeen !== null
 				? { type: "tile-seen", answer: tileSeen }
 				: wrongTileSeen !== null

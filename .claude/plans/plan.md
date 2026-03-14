@@ -129,6 +129,10 @@ The single highest-evidence improvements (Outhwaite 2023). These make math mode 
   - **Timeout, first:** Strategy hint — "Try counting on from 3."
   - **Timeout, repeated:** Worked support — "3, then 4 more: 4, 5, 6, 7. The answer is 7."
   Explanation fades at difficulty 4+ (Sweller's expertise reversal). **Verification:** Play full sessions at difficulty 1 and 5, verify all 6 feedback paths render correctly. Verify explanation text is contextually correct for subtraction ("7 take away 3 leaves 4").
+  - [x] Step 1 — Create `src/engine/explanation-generator.ts` with `getCorrectExplanation` and `getTimeoutHint` pure functions + co-located test `explanation-generator.test.ts` → verify: `pnpm typecheck && pnpm test`
+  - [x] Step 2 — Extend `FeedbackState` type in `FeedbackOverlay.tsx`, update `CorrectFeedback` and `TimeoutFeedback` components to use explanation generator → verify: `pnpm typecheck`
+  - [x] Step 3 — Update feedback derivation in `GameScreen.tsx` (use `attemptNumber`, add `difficulty`, pass `problem` to correct/timeout) and `SpellingScreen.tsx` to match new `FeedbackState` shape → verify: `pnpm typecheck && pnpm test && pnpm lint`
+  Commit: "feat: add explanatory feedback with graduated hints based on difficulty"
 
 - [ ] M5: Enable subtraction + mathematical language — Add "Subtraction" button to `TapToStart.tsx` calling `setMode(SubtractionMode)`. Add math language text to `ProblemDisplay.tsx`: "How many altogether?" (addition), "How many are left?" (subtraction) — rendered as secondary text below equation (smaller font, muted color). Verify explanatory feedback works for subtraction context. **Verification:** Full subtraction session — correct, wrong-tile, timeout, and worked-support feedback all contextually appropriate for subtraction. Math language displays correctly.
 
