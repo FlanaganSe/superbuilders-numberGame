@@ -10,15 +10,27 @@ export function ProblemDisplay({
 	showAnswer,
 }: ProblemDisplayProps): React.JSX.Element {
 	return (
-		<div className="flex items-center gap-4 font-display text-7xl text-slate-800">
-			<span>{problem.left}</span>
-			<span className="text-primary-500">{problem.operator}</span>
-			<span>{problem.right}</span>
-			<span className="text-primary-500">=</span>
-			{showAnswer ? (
-				<span className="text-success-600">{problem.answer}</span>
-			) : (
-				<span className="text-8xl text-primary-300">?</span>
+		<div className="flex flex-col items-center gap-2">
+			{/* Equation */}
+			<div className="flex items-center gap-4 font-display text-7xl text-slate-800">
+				<span>{problem.left}</span>
+				<span className="text-primary-500">{problem.operator}</span>
+				<span>{problem.right}</span>
+				<span className="text-primary-500">=</span>
+				{showAnswer ? (
+					<span className="text-success-600">{problem.answer}</span>
+				) : (
+					<span className="text-8xl text-primary-300">?</span>
+				)}
+			</div>
+
+			{/* Math language prompt — only during problem-solving, not when showing answer */}
+			{!showAnswer && problem.answer >= 0 && (
+				<p className="font-body text-xl text-slate-400">
+					{problem.operator === "+"
+						? "How many altogether?"
+						: "How many are left?"}
+				</p>
 			)}
 		</div>
 	);

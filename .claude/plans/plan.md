@@ -121,7 +121,7 @@ The single highest-evidence improvements (Outhwaite 2023). These make math mode 
   - [x] Step 3 — Wire into `GameScreen.tsx`: subscribe to `wrongTileSeen`, update feedback chain (correct > timeout > tile-seen > wrong-tile > null), add `!wrongTileSeen` guard to answer-zone hint. → verify: `pnpm typecheck && pnpm test && pnpm lint`
   Commit: "feat: add wrong-answer detection with explanatory feedback"
 
-- [ ] M4: Explanatory feedback + graduated hints — Create `explanation-generator.ts`: pure functions generating context-aware feedback. Extend `FeedbackOverlay.tsx`:
+- [x] M4: Explanatory feedback + graduated hints — Create `explanation-generator.ts`: pure functions generating context-aware feedback. Extend `FeedbackOverlay.tsx`:
   - **Correct, low difficulty:** Full explanation — "3 + 4 = 7. Three, then four more: 4, 5, 6, 7!"
   - **Correct, high difficulty:** Brief — "Seven! Fast!"
   - **Correct after retry:** Process praise — "You figured it out!"
@@ -135,6 +135,8 @@ The single highest-evidence improvements (Outhwaite 2023). These make math mode 
   Commit: "feat: add explanatory feedback with graduated hints based on difficulty"
 
 - [ ] M5: Enable subtraction + mathematical language — Add "Subtraction" button to `TapToStart.tsx` calling `setMode(SubtractionMode)`. Add math language text to `ProblemDisplay.tsx`: "How many altogether?" (addition), "How many are left?" (subtraction) — rendered as secondary text below equation (smaller font, muted color). Verify explanatory feedback works for subtraction context. **Verification:** Full subtraction session — correct, wrong-tile, timeout, and worked-support feedback all contextually appropriate for subtraction. Math language displays correctly.
+  - [x] Step 1 — Add math language prompt to `ProblemDisplay.tsx`: wrap equation in flex-col container, add operator-derived prompt text below equation, guard with `!showAnswer && problem.answer >= 0` → verify: `pnpm typecheck && pnpm test && pnpm lint`
+  Commit: "feat: add mathematical language prompts to problem display"
 
 ### Phase 3: Math Content Expansion
 
