@@ -66,3 +66,42 @@ Append-only log. Read during planning, not loaded every session.
 **Decision:** 150ms opacity-only fade via `AnimatePresence mode="wait"` + `m.div`. No springs, no scale, no y-offset on exit. Duration must not exceed 200ms.
 
 **Consequences:** Phase changes feel smooth instead of jarring. The 200ms ceiling is a hard constraint — any future change to exit animation duration or type (e.g., springs) must re-evaluate the CountdownTimer timing interaction.
+
+---
+
+## ADR-006: Class-Range Filtering Inside Argmax (Not Post-Filter)
+
+**Date:** 2026-03-13
+**Status:** Accepted
+
+**Context:** The 36-class ONNX model outputs digit (0-9) and letter (10-35) classes. Class-agnostic NMS runs after argmax but before any post-filter. A high-confidence letter detection can suppress a valid digit detection via NMS — post-filtering the letter afterward leaves a gap where the digit was already removed. This was the root cause of "bouncing" digit detections in math mode.
+
+**Decision:** Add a `classRange` parameter to `PostProcessParams` that constrains the argmax loop to only iterate classes within the specified range. Math mode passes `{min: 0, max: 9}`; spelling mode passes `{min: 10, max: 35}`. The worker sends the range based on the active game kind.
+
+**Consequences:** Letter channels are never considered during math mode (and vice versa), so NMS only competes valid detections against each other. The postprocessing function remains a pure function parameterized by range — no mode coupling.
+
+---
+
+## ADR-007: Parallel Type Path for Spelling Mode
+
+**Date:** 2026-03-13
+**Status:** Accepted
+
+**Context:** The math game's `Problem` type has `answer: number`, `left: number`, `right: number`, `operator: Operator` — all arithmetic-specific. A discriminated union refactor (Option B) would touch 17 test files and ~2600 lines of existing tests. The spelling feature scope is small (3-word sessions).
+
+**Decision:** Keep `Problem` and `GameMode` unchanged. Add `SpellingProblem` as a separate type. Store holds `gameKind: "math" | "spelling"` discriminant. The game reducer is parameterized with `maxProblems` and `modeName` to handle both modes. The pipeline branches on `gameKind` in the store.
+
+**Consequences:** Zero regression risk for math mode. Two parallel type paths exist — acceptable for v1, but a discriminated union refactor is the correct long-term shape if more game modes are added.
+
+---
+
+## ADR-008: StaleWhileRevalidate for ONNX Model Caching
+
+**Date:** 2026-03-13
+**Status:** Accepted
+
+**Context:** The service worker used `CacheFirst` with 1-year expiry for ONNX model files. When the model was updated from 10-class to 36-class, devices that had cached the old model would never fetch the new one — making deployment nondeterministic across devices.
+
+**Decision:** Change the ONNX model caching strategy from `CacheFirst` to `StaleWhileRevalidate`. The cached model is served immediately (no latency penalty), but a background fetch ensures the new version is available on the next load.
+
+**Consequences:** Model updates propagate within one session instead of being permanently cached. Trade-off: a background fetch occurs on every load, which may be unwanted on metered connections. Acceptable for the model's ~5MB size and the critical need for update propagation.

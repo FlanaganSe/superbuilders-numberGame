@@ -37,3 +37,9 @@ All 9 milestones complete as of 2026-03-12. Full codebase review conducted 2026-
 
 11. **Old `WakeLockSentinel` leaked on rapid re-acquire** (`use-wake-lock.ts:25–37`) — if `acquire()` is called twice before the first system release, the first sentinel is overwritten in `sentinelRef` and never released. Re-acquire path has no test coverage.
 12. **`delay: 0.2` leaks into `whileTap` on the play button** (`TapToStart.tsx:59`) — the shared `transition` prop applies the 0.2 s delay to the tap scale-down, making it feel broken on device. Fix: move `delay` off the shared `GENTLE_SPRING` spread or add per-gesture `transition` override on `whileTap`.
+
+**Issues flagged in M3 review (2026-03-13):**
+
+13. **`droppedFrames` never resets between sessions** (`cv-store.ts`) — `useCvStore.reset()` is called on service dispose (unmount), but if the same session continues and the backend is never torn down, the counter accumulates across games. The game store is reset on `START_SESSION` but `droppedFrames` is not. Cosmetic for now.
+14. **`numClasses` optional in `RecognitionResult` but required in `WorkerToMain`** (`types/cv.ts:64`) — the type mismatch means non-ONNX paths (mock backend, error fallback) produce a `RecognitionResult` with `numClasses: undefined`, which is correctly handled by the `?.` conditional in `updateDetections`, but the asymmetry is silent. Low risk.
+15. **Spelling timeout test uses math `SAMPLE_PROBLEM`** (`game-reducer.test.ts:148`) — the spelling timeout test passes a `Problem` (math shape) to `COUNTDOWN_COMPLETE` in a Spelling session. This works because the reducer doesn't validate problem type, but the test doesn't actually verify the new word is different from the timed-out one, leaving the "new word" intent untested.
