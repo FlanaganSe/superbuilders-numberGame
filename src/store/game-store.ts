@@ -45,6 +45,9 @@ interface GameStore {
 
 	// CV integration (interpretation + temporal buffer)
 	readonly tileSeen: number | string | null;
+	readonly cameraUncertain: boolean;
+	readonly cameraMissStreak: number;
+	readonly hadTileThisRound: boolean;
 	readonly processDetections: (
 		detections: readonly import("../types/cv").DetectedDigit[],
 	) => PipelineStageInfo | null;
@@ -102,6 +105,9 @@ export const useGameStore = create<GameStore>((set, get) => ({
 	},
 
 	tileSeen: null,
+	cameraUncertain: false,
+	cameraMissStreak: 0,
+	hadTileThisRound: false,
 
 	processDetections(detections): PipelineStageInfo | null {
 		const { gameState, gameKind } = get();
@@ -119,7 +125,13 @@ export const useGameStore = create<GameStore>((set, get) => ({
 		spellingTemporalBuffer.reset();
 		// Only clear CV-transient state between rounds — NOT spellingWordsUsed
 		// or spellingProblem, which persist across rounds within a session.
-		set({ tileSeen: null, detectedLetters: [] });
+		set({
+			tileSeen: null,
+			detectedLetters: [],
+			cameraUncertain: false,
+			cameraMissStreak: 0,
+			hadTileThisRound: false,
+		});
 	},
 }));
 
@@ -169,6 +181,22 @@ function processMathDetections(
 			}
 			break;
 	}
+
+	// Camera uncertainty: we saw a tile before, but raw detections dropped to zero.
+	// Gate on tileSeen === null to avoid contradicting the "I see X!" feedback
+	// (tileSeen clears after hard reset at missStreak > MAX_CONSECUTIVE_MISSES).
+	const hadTile = get().hadTileThisRound || event.type === "TILE_SEEN";
+	const missStreak = temporalBuffer.getMissStreak();
+	const uncertain =
+		hadTile &&
+		detections.length === 0 &&
+		get().tileSeen === null &&
+		missStreak >= 1;
+	set({
+		cameraUncertain: uncertain,
+		cameraMissStreak: missStreak,
+		hadTileThisRound: hadTile,
+	});
 
 	return {
 		detectionCount: detections.length,
@@ -289,3 +317,9 @@ export const selectSpellingProblem = (s: GameStore): SpellingProblem | null =>
 	s.spellingProblem;
 export const selectDetectedLetters = (s: GameStore): readonly string[] =>
 	s.detectedLetters;
+export const selectCameraUncertain = (s: GameStore): boolean =>
+	s.cameraUncertain;
+export const selectCameraMissStreak = (s: GameStore): number =>
+	s.cameraMissStreak;
+export const selectHadTileThisRound = (s: GameStore): boolean =>
+	s.hadTileThisRound;

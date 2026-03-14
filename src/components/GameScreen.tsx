@@ -1,3 +1,4 @@
+import { AnimatePresence } from "motion/react";
 import * as m from "motion/react-m";
 import { useCallback, useEffect } from "react";
 import { useAudio } from "../audio/use-audio";
@@ -10,6 +11,7 @@ import { useGameStore } from "../store/game-store";
 import type { Digit } from "../types/cv";
 import type { Problem } from "../types/game";
 import { getFeatureFlags } from "../utils/feature-flags";
+import { CameraUncertaintyPrompt } from "./CameraUncertaintyPrompt";
 import { FeedbackOverlay, type FeedbackState } from "./FeedbackOverlay";
 import { MockNumpad } from "./MockNumpad";
 import { ProblemDisplay } from "./ProblemDisplay";
@@ -44,6 +46,7 @@ export function GameScreen({
 	const processDetections = useGameStore((s) => s.processDetections);
 	const resetCvState = useGameStore((s) => s.resetCvState);
 	const tileSeen = useGameStore((s) => s.tileSeen);
+	const cameraUncertain = useGameStore((s) => s.cameraUncertain);
 	const roundsCompleted = useGameStore((s) => s.gameState.rounds.length);
 	const flags = getFeatureFlags();
 	const { play } = useAudio();
@@ -171,8 +174,15 @@ export function GameScreen({
 			{/* Feedback overlay: correct / timeout / tile-seen */}
 			<FeedbackOverlay feedback={feedback} />
 
+			{/* Camera uncertainty prompt — shown when tile was seen but lost */}
+			<AnimatePresence>
+				{isScanning && cameraUncertain && (
+					<CameraUncertaintyPrompt key="camera-uncertainty" />
+				)}
+			</AnimatePresence>
+
 			{/* Answer zone hint — only during scanning with no tile detected */}
-			{isScanning && tileSeen === null && (
+			{isScanning && !cameraUncertain && tileSeen === null && (
 				<div className="animate-pulse-soft rounded-3xl border-4 border-dashed border-primary-400 px-12 py-5">
 					<p className="font-body text-2xl text-primary-400/80">
 						Put your answer here

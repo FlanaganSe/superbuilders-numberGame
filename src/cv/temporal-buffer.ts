@@ -23,6 +23,7 @@ export interface TemporalBuffer<T = number> {
 	readonly reset: () => void;
 	readonly consecutiveCount: () => number;
 	readonly lastAnswer: () => T | null;
+	readonly getMissStreak: () => number;
 }
 
 export function createTemporalBuffer<T = number>(): TemporalBuffer<T> {
@@ -71,6 +72,10 @@ export function createTemporalBuffer<T = number>(): TemporalBuffer<T> {
 
 		lastAnswer(): T | null {
 			return currentAnswer;
+		},
+
+		getMissStreak(): number {
+			return missStreak;
 		},
 	};
 }

@@ -136,6 +136,114 @@ describe("game-store processDetections pipeline result", () => {
 	});
 });
 
+// ─── Camera uncertainty tests ───────────────────────────────────────────────
+
+describe("game-store camera uncertainty", () => {
+	beforeEach(() => {
+		const { dispatch, resetCvState } = useGameStore.getState();
+		dispatch({ type: "RESET" });
+		resetCvState();
+	});
+
+	it("cameraUncertain is false initially", () => {
+		expect(useGameStore.getState().cameraUncertain).toBe(false);
+		expect(useGameStore.getState().hadTileThisRound).toBe(false);
+	});
+
+	it("sets hadTileThisRound when TILE_SEEN fires", () => {
+		enterScanningPhase();
+		const { processDetections } = useGameStore.getState();
+
+		processDetections(makeDetection(7)); // TILE_SEEN
+		expect(useGameStore.getState().hadTileThisRound).toBe(true);
+	});
+
+	it("sets cameraUncertain after tileSeen clears (hard reset)", () => {
+		enterScanningPhase();
+		const { processDetections } = useGameStore.getState();
+
+		processDetections(makeDetection(7)); // TILE_SEEN → hadTileThisRound=true, tileSeen=7
+		expect(useGameStore.getState().cameraUncertain).toBe(false);
+
+		// Within miss tolerance — tileSeen stays, so uncertain stays false
+		for (let i = 0; i < MAX_CONSECUTIVE_MISSES; i++) {
+			processDetections([]);
+			expect(useGameStore.getState().cameraUncertain).toBe(false);
+		}
+
+		// Exceed tolerance → hard reset clears tileSeen → uncertain fires
+		processDetections([]);
+		expect(useGameStore.getState().tileSeen).toBeNull();
+		expect(useGameStore.getState().cameraUncertain).toBe(true);
+	});
+
+	it("does NOT set cameraUncertain when no tile was ever seen this round", () => {
+		enterScanningPhase();
+		const { processDetections } = useGameStore.getState();
+
+		processDetections([]); // no prior tile
+		expect(useGameStore.getState().cameraUncertain).toBe(false);
+		expect(useGameStore.getState().hadTileThisRound).toBe(false);
+	});
+
+	it("clears cameraUncertain when detection returns", () => {
+		enterScanningPhase();
+		const { processDetections } = useGameStore.getState();
+
+		processDetections(makeDetection(7)); // TILE_SEEN
+
+		// Exceed tolerance to trigger uncertainty
+		for (let i = 0; i <= MAX_CONSECUTIVE_MISSES; i++) {
+			processDetections([]);
+		}
+		expect(useGameStore.getState().cameraUncertain).toBe(true);
+
+		processDetections(makeDetection(7)); // detection returns
+		expect(useGameStore.getState().cameraUncertain).toBe(false);
+	});
+
+	it("resets both flags on resetCvState", () => {
+		enterScanningPhase();
+		const { processDetections, resetCvState } = useGameStore.getState();
+
+		processDetections(makeDetection(7)); // hadTileThisRound=true
+		// Exceed tolerance to trigger uncertainty
+		for (let i = 0; i <= MAX_CONSECUTIVE_MISSES; i++) {
+			processDetections([]);
+		}
+		expect(useGameStore.getState().cameraUncertain).toBe(true);
+		resetCvState();
+
+		expect(useGameStore.getState().cameraUncertain).toBe(false);
+		expect(useGameStore.getState().hadTileThisRound).toBe(false);
+	});
+
+	it("does NOT set cameraUncertain while tileSeen is still set (avoids contradicting tile-seen feedback)", () => {
+		enterScanningPhase();
+		const { processDetections } = useGameStore.getState();
+
+		processDetections(makeDetection(7)); // TILE_SEEN → tileSeen=7
+		expect(useGameStore.getState().tileSeen).toBe(7);
+
+		// 1 empty frame — within tolerance, tileSeen still set
+		processDetections([]);
+		expect(useGameStore.getState().tileSeen).toBe(7);
+		expect(useGameStore.getState().cameraUncertain).toBe(false);
+	});
+
+	it("does NOT set cameraUncertain for wrong tile (TILE_SEEN only fires for correct match)", () => {
+		enterScanningPhase();
+		const { processDetections } = useGameStore.getState();
+
+		// Problem answer is 7, place wrong tile 5
+		processDetections(makeDetection(5));
+		expect(useGameStore.getState().hadTileThisRound).toBe(false);
+
+		processDetections([]);
+		expect(useGameStore.getState().cameraUncertain).toBe(false);
+	});
+});
+
 // ─── Spelling mode tests ────────────────────────────────────────────────────
 
 const spellingProblem: SpellingProblem = {

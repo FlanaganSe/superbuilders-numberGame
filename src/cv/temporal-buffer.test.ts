@@ -195,6 +195,52 @@ describe("TemporalBuffer", () => {
 		expect(buffer.consecutiveCount()).toBe(2);
 		expect(buffer.lastAnswer()).toBe(7);
 	});
+
+	// ─── getMissStreak() accessor tests ──────────────────────────────────
+
+	it("getMissStreak returns 0 initially", () => {
+		const buffer = createTemporalBuffer();
+		expect(buffer.getMissStreak()).toBe(0);
+	});
+
+	it("getMissStreak increments on consecutive null updates", () => {
+		const buffer = createTemporalBuffer();
+		buffer.update(null);
+		expect(buffer.getMissStreak()).toBe(1);
+		buffer.update(null);
+		expect(buffer.getMissStreak()).toBe(2);
+		buffer.update(null);
+		expect(buffer.getMissStreak()).toBe(3);
+	});
+
+	it("getMissStreak resets to 0 on valid detection", () => {
+		const buffer = createTemporalBuffer();
+		buffer.update(null);
+		buffer.update(null);
+		expect(buffer.getMissStreak()).toBe(2);
+		buffer.update(7);
+		expect(buffer.getMissStreak()).toBe(0);
+	});
+
+	it("getMissStreak resets to 0 on reset()", () => {
+		const buffer = createTemporalBuffer();
+		buffer.update(null);
+		buffer.update(null);
+		buffer.reset();
+		expect(buffer.getMissStreak()).toBe(0);
+	});
+
+	it("getMissStreak stays elevated after hard reset (only resets on valid detection)", () => {
+		const buffer = createTemporalBuffer();
+		buffer.update(7);
+		// Exceed tolerance: N+1 consecutive nulls
+		for (let i = 0; i <= MAX_CONSECUTIVE_MISSES; i++) {
+			buffer.update(null);
+		}
+		// missStreak is N+1 = 3, count/currentAnswer cleared but missStreak stays
+		expect(buffer.getMissStreak()).toBe(MAX_CONSECUTIVE_MISSES + 1);
+		expect(buffer.consecutiveCount()).toBe(0);
+	});
 });
 
 // ─── Generic temporal buffer (string) ───────────────────────────────────────
