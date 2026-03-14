@@ -111,7 +111,7 @@ export const DIGIT_3_RIGHT_FIXTURE: SyntheticDetection = {
 	score: 0.9,
 };
 
-/** Low-confidence detection that should be filtered out (below 0.65 threshold). */
+/** Low-confidence detection that should be filtered out (below 0.50 threshold). */
 export const LOW_CONFIDENCE_FIXTURE: SyntheticDetection = {
 	anchorIdx: 5000,
 	cx: 500,

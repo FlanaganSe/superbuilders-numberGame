@@ -340,7 +340,117 @@ describe("postProcess", () => {
 	});
 
 	it("exports default thresholds", () => {
-		expect(DEFAULT_CONF_THRESHOLD).toBe(0.65);
+		expect(DEFAULT_CONF_THRESHOLD).toBe(0.5);
 		expect(DEFAULT_IOU_THRESHOLD).toBe(0.45);
+	});
+
+	it("excludes letter classes when classRange restricts to digits", () => {
+		// Create a 36-class tensor where anchor 1000 has:
+		//   digit class 7 = 0.80, letter class 10 (A) = 0.95
+		// Without classRange, classId=10 wins the argmax.
+		// With classRange {min:0, max:9}, classId=7 wins.
+		const numClasses = 36;
+		const numAnchors = 8400;
+		const tensor = createSyntheticTensor(numClasses, numAnchors, [
+			{
+				anchorIdx: 1000,
+				cx: 100,
+				cy: 200,
+				w: 50,
+				h: 70,
+				classId: 7,
+				score: 0.8,
+			},
+			{
+				anchorIdx: 1000,
+				cx: 100,
+				cy: 200,
+				w: 50,
+				h: 70,
+				classId: 10,
+				score: 0.95,
+			},
+		]);
+
+		const results = postProcess({
+			output: tensor,
+			numAnchors,
+			numClasses,
+			...IDENTITY_LETTERBOX,
+			classRange: { min: 0, max: 9 },
+		});
+
+		expect(results).toHaveLength(1);
+		expect(results[0]?.digit).toBe(7);
+		expect(results[0]?.confidence).toBeCloseTo(0.8, 2);
+	});
+
+	it("digit survives NMS when letter class would have suppressed it", () => {
+		// Two nearby anchors on a 36-class model:
+		//   Anchor A: letter class 15 scores 0.92
+		//   Anchor B: digit class 7 scores 0.88
+		// Without classRange: A wins NMS, suppresses B. Post-filter removes A → nothing.
+		// With classRange {min:0,max:9}: A's letter class is ignored, B's digit wins → digit 7 detected.
+		const numClasses = 36;
+		const numAnchors = 8400;
+		const tensor = createSyntheticTensor(numClasses, numAnchors, [
+			{
+				anchorIdx: 1000,
+				cx: 100,
+				cy: 200,
+				w: 50,
+				h: 70,
+				classId: 15,
+				score: 0.92,
+			},
+			{
+				anchorIdx: 1001,
+				cx: 105,
+				cy: 205,
+				w: 48,
+				h: 68,
+				classId: 7,
+				score: 0.88,
+			},
+		]);
+
+		const results = postProcess({
+			output: tensor,
+			numAnchors,
+			numClasses,
+			...IDENTITY_LETTERBOX,
+			classRange: { min: 0, max: 9 },
+		});
+
+		// Anchor A has no digit-class score above threshold → filtered out.
+		// Anchor B's digit 7 survives.
+		expect(results).toHaveLength(1);
+		expect(results[0]?.digit).toBe(7);
+	});
+
+	it("classRange defaults to full range when omitted (backward-compatible)", () => {
+		// 36-class tensor, no classRange → all classes considered
+		const numClasses = 36;
+		const tensor = createSyntheticTensor(numClasses, 8400, [
+			{
+				anchorIdx: 1000,
+				cx: 100,
+				cy: 200,
+				w: 50,
+				h: 70,
+				classId: 15,
+				score: 0.9,
+			},
+		]);
+
+		const results = postProcess({
+			output: tensor,
+			numAnchors: 8400,
+			numClasses,
+			...IDENTITY_LETTERBOX,
+		});
+
+		expect(results).toHaveLength(1);
+		expect(results[0]?.digit).toBe(15);
 	});
 });

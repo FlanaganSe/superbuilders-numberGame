@@ -118,6 +118,19 @@ describe("groupDetections", () => {
 		expect(candidates.find((c) => c.digits === "15")).toBeDefined();
 	});
 
+	it("does not group overlapping different-digit detections", () => {
+		// Two different-digit detections that overlap (gap < 0, but IoU < NMS threshold
+		// so both survived NMS). These represent duplicate anchors on one physical tile.
+		const detections = [
+			makeDetection(3, 0.3, 0.4, 0.12, 0.15),
+			makeDetection(7, 0.35, 0.4, 0.12, 0.15),
+		];
+		// gap = 0.35 - (0.30 + 0.12) = -0.07 → overlapping
+		const candidates = groupDetections(detections);
+		// Should NOT group into "37" — overlapping means same physical tile
+		expect(candidates.find((c) => c.digits === "37")).toBeUndefined();
+	});
+
 	it("handles mixed grouped and ungrouped tiles", () => {
 		const detections = [
 			makeDetection(1, 0.3, 0.4, 0.1, 0.15),

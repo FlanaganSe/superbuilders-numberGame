@@ -81,45 +81,49 @@ export function createFrameCapture(): FrameCapture {
 
 		updateFps(now);
 
-		const { videoWidth, videoHeight } = video;
-		if (videoWidth === 0 || videoHeight === 0) {
-			// Video not ready yet
-			scheduleNext(video);
-			return;
-		}
+		try {
+			const { videoWidth, videoHeight } = video;
+			if (videoWidth === 0 || videoHeight === 0) return;
 
-		const context = ensureCanvas(videoWidth, videoHeight);
-		const captureCanvas = canvas;
-		if (!captureCanvas) return;
+			const context = ensureCanvas(videoWidth, videoHeight);
+			const captureCanvas = canvas;
+			if (!captureCanvas) return;
 
-		// Step 1: draw video to capture canvas (PRD §5.7)
-		context.drawImage(video, 0, 0, videoWidth, videoHeight);
+			// Step 1: draw video to capture canvas (PRD §5.7)
+			context.drawImage(video, 0, 0, videoWidth, videoHeight);
 
-		// Step 2: createImageBitmap from canvas (GPU-accelerated path)
-		const bitmap = await createImageBitmap(captureCanvas);
+			// Step 2: createImageBitmap from canvas (GPU-accelerated path)
+			const bitmap = await createImageBitmap(captureCanvas);
 
-		frameCount++;
+			frameCount++;
 
-		if (listeners.size === 1) {
-			// Fast path: single consumer owns the bitmap (no clone needed).
-			// Consumer is responsible for calling bitmap.close() (PRD §5.12).
-			for (const cb of listeners) {
-				cb(bitmap);
+			if (listeners.size === 1) {
+				// Fast path: single consumer owns the bitmap (no clone needed).
+				// Consumer is responsible for calling bitmap.close() (PRD §5.12).
+				for (const cb of listeners) {
+					cb(bitmap);
+				}
+			} else if (listeners.size > 1) {
+				// Multiple consumers: clone per listener, then close the original.
+				try {
+					const clonePromises = [...listeners].map(async (cb) => {
+						const clone = await createImageBitmap(bitmap);
+						cb(clone);
+					});
+					await Promise.all(clonePromises);
+				} finally {
+					bitmap.close();
+				}
+			} else {
+				// No consumer — close immediately to prevent GPU memory leak
+				bitmap.close();
 			}
-		} else if (listeners.size > 1) {
-			// Multiple consumers: clone per listener, then close the original.
-			const clonePromises = [...listeners].map(async (cb) => {
-				const clone = await createImageBitmap(bitmap);
-				cb(clone);
-			});
-			await Promise.all(clonePromises);
-			bitmap.close();
-		} else {
-			// No consumer — close immediately to prevent GPU memory leak
-			bitmap.close();
+		} catch {
+			// Frame processing failed (GPU error, memory pressure, stop() race).
+			// Continue the rVFC loop regardless to avoid permanent stall.
+		} finally {
+			scheduleNext(video);
 		}
-
-		scheduleNext(video);
 	}
 
 	function scheduleNext(video: HTMLVideoElement): void {

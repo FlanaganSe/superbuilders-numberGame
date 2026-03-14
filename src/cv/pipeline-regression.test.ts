@@ -152,8 +152,8 @@ describe("pipeline: confidence filtering", () => {
 	});
 
 	it("keeps detections just above confidence threshold", () => {
-		// Note: 0.65 stored in Float32Array loses precision (→ 0.6499...), so use 0.66
-		const result = runPipeline([digit(7, 320, 1000, { score: 0.66 })], 7);
+		// Threshold is 0.50; use 0.51 to test just above
+		const result = runPipeline([digit(7, 320, 1000, { score: 0.51 })], 7);
 		expect(result.matched).toBe(true);
 	});
 

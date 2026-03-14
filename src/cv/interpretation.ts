@@ -69,10 +69,12 @@ export function groupDetections(
 		const right = sorted[i + 1];
 		if (!left || !right) continue;
 
-		// Overlapping same-digit detections are duplicates of one physical tile
-		// (model emitted multiple anchor boxes). Don't group as multi-digit.
+		// Overlapping detections (gap < 0) are duplicate anchors for one
+		// physical tile — don't group as multi-digit. This applies regardless
+		// of digit class: different-class overlapping boxes that survive NMS
+		// (IoU < threshold) still represent the same physical tile.
 		const gap = right.bbox.x - rightEdge(left);
-		if (left.digit === right.digit && gap < 0) continue;
+		if (gap < 0) continue;
 
 		const pairAvgHeight = (left.bbox.height + right.bbox.height) / 2;
 		const pairAvgWidth = (left.bbox.width + right.bbox.width) / 2;

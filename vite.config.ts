@@ -35,7 +35,7 @@ export default defineConfig({
 						runtimeCaching: [
 							{
 								urlPattern: /\/models\/.*\.onnx$/,
-								handler: "CacheFirst",
+								handler: "StaleWhileRevalidate",
 								options: {
 									cacheName: "onnx-models",
 									expiration: {

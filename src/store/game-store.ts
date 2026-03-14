@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { groupDetections, matchAnswer } from "../cv/interpretation";
+import { createInterpretationLayer } from "../cv/interpretation";
 import { createTemporalBuffer } from "../cv/temporal-buffer";
 import { gameReducer, initialGameState } from "../engine/game-reducer";
 import { AdditionMode } from "../engine/problem-generator";
@@ -32,6 +32,10 @@ interface GameStore {
 // ─── Store ──────────────────────────────────────────────────────────────────
 
 const temporalBuffer = createTemporalBuffer();
+const interpretationLayer = createInterpretationLayer();
+
+/** Track the current problem to reset temporal buffer on problem change. */
+let lastProblemRef: object | null = null;
 
 export const useGameStore = create<GameStore>((set, get) => ({
 	gameState: initialGameState(),
@@ -61,12 +65,23 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
 		const { problem, attemptNumber } = gameState.phase;
 
-		// Run interpretation
-		const candidates = groupDetections(detections);
-		const matched = matchAnswer(candidates, problem.answer);
+		// Reset temporal buffer when the problem changes (new round)
+		if (problem !== lastProblemRef) {
+			temporalBuffer.reset();
+			lastProblemRef = problem;
+			set({ tileSeen: null });
+		}
+
+		// Run interpretation with digit-count gate
+		const expectedDigitCount = problem.answer.toString().length;
+		const values = interpretationLayer.interpret(
+			detections,
+			expectedDigitCount,
+		);
+		const matched = values.includes(problem.answer);
 
 		// Feed temporal buffer
-		const event = temporalBuffer.update(matched ? matched.value : null);
+		const event = temporalBuffer.update(matched ? problem.answer : null);
 
 		switch (event.type) {
 			case "TILE_SEEN":
@@ -92,13 +107,14 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
 		return {
 			detectionCount: detections.length,
-			candidateCount: candidates.length,
-			matchFound: matched !== null,
+			candidateCount: values.length,
+			matchFound: matched,
 			temporalEvent: event.type,
 		};
 	},
 
 	resetCvState(): void {
+		lastProblemRef = null;
 		temporalBuffer.reset();
 		set({ tileSeen: null });
 	},

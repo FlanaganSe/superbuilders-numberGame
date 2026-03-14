@@ -14,8 +14,8 @@ import type { BoundingBox, DetectedDigit, Digit } from "../types/cv";
 // If tiles are missed → lower CONF. If false positives appear → raise CONF.
 // If duplicate detections leak through → lower IOU.
 
-/** Minimum confidence score to keep a detection. Start 0.65; lower to 0.50 if tiles missed, raise to 0.75 if false positives. */
-export const DEFAULT_CONF_THRESHOLD = 0.65;
+/** Minimum confidence score to keep a detection. YOLO default is 0.25; 0.50 balances recall vs false positives for physical tiles. */
+export const DEFAULT_CONF_THRESHOLD = 0.5;
 
 /** NMS IoU threshold. Physical tiles don't overlap, so this mainly filters duplicate detections. Lower to 0.35 if duplicates leak. */
 export const DEFAULT_IOU_THRESHOLD = 0.45;
@@ -109,6 +109,14 @@ export interface PostProcessParams {
 	readonly confThreshold?: number;
 	/** IoU threshold for NMS suppression. */
 	readonly iouThreshold?: number;
+	/**
+	 * Restrict the argmax to a subset of class channels.
+	 * Critical for 36-class models: constraining to {min:0, max:9} prevents
+	 * letter classes (10-35) from winning the argmax and then suppressing
+	 * valid digit detections via class-agnostic NMS.
+	 * Default: full range {min:0, max:numClasses-1} (backward-compatible).
+	 */
+	readonly classRange?: { readonly min: number; readonly max: number };
 }
 
 /**
@@ -136,17 +144,27 @@ export function postProcess(
 		origH,
 		confThreshold = DEFAULT_CONF_THRESHOLD,
 		iouThreshold = DEFAULT_IOU_THRESHOLD,
+		classRange,
 	} = params;
+
+	const classMin = classRange?.min ?? 0;
+	const classMax = classRange?.max ?? numClasses - 1;
+
+	if (classMin > classMax || classMax >= numClasses) {
+		throw new Error(
+			`classRange [${classMin}, ${classMax}] is invalid for numClasses=${numClasses}`,
+		);
+	}
 
 	// Step 1 & 2: Filter by confidence, decode boxes
 	const candidates: RawDetection[] = [];
 
 	for (let i = 0; i < numAnchors; i++) {
-		// Find max class score (channels 4..4+numClasses-1)
+		// Find max class score within the allowed class range.
 		// Channel-major indexing: output[channel * numAnchors + anchorIdx]
 		let maxScore = 0;
-		let classId = 0;
-		for (let c = 0; c < numClasses; c++) {
+		let classId = classMin;
+		for (let c = classMin; c <= classMax; c++) {
 			const s = output[(4 + c) * numAnchors + i] ?? 0;
 			if (s > maxScore) {
 				maxScore = s;
