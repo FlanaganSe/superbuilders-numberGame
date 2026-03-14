@@ -52,7 +52,9 @@ async function answerCorrectly(
 async function waitForScanning(
 	page: import("@playwright/test").Page,
 ): Promise<void> {
-	await expect(page.getByText("?")).toBeVisible({ timeout: 10_000 });
+	await expect(page.getByText("?", { exact: true })).toBeVisible({
+		timeout: 10_000,
+	});
 }
 
 const CELEBRATION_PATTERN =
@@ -67,7 +69,7 @@ test.describe("Game loop (mock recognition)", () => {
 		await page.goto("/?recognition=mock");
 
 		// ── Start screen ─────────────────────────────────────────────────────
-		const startButton = page.getByRole("button", { name: "Let's Play!" });
+		const startButton = page.getByRole("button", { name: "Addition" });
 		await expect(startButton).toBeVisible();
 		await startButton.click();
 
