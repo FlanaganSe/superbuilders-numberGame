@@ -22,9 +22,11 @@ import { selectWorkerStatus, useCvStore } from "../store/cv-store";
 import {
 	getLastMatchedAnswer,
 	getTemporalCount,
+	selectGameKind,
 	selectGamePhase,
 	useGameStore,
 } from "../store/game-store";
+import type { GameKind } from "../types/game";
 import { getFeatureFlags } from "../utils/feature-flags";
 import { CalibrationGuide } from "./CalibrationGuide";
 import { CountdownTimer } from "./CountdownTimer";
@@ -33,6 +35,7 @@ import { GameScreen } from "./GameScreen";
 import { MuteButton } from "./MuteButton";
 import { ProgressiveLoader } from "./ProgressiveLoader";
 import { SessionSummary } from "./SessionSummary";
+import { SpellingScreen } from "./SpellingScreen";
 import { TapToStart } from "./TapToStart";
 
 const STATS_POLL_MS = 500;
@@ -42,8 +45,15 @@ const EMPTY_STATS: FrameCaptureStats = {
 	capturing: false,
 };
 
+/** Class ranges for each game kind. Digits: 0-9. Letters: 10-35 (A-Z). */
+const CLASS_RANGES: Record<GameKind, { min: number; max: number }> = {
+	math: { min: 0, max: 9 },
+	spelling: { min: 10, max: 35 },
+};
+
 export function App(): React.JSX.Element {
 	const phase = useGameStore(selectGamePhase);
+	const gameKind = useGameStore(selectGameKind);
 	const flags = getFeatureFlags();
 	const isMockMode = flags.recognition === "mock";
 
@@ -92,6 +102,13 @@ export function App(): React.JSX.Element {
 			useCvStore.getState().reset();
 		};
 	}, []);
+
+	// Set class range on the ONNX service when game kind changes
+	useEffect(() => {
+		const backend = backendRef.current;
+		if (!backend || backend.type !== "onnx") return;
+		backend.service.setClassRange(CLASS_RANGES[gameKind]);
+	}, [gameKind]);
 
 	// Start/stop frame capture based on camera status
 	useEffect(() => {
@@ -253,6 +270,7 @@ export function App(): React.JSX.Element {
 								>
 									<PhaseRouter
 										phase={phase}
+										gameKind={gameKind}
 										requestCamera={camera.requestCamera}
 										cameraError={camera.error}
 									/>
@@ -294,13 +312,17 @@ function handleFallbackMock(): void {
 
 function PhaseRouter({
 	phase,
+	gameKind,
 	requestCamera,
 	cameraError,
 }: {
 	readonly phase: ReturnType<typeof selectGamePhase>;
+	readonly gameKind: GameKind;
 	readonly requestCamera: () => Promise<void>;
 	readonly cameraError: import("../camera/use-camera").CameraError | null;
 }): React.JSX.Element {
+	const Screen = gameKind === "spelling" ? SpellingScreen : GameScreen;
+
 	switch (phase.phase) {
 		case "idle":
 			return (
@@ -310,22 +332,15 @@ function PhaseRouter({
 			return <CountdownTimer secondsLeft={phase.secondsLeft} />;
 		case "scanning":
 			return (
-				<GameScreen
-					problem={phase.problem}
-					attemptNumber={phase.attemptNumber}
-				/>
+				<Screen problem={phase.problem} attemptNumber={phase.attemptNumber} />
 			);
 		case "success":
 			return (
-				<GameScreen
-					problem={phase.problem}
-					attemptNumber={1}
-					stars={phase.stars}
-				/>
+				<Screen problem={phase.problem} attemptNumber={1} stars={phase.stars} />
 			);
 		case "timeout":
 			return (
-				<GameScreen
+				<Screen
 					problem={phase.problem}
 					attemptNumber={phase.attemptNumber}
 					timedOut

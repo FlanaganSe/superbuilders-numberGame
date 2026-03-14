@@ -1,3 +1,7 @@
+// ─── Game Kind ───────────────────────────────────────────────────────────────
+
+export type GameKind = "math" | "spelling";
+
 // ─── Difficulty ──────────────────────────────────────────────────────────────
 
 export type DifficultyLevel = 1 | 2 | 3 | 4 | 5;
@@ -12,6 +16,13 @@ export interface Problem {
 	readonly operator: Operator;
 	readonly answer: number;
 	readonly displayAnswer: string;
+}
+
+// ─── Spelling Problem ───────────────────────────────────────────────────────
+
+export interface SpellingProblem {
+	readonly word: string;
+	readonly letters: readonly string[];
 }
 
 // ─── Game Mode ───────────────────────────────────────────────────────────────
@@ -48,7 +59,11 @@ export type GamePhase =
 // ─── Game Action (discriminated union) ───────────────────────────────────────
 
 export type GameAction =
-	| { readonly type: "START_SESSION" }
+	| {
+			readonly type: "START_SESSION";
+			readonly maxProblems?: number;
+			readonly modeName?: SessionData["mode"];
+	  }
 	| { readonly type: "COUNTDOWN_TICK"; readonly secondsLeft: number }
 	| { readonly type: "COUNTDOWN_COMPLETE"; readonly problem: Problem }
 	| { readonly type: "ANSWER_CORRECT"; readonly stars: 1 | 2 | 3 }
@@ -69,7 +84,7 @@ export interface SessionData {
 	readonly rounds: readonly RoundResult[];
 	readonly totalStars: number;
 	readonly difficulty: DifficultyLevel;
-	readonly mode: "Addition" | "Subtraction";
+	readonly mode: "Addition" | "Subtraction" | "Spelling";
 	readonly startedAt: number;
 	readonly endedAt: number;
 }
@@ -84,4 +99,6 @@ export interface GameState {
 	readonly rounds: readonly RoundResult[];
 	readonly currentRoundStartedAt: number | null;
 	readonly sessionStartedAt: number | null;
+	readonly maxProblems: number;
+	readonly modeName: SessionData["mode"];
 }

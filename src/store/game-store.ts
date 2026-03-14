@@ -5,7 +5,20 @@ import { gameReducer, initialGameState } from "../engine/game-reducer";
 import { AdditionMode } from "../engine/problem-generator";
 import { loadMute, saveMute, starsForAttempt } from "../engine/session";
 import type { PipelineStageInfo } from "../store/cv-store";
-import type { GameAction, GameMode, GameState } from "../types/game";
+import type {
+	GameAction,
+	GameKind,
+	GameMode,
+	GameState,
+	SpellingProblem,
+} from "../types/game";
+
+// ─── Constants ───────────────────────────────────────────────────────────────
+
+/** Maps a YOLO classId (10-35) to a letter (A-Z). */
+function classIdToLetter(classId: number): string {
+	return String.fromCharCode(65 + (classId - 10));
+}
 
 // ─── Store shape ────────────────────────────────────────────────────────────
 
@@ -16,13 +29,21 @@ interface GameStore {
 
 	// Active mode
 	readonly mode: GameMode;
+	readonly gameKind: GameKind;
+	readonly setGameKind: (kind: GameKind) => void;
+
+	// Spelling state
+	readonly spellingProblem: SpellingProblem | null;
+	readonly setSpellingProblem: (problem: SpellingProblem | null) => void;
+	readonly detectedLetters: readonly string[];
+	readonly spellingWordsUsed: readonly string[];
 
 	// Audio preference
 	readonly muted: boolean;
 	readonly toggleMute: () => void;
 
 	// CV integration (interpretation + temporal buffer)
-	readonly tileSeen: number | null;
+	readonly tileSeen: number | string | null;
 	readonly processDetections: (
 		detections: readonly import("../types/cv").DetectedDigit[],
 	) => PipelineStageInfo | null;
@@ -31,7 +52,8 @@ interface GameStore {
 
 // ─── Store ──────────────────────────────────────────────────────────────────
 
-const temporalBuffer = createTemporalBuffer();
+const temporalBuffer = createTemporalBuffer<number>();
+const spellingTemporalBuffer = createTemporalBuffer<string>();
 const interpretationLayer = createInterpretationLayer();
 
 /** Track the current problem to reset temporal buffer on problem change. */
@@ -47,6 +69,24 @@ export const useGameStore = create<GameStore>((set, get) => ({
 	},
 
 	mode: AdditionMode,
+	gameKind: "math",
+
+	setGameKind(kind: GameKind): void {
+		// Reset session-level spelling state when switching modes
+		set({
+			gameKind: kind,
+			spellingWordsUsed: [],
+			spellingProblem: null,
+		});
+	},
+
+	spellingProblem: null,
+	detectedLetters: [],
+	spellingWordsUsed: [],
+
+	setSpellingProblem(problem: SpellingProblem | null): void {
+		set({ spellingProblem: problem });
+	},
 
 	muted: loadMute(),
 	toggleMute(): void {
@@ -60,75 +100,171 @@ export const useGameStore = create<GameStore>((set, get) => ({
 	tileSeen: null,
 
 	processDetections(detections): PipelineStageInfo | null {
-		const { gameState, dispatch } = get();
+		const { gameState, gameKind } = get();
 		if (gameState.phase.phase !== "scanning") return null;
 
-		const { problem, attemptNumber } = gameState.phase;
-
-		// Reset temporal buffer when the problem changes (new round)
-		if (problem !== lastProblemRef) {
-			temporalBuffer.reset();
-			lastProblemRef = problem;
-			set({ tileSeen: null });
+		if (gameKind === "spelling") {
+			return processSpellingDetections(detections, get, set);
 		}
-
-		// Run interpretation with digit-count gate
-		const expectedDigitCount = problem.answer.toString().length;
-		const values = interpretationLayer.interpret(
-			detections,
-			expectedDigitCount,
-		);
-		const matched = values.includes(problem.answer);
-
-		// Feed temporal buffer
-		const event = temporalBuffer.update(matched ? problem.answer : null);
-
-		switch (event.type) {
-			case "TILE_SEEN":
-				set({ tileSeen: event.answer });
-				break;
-			case "ANSWER_COMMITTED":
-				dispatch({
-					type: "ANSWER_CORRECT",
-					stars: starsForAttempt(attemptNumber),
-				});
-				temporalBuffer.reset();
-				set({ tileSeen: null });
-				break;
-			case "NONE":
-				if (
-					temporalBuffer.consecutiveCount() === 0 &&
-					get().tileSeen !== null
-				) {
-					set({ tileSeen: null });
-				}
-				break;
-		}
-
-		return {
-			detectionCount: detections.length,
-			candidateCount: values.length,
-			matchFound: matched,
-			temporalEvent: event.type,
-		};
+		return processMathDetections(detections, get, set);
 	},
 
 	resetCvState(): void {
 		lastProblemRef = null;
 		temporalBuffer.reset();
-		set({ tileSeen: null });
+		spellingTemporalBuffer.reset();
+		// Only clear CV-transient state between rounds — NOT spellingWordsUsed
+		// or spellingProblem, which persist across rounds within a session.
+		set({ tileSeen: null, detectedLetters: [] });
 	},
 }));
+
+// ─── Math detection processing ──────────────────────────────────────────────
+
+function processMathDetections(
+	detections: readonly import("../types/cv").DetectedDigit[],
+	get: () => GameStore,
+	set: (partial: Partial<GameStore>) => void,
+): PipelineStageInfo {
+	const { gameState, dispatch } = get();
+	const { problem, attemptNumber } = gameState.phase as {
+		problem: import("../types/game").Problem;
+		attemptNumber: number;
+	};
+
+	// Reset temporal buffer when the problem changes (new round)
+	if (problem !== lastProblemRef) {
+		temporalBuffer.reset();
+		lastProblemRef = problem;
+		set({ tileSeen: null });
+	}
+
+	// Run interpretation with digit-count gate
+	const expectedDigitCount = problem.answer.toString().length;
+	const values = interpretationLayer.interpret(detections, expectedDigitCount);
+	const matched = values.includes(problem.answer);
+
+	// Feed temporal buffer
+	const event = temporalBuffer.update(matched ? problem.answer : null);
+
+	switch (event.type) {
+		case "TILE_SEEN":
+			set({ tileSeen: event.answer });
+			break;
+		case "ANSWER_COMMITTED":
+			dispatch({
+				type: "ANSWER_CORRECT",
+				stars: starsForAttempt(attemptNumber),
+			});
+			temporalBuffer.reset();
+			set({ tileSeen: null });
+			break;
+		case "NONE":
+			if (temporalBuffer.consecutiveCount() === 0 && get().tileSeen !== null) {
+				set({ tileSeen: null });
+			}
+			break;
+	}
+
+	return {
+		detectionCount: detections.length,
+		candidateCount: values.length,
+		matchFound: matched,
+		temporalEvent: event.type,
+	};
+}
+
+// ─── Spelling detection processing ──────────────────────────────────────────
+
+function processSpellingDetections(
+	detections: readonly import("../types/cv").DetectedDigit[],
+	get: () => GameStore,
+	set: (partial: Partial<GameStore>) => void,
+): PipelineStageInfo {
+	const { gameState, dispatch, spellingProblem } = get();
+	const { attemptNumber } = gameState.phase as { attemptNumber: number };
+
+	if (!spellingProblem) {
+		return {
+			detectionCount: detections.length,
+			candidateCount: 0,
+			matchFound: false,
+			temporalEvent: "NONE",
+		};
+	}
+
+	// Reset spelling temporal buffer when the problem changes
+	if (spellingProblem !== lastProblemRef) {
+		spellingTemporalBuffer.reset();
+		lastProblemRef = spellingProblem;
+		set({ tileSeen: null, detectedLetters: [] });
+	}
+
+	// Map classId (10-35) to letters, already sorted L→R by postProcess
+	const letters = detections
+		.filter((d) => d.digit >= 10 && d.digit <= 35)
+		.map((d) => classIdToLetter(d.digit));
+
+	set({ detectedLetters: letters });
+
+	// Full word match
+	const detectedWord = letters.join("");
+	const matched = detectedWord === spellingProblem.word;
+
+	// Feed spelling temporal buffer
+	const event = spellingTemporalBuffer.update(
+		matched ? spellingProblem.word : null,
+	);
+
+	switch (event.type) {
+		case "TILE_SEEN":
+			set({ tileSeen: event.answer });
+			break;
+		case "ANSWER_COMMITTED":
+			dispatch({
+				type: "ANSWER_CORRECT",
+				stars: starsForAttempt(attemptNumber),
+			});
+			spellingTemporalBuffer.reset();
+			set({
+				tileSeen: null,
+				detectedLetters: [],
+				spellingWordsUsed: [...get().spellingWordsUsed, spellingProblem.word],
+			});
+			break;
+		case "NONE":
+			if (
+				spellingTemporalBuffer.consecutiveCount() === 0 &&
+				get().tileSeen !== null
+			) {
+				set({ tileSeen: null });
+			}
+			break;
+	}
+
+	return {
+		detectionCount: detections.length,
+		candidateCount: letters.length,
+		matchFound: matched,
+		temporalEvent: event.type,
+	};
+}
 
 // ─── Temporal buffer accessors ──────────────────────────────────────────────
 // Exposed for cv-store to read temporal state without coupling stores.
 
 export function getTemporalCount(): number {
-	return temporalBuffer.consecutiveCount();
+	const kind = useGameStore.getState().gameKind;
+	return kind === "spelling"
+		? spellingTemporalBuffer.consecutiveCount()
+		: temporalBuffer.consecutiveCount();
 }
 
-export function getLastMatchedAnswer(): number | null {
-	return temporalBuffer.lastAnswer();
+export function getLastMatchedAnswer(): number | string | null {
+	const kind = useGameStore.getState().gameKind;
+	return kind === "spelling"
+		? spellingTemporalBuffer.lastAnswer()
+		: temporalBuffer.lastAnswer();
 }
 
 // ─── Selectors ──────────────────────────────────────────────────────────────
@@ -141,4 +277,10 @@ export const selectDifficulty = (s: GameStore): number =>
 export const selectRounds = (s: GameStore): GameState["rounds"] =>
 	s.gameState.rounds;
 export const selectMuted = (s: GameStore): boolean => s.muted;
-export const selectTileSeen = (s: GameStore): number | null => s.tileSeen;
+export const selectTileSeen = (s: GameStore): number | string | null =>
+	s.tileSeen;
+export const selectGameKind = (s: GameStore): GameKind => s.gameKind;
+export const selectSpellingProblem = (s: GameStore): SpellingProblem | null =>
+	s.spellingProblem;
+export const selectDetectedLetters = (s: GameStore): readonly string[] =>
+	s.detectedLetters;

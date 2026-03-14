@@ -74,7 +74,7 @@ Three focused milestones that fix the verified detection pipeline bugs, then bui
 
 ### Phase 1: Fix & Stabilize
 
-- [ ] **M1: Detection Pipeline Fixes** — Fix the 3 verified root causes and 2 amplifiers so the math game works reliably with the 36-class model. Critical fix: restrict postprocessing argmax to digit classes (0-9) so letter classes can't suppress digit detections via NMS. Also: lower confidence threshold, wire `expectedDigitCount` filter, reset temporal buffer on phase transitions, try/catch frame capture, fix model cache strategy. ~7 files changed, all with tests.
+- [x] **M1: Detection Pipeline Fixes** — Fix the 3 verified root causes and 2 amplifiers so the math game works reliably with the 36-class model. Critical fix: restrict postprocessing argmax to digit classes (0-9) so letter classes can't suppress digit detections via NMS. Also: lower confidence threshold, wire `expectedDigitCount` filter, reset temporal buffer on phase transitions, try/catch frame capture, fix model cache strategy. ~7 files changed, all with tests.
   - [ ] Step 1 — Add `classRange` to `PostProcessParams`, constrain argmax loop, lower threshold to 0.50. Pass `classRange: {min:0, max:9}` in worker. → verify: `pnpm typecheck`
   - [ ] Step 2 — Fix interpretation gap-sign bug (`gap < 0` → skip regardless of digit equality). Wire `createInterpretationLayer` in game-store with `expectedDigitCount`. Add temporal buffer reset on problem change. → verify: `pnpm typecheck`
   - [ ] Step 3 — Wrap frame-capture `onVideoFrame` in try/catch/finally. Change model cache to `StaleWhileRevalidate`. → verify: `pnpm typecheck`
@@ -84,6 +84,11 @@ Three focused milestones that fix the verified detection pipeline bugs, then bui
 ### Phase 2: Expand
 
 - [ ] **M2: Spelling Game** — Add spelling game mode using the 36-class model's letter classes (A-Z). Parallel types alongside math (no breaking changes to existing code/tests). 3-word sessions with 3-4 letter age-appropriate words. Mode-aware class range passed to postprocessing. Wire existing disabled "Spelling" button.
+  - [ ] Step 1 — Foundation: Widen `DetectedDigit.digit` to `number`, add `Letter` type, add `SpellingProblem`/`GameKind` to game types, make temporal buffer generic `<T>`, add `classRange` to worker protocol, create spelling word list. → verify: `pnpm typecheck && pnpm test`
+  - [ ] Step 2 — Pipeline: Worker reads `classRange` from infer message, recognition service stores/passes classRange, remove `as Digit` cast in postProcess, parameterize game reducer with `maxProblems`/`modeName`. → verify: `pnpm typecheck && pnpm test`
+  - [ ] Step 3 — Store & UI: Add `gameKind`/`spellingProblem` to game store, branch `processDetections` for spelling, enable spelling button in TapToStart, create SpellingScreen, route phases in App.tsx, set classRange on mode change, widen FeedbackOverlay. → verify: `pnpm typecheck && pnpm test && pnpm lint`
+  - [ ] Step 4 — Tests: Add spelling-words.test.ts, spelling game-store tests, temporal buffer generic tests. → verify: `pnpm test && pnpm typecheck && pnpm lint`
+  Commit: "feat: add spelling game mode with letter detection"
 
 ### Phase 3: Polish (optional)
 

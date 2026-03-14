@@ -115,7 +115,7 @@ self.onmessage = async (e: MessageEvent<MainToWorker>): Promise<void> => {
 
 			isInferring = true;
 			const t0 = performance.now();
-			const { bitmap } = msg;
+			const { bitmap, classRange: msgClassRange } = msg;
 
 			try {
 				const origW = bitmap.width;
@@ -154,9 +154,11 @@ self.onmessage = async (e: MessageEvent<MainToWorker>): Promise<void> => {
 					);
 				}
 
-				// 3. Post-process — restrict argmax to digit classes (0-9) so letter
-				//    classes (10-35) in the 36-class model can't suppress digits via NMS.
-				//    M2 (spelling game) will make this mode-dependent.
+				// 3. Post-process — class range restricts the argmax so only the
+				//    active game mode's classes are considered. Default: digit
+				//    classes (0-9). Spelling mode sends {min:10, max:35}.
+				const classMin = msgClassRange?.min ?? 0;
+				const classMax = msgClassRange?.max ?? Math.min(9, numClasses - 1);
 				const detections = postProcess({
 					output: rawOutput,
 					numAnchors,
@@ -166,7 +168,10 @@ self.onmessage = async (e: MessageEvent<MainToWorker>): Promise<void> => {
 					padY,
 					origW,
 					origH,
-					classRange: { min: 0, max: Math.min(9, numClasses - 1) },
+					classRange: {
+						min: classMin,
+						max: Math.min(classMax, numClasses - 1),
+					},
 				});
 
 				const latencyMs = performance.now() - t0;

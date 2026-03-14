@@ -18,6 +18,8 @@ export function initialGameState(): GameState {
 		rounds: [],
 		currentRoundStartedAt: null,
 		sessionStartedAt: null,
+		maxProblems: DEFAULT_PROBLEM_COUNT,
+		modeName: "Addition",
 	};
 }
 
@@ -31,7 +33,7 @@ export const MAX_PROBLEMS = DEFAULT_PROBLEM_COUNT;
 export function gameReducer(state: GameState, action: GameAction): GameState {
 	switch (action.type) {
 		case "START_SESSION":
-			return handleStartSession(state);
+			return handleStartSession(state, action);
 
 		case "COUNTDOWN_TICK":
 			return handleCountdownTick(state, action.secondsLeft);
@@ -58,7 +60,10 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
 
 // ─── Transition handlers ────────────────────────────────────────────────────
 
-function handleStartSession(state: GameState): GameState {
+function handleStartSession(
+	state: GameState,
+	action: Extract<GameAction, { type: "START_SESSION" }>,
+): GameState {
 	if (state.phase.phase !== "idle" && state.phase.phase !== "session-end") {
 		return state;
 	}
@@ -66,6 +71,8 @@ function handleStartSession(state: GameState): GameState {
 		...initialGameState(),
 		phase: { phase: "countdown", secondsLeft: COUNTDOWN_SECONDS },
 		sessionStartedAt: Date.now(),
+		maxProblems: action.maxProblems ?? DEFAULT_PROBLEM_COUNT,
+		modeName: action.modeName ?? "Addition",
 	};
 }
 
@@ -141,7 +148,7 @@ function handleNextRound(state: GameState): GameState {
 	}
 
 	// Check if session should end
-	if (state.rounds.length >= MAX_PROBLEMS) {
+	if (state.rounds.length >= state.maxProblems) {
 		return handleEndSession(state);
 	}
 
@@ -184,7 +191,7 @@ function handleEndSession(state: GameState): GameState {
 				rounds: state.rounds,
 				totalStars,
 				difficulty: state.difficulty,
-				mode: "Addition",
+				mode: state.modeName,
 				startedAt: state.sessionStartedAt ?? Date.now(),
 				endedAt: Date.now(),
 			},

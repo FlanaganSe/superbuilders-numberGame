@@ -7,7 +7,7 @@
 // All parameters (numAnchors, numClasses) are read from output tensor dims,
 // not hardcoded — works for both 640×640 (8400 anchors) and 320×320 (2100).
 
-import type { BoundingBox, DetectedDigit, Digit } from "../types/cv";
+import type { BoundingBox, DetectedDigit } from "../types/cv";
 
 // ─── Tuning Constants ────────────────────────────────────────────────────────
 // Tune on real iPad with physical tiles via ?debug=true HUD.
@@ -213,7 +213,7 @@ export function postProcess(
 			height: (d.y2 - d.y1) / origH,
 		};
 		return {
-			digit: d.classId as Digit,
+			digit: d.classId,
 			confidence: d.score,
 			bbox,
 		};

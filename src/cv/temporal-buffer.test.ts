@@ -196,3 +196,42 @@ describe("TemporalBuffer", () => {
 		expect(buffer.lastAnswer()).toBe(7);
 	});
 });
+
+// ─── Generic temporal buffer (string) ───────────────────────────────────────
+
+describe("TemporalBuffer<string>", () => {
+	it("works with string answers (spelling mode)", () => {
+		const buffer = createTemporalBuffer<string>();
+		const e1 = buffer.update("CAT");
+		expect(e1.type).toBe("TILE_SEEN");
+		if (e1.type === "TILE_SEEN") {
+			expect(e1.answer).toBe("CAT");
+		}
+
+		buffer.update("CAT");
+		const e3 = buffer.update("CAT");
+		expect(e3.type).toBe("ANSWER_COMMITTED");
+		if (e3.type === "ANSWER_COMMITTED") {
+			expect(e3.answer).toBe("CAT");
+		}
+	});
+
+	it("resets on different string answer", () => {
+		const buffer = createTemporalBuffer<string>();
+		buffer.update("CAT");
+		buffer.update("CAT");
+		const event = buffer.update("DOG");
+		expect(event.type).toBe("TILE_SEEN");
+		if (event.type === "TILE_SEEN") {
+			expect(event.answer).toBe("DOG");
+		}
+		expect(buffer.consecutiveCount()).toBe(1);
+	});
+
+	it("tracks lastAnswer as string", () => {
+		const buffer = createTemporalBuffer<string>();
+		expect(buffer.lastAnswer()).toBeNull();
+		buffer.update("FISH");
+		expect(buffer.lastAnswer()).toBe("FISH");
+	});
+});

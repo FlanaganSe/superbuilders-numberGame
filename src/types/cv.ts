@@ -12,10 +12,45 @@ export interface BoundingBox {
 
 export type Digit = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9;
 
+// ─── Letter ──────────────────────────────────────────────────────────────────
+
+export type Letter =
+	| "A"
+	| "B"
+	| "C"
+	| "D"
+	| "E"
+	| "F"
+	| "G"
+	| "H"
+	| "I"
+	| "J"
+	| "K"
+	| "L"
+	| "M"
+	| "N"
+	| "O"
+	| "P"
+	| "Q"
+	| "R"
+	| "S"
+	| "T"
+	| "U"
+	| "V"
+	| "W"
+	| "X"
+	| "Y"
+	| "Z";
+
 // ─── Detection ───────────────────────────────────────────────────────────────
 
+/**
+ * A detection from the YOLO model. `digit` is the raw classId (0-9 for digits,
+ * 10-35 for letters A-Z). Widened from `Digit` to `number` to support the
+ * 36-class model — callers constrain the range via `classRange` in postProcess.
+ */
 export interface DetectedDigit {
-	readonly digit: Digit;
+	readonly digit: number;
 	readonly confidence: number;
 	readonly bbox: BoundingBox;
 }

@@ -38,7 +38,7 @@ interface CvState {
 	readonly workerStatus: WorkerStatus;
 	readonly errorMessage: string | null;
 	readonly temporalCount: number;
-	readonly lastMatchedAnswer: number | null;
+	readonly lastMatchedAnswer: number | string | null;
 	readonly cameraSettings: CameraSettings | null;
 	readonly pipelineStage: PipelineStageInfo | null;
 	readonly pipelineStats: PipelineStats;
@@ -52,7 +52,7 @@ interface CvStore extends CvState {
 	readonly updateWorkerStatus: (status: WorkerStatus, error?: string) => void;
 	readonly updateTemporalState: (
 		count: number,
-		lastAnswer: number | null,
+		lastAnswer: number | string | null,
 	) => void;
 	readonly updateCameraSettings: (settings: CameraSettings) => void;
 	readonly updatePipelineStage: (stage: PipelineStageInfo) => void;
@@ -125,7 +125,7 @@ export const selectDetections = (s: CvStore): readonly DetectedDigit[] =>
 export const selectLatencyMs = (s: CvStore): number => s.latencyMs;
 export const selectWorkerStatus = (s: CvStore): WorkerStatus => s.workerStatus;
 export const selectTemporalCount = (s: CvStore): number => s.temporalCount;
-export const selectLastMatchedAnswer = (s: CvStore): number | null =>
+export const selectLastMatchedAnswer = (s: CvStore): number | string | null =>
 	s.lastMatchedAnswer;
 export const selectCameraSettings = (s: CvStore): CameraSettings | null =>
 	s.cameraSettings;

@@ -58,7 +58,7 @@ function pickRandom<T>(items: readonly [T, ...T[]]): T {
 export type FeedbackState =
 	| { readonly type: "correct"; readonly stars: 1 | 2 | 3 }
 	| { readonly type: "timeout"; readonly problem: Problem }
-	| { readonly type: "tile-seen"; readonly answer: number }
+	| { readonly type: "tile-seen"; readonly answer: number | string }
 	| null;
 
 interface FeedbackOverlayProps {
@@ -80,7 +80,7 @@ export function FeedbackOverlay({
 			)}
 			{feedback?.type === "tile-seen" && (
 				<TileSeenFeedback
-					key={`tile-${feedback.answer}`}
+					key={`tile-${String(feedback.answer)}`}
 					answer={feedback.answer}
 				/>
 			)}
@@ -165,9 +165,9 @@ function TimeoutFeedback({
 		>
 			<p className="font-display text-4xl text-primary-500">{text}</p>
 			<p className="font-body text-3xl text-slate-600">
-				The answer is{" "}
+				{problem.answer >= 0 ? "The answer is" : "The word is"}{" "}
 				<span className="font-display text-4xl text-primary-600">
-					{problem.answer}
+					{problem.answer >= 0 ? problem.answer : problem.displayAnswer}
 				</span>
 			</p>
 		</m.div>
@@ -179,7 +179,7 @@ function TimeoutFeedback({
 function TileSeenFeedback({
 	answer,
 }: {
-	readonly answer: number;
+	readonly answer: number | string;
 }): React.JSX.Element {
 	const reduced = useReducedMotion();
 

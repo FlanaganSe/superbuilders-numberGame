@@ -1,6 +1,7 @@
 import * as m from "motion/react-m";
 import { unlockAudio } from "../audio/sound-manager";
 import type { CameraError } from "../camera/use-camera";
+import { MAX_SPELLING_WORDS } from "../engine/spelling-words";
 import { useWakeLock } from "../hooks/use-wake-lock";
 import { useGameStore } from "../store/game-store";
 import { getFeatureFlags } from "../utils/feature-flags";
@@ -17,6 +18,7 @@ export function TapToStart({
 	cameraError,
 }: TapToStartProps): React.JSX.Element {
 	const dispatch = useGameStore((s) => s.dispatch);
+	const setGameKind = useGameStore((s) => s.setGameKind);
 	const flags = getFeatureFlags();
 	const { acquire } = useWakeLock();
 
@@ -30,7 +32,25 @@ export function TapToStart({
 		if (flags.recognition !== "mock") {
 			requestCamera();
 		}
+
+		setGameKind("math");
 		dispatch({ type: "START_SESSION" });
+	}
+
+	function handleSpellingStart(): void {
+		unlockAudio();
+		acquire();
+
+		if (flags.recognition !== "mock") {
+			requestCamera();
+		}
+
+		setGameKind("spelling");
+		dispatch({
+			type: "START_SESSION",
+			maxProblems: MAX_SPELLING_WORDS,
+			modeName: "Spelling",
+		});
 	}
 
 	return (
@@ -62,7 +82,7 @@ export function TapToStart({
 				transition={{ delay: 0.2, ...GENTLE_SPRING }}
 				className="min-h-20 rounded-3xl bg-primary-500 px-14 py-6 font-display text-4xl text-white shadow-xl"
 			>
-				Let's Play!
+				Math Game
 			</m.button>
 
 			<m.div
@@ -71,20 +91,30 @@ export function TapToStart({
 				transition={{ delay: 0.4, ...GENTLE_SPRING }}
 				className="flex gap-4"
 			>
+				<m.button
+					type="button"
+					onClick={handleSpellingStart}
+					whileTap={{
+						scale: 0.95,
+						transition: {
+							type: "spring",
+							stiffness: 400,
+							damping: 17,
+						},
+					}}
+					className="rounded-2xl bg-teal-500 px-6 py-3 font-display text-xl text-white shadow-lg"
+				>
+					Spelling
+					<span className="block font-body text-sm">
+						{MAX_SPELLING_WORDS} words
+					</span>
+				</m.button>
 				<button
 					type="button"
 					disabled
 					className="rounded-2xl bg-slate-200 px-6 py-3 font-display text-xl text-slate-400 opacity-60"
 				>
-					Spelling 🔤
-					<span className="block font-body text-sm">Coming Soon</span>
-				</button>
-				<button
-					type="button"
-					disabled
-					className="rounded-2xl bg-slate-200 px-6 py-3 font-display text-xl text-slate-400 opacity-60"
-				>
-					Image Quiz 🖼️
+					Image Quiz
 					<span className="block font-body text-sm">Coming Soon</span>
 				</button>
 			</m.div>

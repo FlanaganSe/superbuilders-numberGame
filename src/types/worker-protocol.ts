@@ -2,9 +2,18 @@ import type { DetectedDigit } from "./cv";
 
 // ─── Main Thread → Worker ────────────────────────────────────────────────────
 
+export interface ClassRange {
+	readonly min: number;
+	readonly max: number;
+}
+
 export type MainToWorker =
 	| { readonly type: "init"; readonly modelUrl: string }
-	| { readonly type: "infer"; readonly bitmap: ImageBitmap }
+	| {
+			readonly type: "infer";
+			readonly bitmap: ImageBitmap;
+			readonly classRange?: ClassRange;
+	  }
 	| { readonly type: "terminate" };
 
 // ─── Worker → Main Thread ────────────────────────────────────────────────────

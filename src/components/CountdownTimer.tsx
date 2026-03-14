@@ -2,7 +2,9 @@ import { AnimatePresence } from "motion/react";
 import * as m from "motion/react-m";
 import { useEffect, useRef } from "react";
 import { useAudio } from "../audio/use-audio";
+import { generateSpellingProblem } from "../engine/spelling-words";
 import { useGameStore } from "../store/game-store";
+import type { Problem } from "../types/game";
 
 interface CountdownTimerProps {
 	readonly secondsLeft: number;
@@ -45,8 +47,28 @@ export function CountdownTimer({
 			if (next <= 0) {
 				if (intervalRef.current) clearInterval(intervalRef.current);
 				stop("countdownTick");
-				const problem = mode.generate(difficulty);
-				dispatch({ type: "COUNTDOWN_COMPLETE", problem });
+
+				const currentGameKind = useGameStore.getState().gameKind;
+				if (currentGameKind === "spelling") {
+					// Generate a spelling problem and store it
+					const usedWords = useGameStore.getState().spellingWordsUsed;
+					const sp = generateSpellingProblem(usedWords);
+					useGameStore.getState().setSpellingProblem(sp);
+
+					// Create a stub Problem for the reducer — spelling matching
+					// is handled separately in processDetections
+					const problem: Problem = {
+						left: 0,
+						right: 0,
+						operator: "+",
+						answer: -1,
+						displayAnswer: sp.word,
+					};
+					dispatch({ type: "COUNTDOWN_COMPLETE", problem });
+				} else {
+					const problem = mode.generate(difficulty);
+					dispatch({ type: "COUNTDOWN_COMPLETE", problem });
+				}
 			} else {
 				dispatch({ type: "COUNTDOWN_TICK", secondsLeft: next });
 			}

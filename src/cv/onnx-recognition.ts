@@ -7,7 +7,11 @@
 // Busy flag: prevents frame queuing (drop frames, never queue).
 
 import type { RecognitionResult, RecognitionService } from "../types/cv";
-import type { MainToWorker, WorkerToMain } from "../types/worker-protocol";
+import type {
+	ClassRange,
+	MainToWorker,
+	WorkerToMain,
+} from "../types/worker-protocol";
 
 export type OnnxServiceStatus = "loading" | "ready" | "error";
 
@@ -15,6 +19,8 @@ export interface OnnxRecognitionService extends RecognitionService {
 	readonly status: OnnxServiceStatus;
 	readonly busy: boolean;
 	readonly errorMessage: string | null;
+	/** Set the class range for postprocessing argmax. Default: digits (0-9). */
+	readonly setClassRange: (range: ClassRange) => void;
 }
 
 export function createOnnxRecognitionService(): OnnxRecognitionService {
@@ -22,6 +28,7 @@ export function createOnnxRecognitionService(): OnnxRecognitionService {
 	let currentStatus: OnnxServiceStatus = "loading";
 	let currentBusy = false;
 	let currentError: string | null = null;
+	let currentClassRange: ClassRange = { min: 0, max: 9 };
 
 	let pendingInit: {
 		resolve: () => void;
@@ -99,6 +106,10 @@ export function createOnnxRecognitionService(): OnnxRecognitionService {
 			});
 		},
 
+		setClassRange(range: ClassRange): void {
+			currentClassRange = range;
+		},
+
 		async recognize(frame: ImageBitmap): Promise<RecognitionResult | null> {
 			if (!worker || currentStatus !== "ready" || currentBusy) {
 				frame.close();
@@ -107,7 +118,11 @@ export function createOnnxRecognitionService(): OnnxRecognitionService {
 
 			currentBusy = true;
 			worker.postMessage(
-				{ type: "infer", bitmap: frame } satisfies MainToWorker,
+				{
+					type: "infer",
+					bitmap: frame,
+					classRange: currentClassRange,
+				} satisfies MainToWorker,
 				[frame],
 			);
 

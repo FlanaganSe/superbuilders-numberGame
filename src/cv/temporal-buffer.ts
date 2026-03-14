@@ -3,10 +3,13 @@
 //
 // Phase 1 — TILE_SEEN: first frame a matching candidate appears (< 200ms)
 // Phase 2 — ANSWER_COMMITTED: 3 consecutive frames with same answer
+//
+// Generic over T: use number for math, string for spelling.
+// Internal comparison uses === which works for both.
 
-export type TemporalEvent =
-	| { readonly type: "TILE_SEEN"; readonly answer: number }
-	| { readonly type: "ANSWER_COMMITTED"; readonly answer: number }
+export type TemporalEvent<T = number> =
+	| { readonly type: "TILE_SEEN"; readonly answer: T }
+	| { readonly type: "ANSWER_COMMITTED"; readonly answer: T }
 	| { readonly type: "NONE" };
 
 /** Consecutive matching frames required before committing an answer. At 4fps → ~750ms. Reduce to 2 if fps < 3. */
@@ -15,20 +18,20 @@ const REQUIRED_CONSECUTIVE_FRAMES = 3;
 /** Max consecutive null frames tolerated before hard-resetting the buffer. */
 export const MAX_CONSECUTIVE_MISSES = 2;
 
-export interface TemporalBuffer {
-	readonly update: (matchedAnswer: number | null) => TemporalEvent;
+export interface TemporalBuffer<T = number> {
+	readonly update: (matchedAnswer: T | null) => TemporalEvent<T>;
 	readonly reset: () => void;
 	readonly consecutiveCount: () => number;
-	readonly lastAnswer: () => number | null;
+	readonly lastAnswer: () => T | null;
 }
 
-export function createTemporalBuffer(): TemporalBuffer {
+export function createTemporalBuffer<T = number>(): TemporalBuffer<T> {
 	let count = 0;
-	let currentAnswer: number | null = null;
+	let currentAnswer: T | null = null;
 	let missStreak = 0;
 
 	return {
-		update(matchedAnswer: number | null): TemporalEvent {
+		update(matchedAnswer: T | null): TemporalEvent<T> {
 			if (matchedAnswer === null) {
 				missStreak++;
 				if (missStreak > MAX_CONSECUTIVE_MISSES) {
@@ -66,7 +69,7 @@ export function createTemporalBuffer(): TemporalBuffer {
 			return count;
 		},
 
-		lastAnswer(): number | null {
+		lastAnswer(): T | null {
 			return currentAnswer;
 		},
 	};
