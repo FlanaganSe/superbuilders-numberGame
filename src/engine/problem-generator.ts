@@ -82,6 +82,29 @@ function generateSubtraction(difficulty: DifficultyLevel): Problem {
 	};
 }
 
+function generateMissingAddend(difficulty: DifficultyLevel): Problem {
+	const range = ADDITION_RANGES[difficulty];
+	let left: number;
+	let right: number;
+
+	do {
+		left = randomInt(range.minLeft, range.maxLeft);
+		right = randomInt(range.minRight, range.maxRight);
+	} while (left + right > MAX_ANSWER || right === 0);
+
+	const sum = left + right;
+
+	return {
+		left,
+		right,
+		operator: "+",
+		answer: right,
+		displayAnswer: right.toString(),
+		unknownPosition: "right",
+		target: sum,
+	};
+}
+
 // ─── GameMode implementations ───────────────────────────────────────────────
 
 export const AdditionMode: GameMode = {
@@ -95,5 +118,12 @@ export const SubtractionMode: GameMode = {
 	name: "Subtraction",
 	operator: "-",
 	generate: generateSubtraction,
+	validate: (detected, problem) => detected.includes(problem.answer),
+};
+
+export const MissingAddendMode: GameMode = {
+	name: "Missing Part",
+	operator: "+",
+	generate: generateMissingAddend,
 	validate: (detected, problem) => detected.includes(problem.answer),
 };

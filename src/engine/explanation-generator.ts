@@ -46,6 +46,20 @@ export function getCorrectExplanation(
 	// Spelling sentinel — no math explanation
 	if (problem.answer < 0) return null;
 
+	// Missing-addend: part-whole language
+	if (problem.unknownPosition === "right" && problem.target !== undefined) {
+		if (stars === 3 && difficulty <= 3) {
+			return `The missing part is ${problem.answer}! ${problem.left} and ${problem.answer} make ${problem.target}!`;
+		}
+		if (stars === 3) {
+			return `${capitalize(numberWord(problem.answer))}!`;
+		}
+		if (difficulty <= 3) {
+			return `You figured it out! The missing part is ${problem.answer}.`;
+		}
+		return null;
+	}
+
 	if (stars === 3) {
 		// First attempt
 		if (difficulty <= 3) {
@@ -79,6 +93,17 @@ export function getTimeoutHint(
 	// Spelling sentinel — word-based fallback
 	if (problem.answer < 0) {
 		return `The word is ${problem.displayAnswer}.`;
+	}
+
+	// Missing-addend: part-whole hints
+	if (problem.unknownPosition === "right" && problem.target !== undefined) {
+		if (attemptNumber === 1) {
+			return `${problem.left} and what make ${problem.target}? Try counting on from ${problem.left}.`;
+		}
+		if (difficulty <= 3) {
+			return `Let's find the missing part: ${numberWord(problem.left)}, then count to ${problem.target}: ${countOnFrom(problem.left, problem.answer)}. The missing part is ${problem.answer}.`;
+		}
+		return `The missing part is ${problem.answer}.`;
 	}
 
 	if (attemptNumber === 1) {

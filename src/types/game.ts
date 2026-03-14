@@ -16,6 +16,9 @@ export interface Problem {
 	readonly operator: Operator;
 	readonly answer: number;
 	readonly displayAnswer: string;
+	// Missing-addend support
+	readonly unknownPosition?: "answer" | "left" | "right";
+	readonly target?: number;
 }
 
 // ─── Spelling Problem ───────────────────────────────────────────────────────
@@ -84,7 +87,7 @@ export interface SessionData {
 	readonly rounds: readonly RoundResult[];
 	readonly totalStars: number;
 	readonly difficulty: DifficultyLevel;
-	readonly mode: "Addition" | "Subtraction" | "Spelling";
+	readonly mode: "Addition" | "Subtraction" | "Missing Part" | "Spelling";
 	readonly startedAt: number;
 	readonly endedAt: number;
 }

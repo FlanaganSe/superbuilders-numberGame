@@ -1,7 +1,11 @@
 import * as m from "motion/react-m";
 import { unlockAudio } from "../audio/sound-manager";
 import type { CameraError } from "../camera/use-camera";
-import { AdditionMode, SubtractionMode } from "../engine/problem-generator";
+import {
+	AdditionMode,
+	MissingAddendMode,
+	SubtractionMode,
+} from "../engine/problem-generator";
 import { MAX_SPELLING_WORDS } from "../engine/spelling-words";
 import { useWakeLock } from "../hooks/use-wake-lock";
 import { useGameStore } from "../store/game-store";
@@ -24,7 +28,9 @@ export function TapToStart({
 	const flags = getFeatureFlags();
 	const { acquire } = useWakeLock();
 
-	function startMathSession(modeName: "Addition" | "Subtraction"): void {
+	function startMathSession(
+		modeName: "Addition" | "Subtraction" | "Missing Part",
+	): void {
 		// AudioContext unlock MUST happen in user gesture (research §4.2).
 		// Camera unlock MUST happen in the same user gesture handler (PRD §5.5).
 		// One tap does both: (a) unlock AudioContext, (b) unlock camera, (c) wake lock, (d) start game.
@@ -47,6 +53,11 @@ export function TapToStart({
 	function handleSubtractionStart(): void {
 		setMode(SubtractionMode);
 		startMathSession("Subtraction");
+	}
+
+	function handleMissingPartStart(): void {
+		setMode(MissingAddendMode);
+		startMathSession("Missing Part");
 	}
 
 	function handleSpellingStart(): void {
@@ -109,6 +120,17 @@ export function TapToStart({
 					className="min-h-20 rounded-3xl bg-orange-500 px-14 py-6 font-display text-4xl text-white shadow-xl"
 				>
 					Subtraction
+				</m.button>
+				<m.button
+					type="button"
+					onClick={handleMissingPartStart}
+					whileTap={{
+						scale: 0.95,
+						transition: { type: "spring", stiffness: 400, damping: 17 },
+					}}
+					className="min-h-20 rounded-3xl bg-violet-500 px-14 py-6 font-display text-4xl text-white shadow-xl"
+				>
+					Missing Part
 				</m.button>
 			</m.div>
 

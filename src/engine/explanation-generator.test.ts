@@ -24,6 +24,18 @@ function subProblem(left: number, right: number): Problem {
 	};
 }
 
+function missingAddendProblem(left: number, right: number): Problem {
+	return {
+		left,
+		right,
+		operator: "+",
+		answer: right,
+		displayAnswer: String(right),
+		unknownPosition: "right" as const,
+		target: left + right,
+	};
+}
+
 const spellingProblem: Problem = {
 	left: 0,
 	right: 0,
@@ -88,6 +100,38 @@ describe("getCorrectExplanation", () => {
 			expect(getCorrectExplanation(p, 2, 2)).toBe(
 				"You figured it out! 7 - 3 = 4.",
 			);
+		});
+	});
+
+	describe("missing-addend, first attempt (stars=3)", () => {
+		it("difficulty 1-3: part-whole explanation", () => {
+			const p = missingAddendProblem(3, 4);
+			expect(getCorrectExplanation(p, 1, 3)).toBe(
+				"The missing part is 4! 3 and 4 make 7!",
+			);
+			expect(getCorrectExplanation(p, 3, 3)).toBe(
+				"The missing part is 4! 3 and 4 make 7!",
+			);
+		});
+
+		it("difficulty 4-5: brief acknowledgment", () => {
+			const p = missingAddendProblem(3, 4);
+			expect(getCorrectExplanation(p, 4, 3)).toBe("Four!");
+			expect(getCorrectExplanation(p, 5, 3)).toBe("Four!");
+		});
+	});
+
+	describe("missing-addend, retry (stars=1 or 2)", () => {
+		it("difficulty 1-3: process praise", () => {
+			const p = missingAddendProblem(3, 4);
+			expect(getCorrectExplanation(p, 1, 2)).toBe(
+				"You figured it out! The missing part is 4.",
+			);
+		});
+
+		it("difficulty 4-5: returns null", () => {
+			const p = missingAddendProblem(3, 4);
+			expect(getCorrectExplanation(p, 4, 2)).toBeNull();
 		});
 	});
 
@@ -165,6 +209,27 @@ describe("getTimeoutHint", () => {
 			const p = addProblem(3, 4);
 			expect(getTimeoutHint(p, 4, 2)).toBe("The answer is 7.");
 			expect(getTimeoutHint(p, 5, 3)).toBe("The answer is 7.");
+		});
+	});
+
+	describe("missing-addend timeout", () => {
+		it("first timeout: counting on strategy", () => {
+			const p = missingAddendProblem(3, 4);
+			expect(getTimeoutHint(p, 1, 1)).toBe(
+				"3 and what make 7? Try counting on from 3.",
+			);
+		});
+
+		it("repeated timeout, difficulty 1-3: worked support", () => {
+			const p = missingAddendProblem(3, 4);
+			expect(getTimeoutHint(p, 1, 2)).toBe(
+				"Let's find the missing part: three, then count to 7: 4, 5, 6, 7. The missing part is 4.",
+			);
+		});
+
+		it("repeated timeout, difficulty 4-5: just the answer", () => {
+			const p = missingAddendProblem(3, 4);
+			expect(getTimeoutHint(p, 4, 2)).toBe("The missing part is 4.");
 		});
 	});
 

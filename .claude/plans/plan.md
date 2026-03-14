@@ -134,7 +134,7 @@ The single highest-evidence improvements (Outhwaite 2023). These make math mode 
   - [x] Step 3 — Update feedback derivation in `GameScreen.tsx` (use `attemptNumber`, add `difficulty`, pass `problem` to correct/timeout) and `SpellingScreen.tsx` to match new `FeedbackState` shape → verify: `pnpm typecheck && pnpm test && pnpm lint`
   Commit: "feat: add explanatory feedback with graduated hints based on difficulty"
 
-- [ ] M5: Enable subtraction + mathematical language — Add "Subtraction" button to `TapToStart.tsx` calling `setMode(SubtractionMode)`. Add math language text to `ProblemDisplay.tsx`: "How many altogether?" (addition), "How many are left?" (subtraction) — rendered as secondary text below equation (smaller font, muted color). Verify explanatory feedback works for subtraction context. **Verification:** Full subtraction session — correct, wrong-tile, timeout, and worked-support feedback all contextually appropriate for subtraction. Math language displays correctly.
+- [x] M5: Enable subtraction + mathematical language — Add "Subtraction" button to `TapToStart.tsx` calling `setMode(SubtractionMode)`. Add math language text to `ProblemDisplay.tsx`: "How many altogether?" (addition), "How many are left?" (subtraction) — rendered as secondary text below equation (smaller font, muted color). Verify explanatory feedback works for subtraction context. **Verification:** Full subtraction session — correct, wrong-tile, timeout, and worked-support feedback all contextually appropriate for subtraction. Math language displays correctly.
   - [x] Step 1 — Add math language prompt to `ProblemDisplay.tsx`: wrap equation in flex-col container, add operator-derived prompt text below equation, guard with `!showAnswer && problem.answer >= 0` → verify: `pnpm typecheck && pnpm test && pnpm lint`
   Commit: "feat: add mathematical language prompts to problem display"
 
@@ -142,7 +142,13 @@ The single highest-evidence improvements (Outhwaite 2023). These make math mode 
 
 The highest-leverage new problem type (0/18 apps — Marx et al. 2025).
 
-- [ ] M6: Missing-addend problems — Add `unknownPosition` and `target` to `Problem` type (optional fields, zero breaking changes). Create `generateMissingAddend()` and `MissingAddendMode` in `problem-generator.ts`: generates a valid addition, then hides the right operand. `target` stores the sum (displayed after "="). Update `ProblemDisplay.tsx`: when `unknownPosition === "right"`, render "3 + ? = 7". Update `game-store.ts` validation: when `unknownPosition === "right"`, check `detected.includes(problem.right)` instead of `detected.includes(problem.answer)`. Add "Missing Part" button to TapToStart. **Verification:** Full missing-addend session. Place correct tile → accepted. Place wrong tile → "You made 8. We need 4" (checks against right operand, not answer). Timeout → strategy hint appropriate for part-whole.
+- [ ] M6: Missing-addend problems — `answer` = hidden operand (what child places), `target` = sum (displayed after "="). No store changes needed.
+  - [ ] Step 1 — Extend `Problem` type with optional `unknownPosition` and `target` fields. Extend `SessionData["mode"]` with `"Missing Part"`. → verify: `pnpm typecheck`
+  - [ ] Step 2 — Create `generateMissingAddend` + `MissingAddendMode` in `problem-generator.ts`. Guard against `right === 0` (trivial). Add comprehensive tests. → verify: `pnpm typecheck && pnpm test`
+  - [ ] Step 3 — Update `ProblemDisplay.tsx` for conditional missing-addend rendering ("3 + ? = 7") and math language prompt ("What's the missing part?"). → verify: `pnpm typecheck`
+  - [ ] Step 4 — Add "Missing Part" button to `TapToStart.tsx` with violet-500 styling. → verify: `pnpm typecheck`
+  - [ ] Step 5 — Add missing-addend handling to `explanation-generator.ts` (before existing operator checks) + tests. → verify: `pnpm typecheck && pnpm test && pnpm lint`
+  Commit: "feat: add missing-addend problems with part-whole reasoning"
 
 - [ ] M7: Missing-addend polish + Make-10 — Add math language for missing-addend: "What's the missing part?", "How many more to make [target]?". Create Make-10 variant: constrain `target = 10`, dedicated prompt "How many more to make ten?". Add part-whole explanatory feedback: "3 and 4 make 7!" Verify all 6 feedback paths work for missing-addend and Make-10 contexts. **Verification:** End-to-end session exercising wrong tile, timeout, strategy hint, worked support — all contextually correct for part-whole reasoning.
 

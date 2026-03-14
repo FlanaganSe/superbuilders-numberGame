@@ -77,6 +77,7 @@ export type FeedbackState =
 			readonly type: "wrong-tile";
 			readonly wrongValue: number;
 			readonly expectedValue: number;
+			readonly targetConfusion?: boolean;
 	  }
 	| null;
 
@@ -118,6 +119,7 @@ export function FeedbackOverlay({
 					key={`wrong-${feedback.wrongValue}`}
 					wrongValue={feedback.wrongValue}
 					expectedValue={feedback.expectedValue}
+					targetConfusion={feedback.targetConfusion ?? false}
 				/>
 			)}
 		</AnimatePresence>
@@ -251,9 +253,11 @@ function TileSeenFeedback({
 function WrongTileFeedback({
 	wrongValue,
 	expectedValue,
+	targetConfusion,
 }: {
 	readonly wrongValue: number;
 	readonly expectedValue: number;
+	readonly targetConfusion?: boolean;
 }): React.JSX.Element {
 	const reduced = useReducedMotion();
 
@@ -265,14 +269,20 @@ function WrongTileFeedback({
 			exit={{ opacity: 0 }}
 			transition={{ duration: 0.3 }}
 		>
-			<p className="font-body text-2xl text-amber-600">
-				You made <span className="font-display text-3xl">{wrongValue}</span>. We
-				need{" "}
-				<span className="font-display text-3xl text-primary-600">
-					{expectedValue}
-				</span>
-				.
-			</p>
+			{targetConfusion ? (
+				<p className="font-body text-2xl text-amber-600">
+					That's the total! Find the missing part.
+				</p>
+			) : (
+				<p className="font-body text-2xl text-amber-600">
+					You made <span className="font-display text-3xl">{wrongValue}</span>.
+					We need{" "}
+					<span className="font-display text-3xl text-primary-600">
+						{expectedValue}
+					</span>
+					.
+				</p>
+			)}
 			<p className="font-body text-xl text-slate-500">Try again!</p>
 		</m.div>
 	);

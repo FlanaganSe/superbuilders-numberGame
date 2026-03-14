@@ -160,6 +160,9 @@ export function GameScreen({
 							type: "wrong-tile",
 							wrongValue: wrongTileSeen,
 							expectedValue: problem.answer,
+							targetConfusion:
+								problem.unknownPosition === "right" &&
+								wrongTileSeen === problem.target,
 						}
 					: null;
 
