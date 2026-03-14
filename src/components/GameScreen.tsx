@@ -1,7 +1,7 @@
 import { AnimatePresence } from "motion/react";
 import * as m from "motion/react-m";
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { SoundName } from "../audio/sound-manager";
+import type { SoundName } from "../audio/use-audio";
 import { useAudio } from "../audio/use-audio";
 import {
 	createMockDetection,
@@ -17,6 +17,18 @@ import { FeedbackOverlay, type FeedbackState } from "./FeedbackOverlay";
 import { MockNumpad } from "./MockNumpad";
 import { ProblemDisplay } from "./ProblemDisplay";
 import { ProgressPips } from "./ProgressPips";
+
+// ─── Prompt sound helper ─────────────────────────────────────────────────────
+// Mirrors ProblemDisplay.tsx text prompt logic (lines 45-51) exactly.
+
+function getPromptSound(problem: Problem): SoundName | null {
+	if (problem.unknownPosition === "right") {
+		return problem.target === 10 ? "promptMakeTen" : "promptMissing";
+	}
+	if (problem.operator === "+") return "promptAltogether";
+	if (problem.operator === "-") return "promptLeft";
+	return null;
+}
 
 // ─── Spring config for tile-detected pop (research §3.3) ───────────────────
 
@@ -143,6 +155,26 @@ export function GameScreen({
 	useEffect(() => {
 		if (tileSeen !== null) play("tileDetectedPop");
 	}, [tileSeen, play]);
+
+	// Math language prompt audio — plays once when a new problem appears
+	// (Mayer temporal contiguity + Purpura math vocabulary).
+	// Ref guards against replay on timeout retry (same problem object).
+	const lastPromptedProblemRef = useRef<Problem | null>(null);
+
+	useEffect(() => {
+		if (stars || timedOut) return;
+		if (problem.answer < 0) return;
+		if (problem === lastPromptedProblemRef.current) return;
+
+		const promptSound = getPromptSound(problem);
+		if (promptSound) {
+			lastPromptedProblemRef.current = problem;
+			const timer = setTimeout(() => {
+				play(promptSound);
+			}, 400);
+			return () => clearTimeout(timer);
+		}
+	}, [problem, stars, timedOut, play]);
 
 	// Timeout handling — `stars` in deps ensures the timer is cancelled when
 	// a correct answer arrives (otherwise the old 30s timer survives into the

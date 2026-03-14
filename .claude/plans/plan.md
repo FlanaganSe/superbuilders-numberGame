@@ -158,11 +158,13 @@ The highest-leverage new problem type (0/18 apps — Marx et al. 2025).
 
 ### Phase 4: UI Polish
 
-- [ ] M8: UI polish + quality of life — Remove Image Quiz placeholder, fix "Play Again" bug (return to mode selection), reorder buttons, show difficulty level + mode name during gameplay, cumulative stars on home screen, number word audio on correct answer (Mayer dual coding).
-  - [ ] Step 1 — Convert number word MP3s to M4A (iOS compat). TapToStart polish: remove Image Quiz, reorder buttons, add cumulative stars. Fix SessionSummary "Play Again" bug. → verify: `pnpm typecheck`
-  - [ ] Step 2 — GameScreen: add mode name + difficulty level badge + level-up animation (invisible demotion). → verify: `pnpm typecheck`
-  - [ ] Step 3 — Number word audio: extend SoundName, add to sound-manager, play on correct answer alongside chime. → verify: `pnpm typecheck && pnpm test && pnpm lint`
+- [x] M8: UI polish + quality of life — Remove Image Quiz placeholder, fix "Play Again" bug (return to mode selection), reorder buttons, show difficulty level + mode name during gameplay, cumulative stars on home screen, number word audio on correct answer (Mayer dual coding).
   Commit: "feat: UI polish with difficulty display, mode labels, and number word audio"
+
+- [x] M9: Wire up math language prompt audio — Play spoken math prompts ("How many altogether?", etc.) when each new problem appears. Mayer temporal contiguity + Purpura math vocabulary.
+  - [x] Step 1 — Register 4 prompt sounds in `sound-manager.ts`: extend `SoundName` + `SOUND_FILES` with `promptAltogether`, `promptLeft`, `promptMissing`, `promptMakeTen` → verify: `pnpm typecheck`
+  - [x] Step 2 — Add `getPromptSound` helper + `useEffect` in `GameScreen.tsx` to play prompt audio 400ms after new problem appears (scanning phase only). Ref guard prevents replay on timeout retry. → verify: `pnpm typecheck && pnpm test && pnpm lint`
+  Commit: "feat: add math language prompt audio for pre-reader accessibility"
 
 ---
 

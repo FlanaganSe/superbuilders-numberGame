@@ -32,7 +32,11 @@ export type SoundName =
 	| "number6"
 	| "number7"
 	| "number8"
-	| "number9";
+	| "number9"
+	| "promptAltogether"
+	| "promptLeft"
+	| "promptMissing"
+	| "promptMakeTen";
 
 // ─── File mapping ───────────────────────────────────────────────────────────
 // Individual files (not sprites). Swap to a single sprite by changing
@@ -55,6 +59,10 @@ const SOUND_FILES: Record<SoundName, string> = {
 	number7: "seven",
 	number8: "eight",
 	number9: "nine",
+	promptAltogether: "prompt-altogether",
+	promptLeft: "prompt-left",
+	promptMissing: "prompt-missing",
+	promptMakeTen: "prompt-make-ten",
 };
 
 // ─── Howl instance cache ────────────────────────────────────────────────────
