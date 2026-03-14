@@ -24,6 +24,7 @@ export type WorkerToMain =
 			readonly type: "detections";
 			readonly results: readonly DetectedDigit[];
 			readonly latencyMs: number;
+			readonly numClasses: number;
 	  }
 	| {
 			readonly type: "error";

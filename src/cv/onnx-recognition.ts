@@ -58,6 +58,7 @@ export function createOnnxRecognitionService(): OnnxRecognitionService {
 					detections: [...msg.results],
 					latencyMs: msg.latencyMs,
 					frameTimestamp: Date.now(),
+					numClasses: msg.numClasses,
 				};
 				pendingInfer?.(result);
 				pendingInfer = null;

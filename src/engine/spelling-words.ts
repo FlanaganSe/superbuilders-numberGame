@@ -9,6 +9,18 @@ import type { SpellingProblem } from "../types/game";
 
 // ─── Word pools ─────────────────────────────────────────────────────────────
 
+/** 2-letter sight words — easiest tier, only two tiles to place. */
+export const TWO_LETTER_WORDS: readonly string[] = [
+	"AT",
+	"GO",
+	"IN",
+	"IT",
+	"NO",
+	"ON",
+	"UP",
+	"WE",
+] as const;
+
 /** 3-letter CVC words — high-frequency, concrete nouns kids can picture. */
 export const THREE_LETTER_WORDS: readonly string[] = [
 	"CAT",
@@ -33,24 +45,10 @@ export const THREE_LETTER_WORDS: readonly string[] = [
 	"BUG",
 ] as const;
 
-/** 4-letter words — slightly harder, still concrete and familiar. */
-export const FOUR_LETTER_WORDS: readonly string[] = [
-	"FISH",
-	"FROG",
-	"STAR",
-	"DUCK",
-	"TREE",
-	"BOOK",
-	"CAKE",
-	"LAMP",
-	"SHIP",
-	"BALL",
-] as const;
-
-/** Combined pool for random selection. */
+/** Combined pool for random selection (2-3 letter words only). */
 const ALL_WORDS: readonly string[] = [
+	...TWO_LETTER_WORDS,
 	...THREE_LETTER_WORDS,
-	...FOUR_LETTER_WORDS,
 ];
 
 // ─── Session constants ──────────────────────────────────────────────────────
@@ -62,7 +60,7 @@ export const MAX_SPELLING_WORDS = 3;
 
 /**
  * Generates a spelling problem, avoiding words already used in this session.
- * Falls back to any word if the pool is exhausted (unlikely with 30 words
+ * Falls back to any word if the pool is exhausted (unlikely with 28 words
  * and 3-word sessions).
  */
 export function generateSpellingProblem(

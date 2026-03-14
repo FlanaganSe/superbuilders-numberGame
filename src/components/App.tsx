@@ -164,8 +164,14 @@ export function App(): React.JSX.Element {
 			const result = await service.recognize(bitmap);
 			// bitmap ownership transferred to worker (or closed if busy/not ready)
 
-			// Frame was skipped (worker busy) — don't touch cv-store or temporal buffer
-			if (!result) return;
+			// Frame was skipped — count as dropped only when worker is ready
+			// (busy backpressure), not during initial model loading
+			if (!result) {
+				if (service.ready) {
+					useCvStore.getState().incrementDroppedFrames();
+				}
+				return;
+			}
 
 			// Guard: if service was disposed while recognize was inflight, skip
 			if (!service.ready) return;
@@ -173,7 +179,11 @@ export function App(): React.JSX.Element {
 			// Update cv-store with raw detections + latency (fresh getState per frame)
 			useCvStore
 				.getState()
-				.updateDetections(result.detections, result.latencyMs);
+				.updateDetections(
+					result.detections,
+					result.latencyMs,
+					result.numClasses,
+				);
 
 			// Process through interpretation → temporal buffer → game store
 			const pipelineResult = useGameStore

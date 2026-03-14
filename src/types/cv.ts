@@ -61,6 +61,7 @@ export interface RecognitionResult {
 	readonly detections: readonly DetectedDigit[];
 	readonly latencyMs: number;
 	readonly frameTimestamp: number;
+	readonly numClasses?: number;
 }
 
 // ─── PRD Seam Interfaces (§3.25) ────────────────────────────────────────────

@@ -42,12 +42,15 @@ interface CvState {
 	readonly cameraSettings: CameraSettings | null;
 	readonly pipelineStage: PipelineStageInfo | null;
 	readonly pipelineStats: PipelineStats;
+	readonly droppedFrames: number;
+	readonly modelNumClasses: number | null;
 }
 
 interface CvStore extends CvState {
 	readonly updateDetections: (
 		detections: readonly DetectedDigit[],
 		latencyMs: number,
+		numClasses?: number,
 	) => void;
 	readonly updateWorkerStatus: (status: WorkerStatus, error?: string) => void;
 	readonly updateTemporalState: (
@@ -56,6 +59,7 @@ interface CvStore extends CvState {
 	) => void;
 	readonly updateCameraSettings: (settings: CameraSettings) => void;
 	readonly updatePipelineStage: (stage: PipelineStageInfo) => void;
+	readonly incrementDroppedFrames: () => void;
 	readonly reset: () => void;
 }
 
@@ -76,13 +80,19 @@ const INITIAL_STATE: CvState = {
 	cameraSettings: null,
 	pipelineStage: null,
 	pipelineStats: INITIAL_PIPELINE_STATS,
+	droppedFrames: 0,
+	modelNumClasses: null,
 };
 
 export const useCvStore = create<CvStore>((set) => ({
 	...INITIAL_STATE,
 
-	updateDetections(detections, latencyMs): void {
-		set({ detections, latencyMs });
+	updateDetections(detections, latencyMs, numClasses): void {
+		set({
+			detections,
+			latencyMs,
+			...(numClasses !== undefined ? { modelNumClasses: numClasses } : {}),
+		});
 	},
 
 	updateWorkerStatus(status, error): void {
@@ -113,6 +123,10 @@ export const useCvStore = create<CvStore>((set) => ({
 		}));
 	},
 
+	incrementDroppedFrames(): void {
+		set((state) => ({ droppedFrames: state.droppedFrames + 1 }));
+	},
+
 	reset(): void {
 		set(INITIAL_STATE);
 	},
@@ -131,3 +145,6 @@ export const selectCameraSettings = (s: CvStore): CameraSettings | null =>
 	s.cameraSettings;
 export const selectPipelineStats = (s: CvStore): PipelineStats =>
 	s.pipelineStats;
+export const selectDroppedFrames = (s: CvStore): number => s.droppedFrames;
+export const selectModelNumClasses = (s: CvStore): number | null =>
+	s.modelNumClasses;

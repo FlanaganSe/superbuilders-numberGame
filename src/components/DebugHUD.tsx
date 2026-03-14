@@ -4,8 +4,10 @@ import {
 	type CameraSettings,
 	selectCameraSettings,
 	selectDetections,
+	selectDroppedFrames,
 	selectLastMatchedAnswer,
 	selectLatencyMs,
+	selectModelNumClasses,
 	selectPipelineStats,
 	selectTemporalCount,
 	selectWorkerStatus,
@@ -67,6 +69,8 @@ function DebugHUDInner({
 	const lastMatchedAnswer = useCvStore(selectLastMatchedAnswer);
 	const cameraSettings = useCvStore(selectCameraSettings);
 	const pipelineStats = useCvStore(selectPipelineStats);
+	const droppedFrames = useCvStore(selectDroppedFrames);
+	const modelNumClasses = useCvStore(selectModelNumClasses);
 
 	const avgConfidence =
 		detections.length > 0
@@ -89,10 +93,19 @@ function DebugHUDInner({
 				<span>
 					confidence: {avgConfidence > 0 ? avgConfidence.toFixed(2) : "—"}
 				</span>
+				<span>temporal: {temporalCount}/3</span>
 				<span>
-					temporal: {temporalCount}/3{" "}
-					{lastMatchedAnswer !== null ? `[${lastMatchedAnswer}]` : ""}
+					match:{" "}
+					{lastMatchedAnswer !== null ? (
+						<span className="text-green-300">{lastMatchedAnswer} YES</span>
+					) : (
+						"null"
+					)}
 				</span>
+				<span>dropped: {droppedFrames}</span>
+				{modelNumClasses !== null && (
+					<span>model: {modelNumClasses} classes</span>
+				)}
 				{cameraSettings && (
 					<span>cam: {formatCameraSettings(cameraSettings)}</span>
 				)}

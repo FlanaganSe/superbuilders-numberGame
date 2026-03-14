@@ -152,8 +152,16 @@ function handleNextRound(state: GameState): GameState {
 		return handleEndSession(state);
 	}
 
-	// For timeout/retry, increment attempt and re-enter scanning with same problem
+	// For timeout: spelling skips to a new word (countdown), math retries same problem
 	if (state.phase.phase === "timeout") {
+		if (state.modeName === "Spelling") {
+			// Spelling: move to countdown so CountdownTimer generates a new word
+			return {
+				...state,
+				phase: { phase: "countdown", secondsLeft: COUNTDOWN_SECONDS },
+			};
+		}
+		// Math: retry same problem with incremented attempt
 		return {
 			...state,
 			phase: {

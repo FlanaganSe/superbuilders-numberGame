@@ -179,6 +179,7 @@ self.onmessage = async (e: MessageEvent<MainToWorker>): Promise<void> => {
 					type: "detections",
 					results: detections,
 					latencyMs,
+					numClasses,
 				} satisfies WorkerToMain);
 			} catch (err) {
 				// Critical: clear busy flag even on error, or worker deadlocks

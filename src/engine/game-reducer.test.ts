@@ -126,7 +126,7 @@ describe("gameReducer", () => {
 	});
 
 	describe("timeout → scanning (retry)", () => {
-		it("retries same problem with incremented attempt", () => {
+		it("retries same problem with incremented attempt (math)", () => {
 			let state = toScanning(initialGameState());
 			state = dispatch(state, { type: "ROUND_TIMEOUT" });
 			state = dispatch(state, {
@@ -136,6 +136,25 @@ describe("gameReducer", () => {
 			if (state.phase.phase === "scanning") {
 				expect(state.phase.problem).toEqual(SAMPLE_PROBLEM);
 				expect(state.phase.attemptNumber).toBe(2);
+			}
+		});
+
+		it("skips to countdown for a new word on spelling timeout", () => {
+			let state = dispatch(initialGameState(), {
+				type: "START_SESSION",
+				maxProblems: 3,
+				modeName: "Spelling",
+			});
+			state = dispatch(state, {
+				type: "COUNTDOWN_COMPLETE",
+				problem: SAMPLE_PROBLEM,
+			});
+			state = dispatch(state, { type: "ROUND_TIMEOUT" });
+			state = dispatch(state, { type: "NEXT_ROUND" });
+			// Spelling: should go to countdown (new word), not retry same problem
+			expect(state.phase.phase).toBe("countdown");
+			if (state.phase.phase === "countdown") {
+				expect(state.phase.secondsLeft).toBe(COUNTDOWN_SECONDS);
 			}
 		});
 	});

@@ -83,16 +83,20 @@ Three focused milestones that fix the verified detection pipeline bugs, then bui
 
 ### Phase 2: Expand
 
-- [ ] **M2: Spelling Game** — Add spelling game mode using the 36-class model's letter classes (A-Z). Parallel types alongside math (no breaking changes to existing code/tests). 3-word sessions with 3-4 letter age-appropriate words. Mode-aware class range passed to postprocessing. Wire existing disabled "Spelling" button.
-  - [ ] Step 1 — Foundation: Widen `DetectedDigit.digit` to `number`, add `Letter` type, add `SpellingProblem`/`GameKind` to game types, make temporal buffer generic `<T>`, add `classRange` to worker protocol, create spelling word list. → verify: `pnpm typecheck && pnpm test`
-  - [ ] Step 2 — Pipeline: Worker reads `classRange` from infer message, recognition service stores/passes classRange, remove `as Digit` cast in postProcess, parameterize game reducer with `maxProblems`/`modeName`. → verify: `pnpm typecheck && pnpm test`
-  - [ ] Step 3 — Store & UI: Add `gameKind`/`spellingProblem` to game store, branch `processDetections` for spelling, enable spelling button in TapToStart, create SpellingScreen, route phases in App.tsx, set classRange on mode change, widen FeedbackOverlay. → verify: `pnpm typecheck && pnpm test && pnpm lint`
-  - [ ] Step 4 — Tests: Add spelling-words.test.ts, spelling game-store tests, temporal buffer generic tests. → verify: `pnpm test && pnpm typecheck && pnpm lint`
+- [x] **M2: Spelling Game** — Add spelling game mode using the 36-class model's letter classes (A-Z). Parallel types alongside math (no breaking changes to existing code/tests). 3-word sessions with 3-4 letter age-appropriate words. Mode-aware class range passed to postprocessing. Wire existing disabled "Spelling" button.
+  - [x] Step 1 — Foundation: Widen `DetectedDigit.digit` to `number`, add `Letter` type, add `SpellingProblem`/`GameKind` to game types, make temporal buffer generic `<T>`, add `classRange` to worker protocol, create spelling word list. → verify: `pnpm typecheck && pnpm test`
+  - [x] Step 2 — Pipeline: Worker reads `classRange` from infer message, recognition service stores/passes classRange, remove `as Digit` cast in postProcess, parameterize game reducer with `maxProblems`/`modeName`. → verify: `pnpm typecheck && pnpm test`
+  - [x] Step 3 — Store & UI: Add `gameKind`/`spellingProblem` to game store, branch `processDetections` for spelling, enable spelling button in TapToStart, create SpellingScreen, route phases in App.tsx, set classRange on mode change, widen FeedbackOverlay. → verify: `pnpm typecheck && pnpm test && pnpm lint`
+  - [x] Step 4 — Tests: Add spelling-words.test.ts, spelling game-store tests, temporal buffer generic tests. → verify: `pnpm test && pnpm typecheck && pnpm lint`
   Commit: "feat: add spelling game mode with letter detection"
 
 ### Phase 3: Polish (optional)
 
-- [ ] **M3: Debug Diagnostics** — Improve DebugHUD to show answer-match status, dropped frames, and active model class count. Diagnostic-only, no game behavior changes.
+- [ ] **M3: Spelling Polish + Debug Diagnostics** — Fix spelling timeout behavior (new word on failure instead of retry), limit words to 2-3 letters, add debug diagnostics to HUD.
+  - [x] Step 1 — Remove 4-letter words, add 2-letter words. Update spelling-words.ts and tests. → verify: `pnpm typecheck && pnpm test`
+  - [x] Step 2 — In `handleNextRound`, for spelling mode (`modeName === "Spelling"`), on timeout go to countdown (new word) instead of retrying. Update game-reducer tests. → verify: `pnpm typecheck && pnpm test`
+  - [x] Step 3 — Add debug diagnostics: `droppedFrames`/`modelInfo` to cv-store, `numClasses` in worker detections message, updated DebugHUD with match result, dropped frames, model info. → verify: `pnpm typecheck && pnpm test && pnpm lint`
+  Commit: "feat: polish spelling game + add debug diagnostics"
 
 ---
 

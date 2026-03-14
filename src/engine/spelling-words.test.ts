@@ -1,24 +1,30 @@
 import { describe, expect, it } from "vitest";
 import {
-	FOUR_LETTER_WORDS,
 	generateSpellingProblem,
 	MAX_SPELLING_WORDS,
 	THREE_LETTER_WORDS,
+	TWO_LETTER_WORDS,
 } from "./spelling-words";
 
 describe("spelling word pools", () => {
+	it("has at least 5 two-letter words", () => {
+		expect(TWO_LETTER_WORDS.length).toBeGreaterThanOrEqual(5);
+	});
+
 	it("has at least 15 three-letter words", () => {
 		expect(THREE_LETTER_WORDS.length).toBeGreaterThanOrEqual(15);
 	});
 
-	it("has at least 5 four-letter words", () => {
-		expect(FOUR_LETTER_WORDS.length).toBeGreaterThanOrEqual(5);
-	});
-
 	it("all words are uppercase A-Z only", () => {
-		const allWords = [...THREE_LETTER_WORDS, ...FOUR_LETTER_WORDS];
+		const allWords = [...TWO_LETTER_WORDS, ...THREE_LETTER_WORDS];
 		for (const word of allWords) {
 			expect(word).toMatch(/^[A-Z]+$/);
+		}
+	});
+
+	it("all two-letter words have length 2", () => {
+		for (const word of TWO_LETTER_WORDS) {
+			expect(word).toHaveLength(2);
 		}
 	});
 
@@ -28,14 +34,16 @@ describe("spelling word pools", () => {
 		}
 	});
 
-	it("all four-letter words have length 4", () => {
-		for (const word of FOUR_LETTER_WORDS) {
-			expect(word).toHaveLength(4);
+	it("all words are 2-3 letters (no 4+ letter words)", () => {
+		const allWords = [...TWO_LETTER_WORDS, ...THREE_LETTER_WORDS];
+		for (const word of allWords) {
+			expect(word.length).toBeGreaterThanOrEqual(2);
+			expect(word.length).toBeLessThanOrEqual(3);
 		}
 	});
 
 	it("no duplicate words across pools", () => {
-		const allWords = [...THREE_LETTER_WORDS, ...FOUR_LETTER_WORDS];
+		const allWords = [...TWO_LETTER_WORDS, ...THREE_LETTER_WORDS];
 		const unique = new Set(allWords);
 		expect(unique.size).toBe(allWords.length);
 	});
@@ -43,7 +51,7 @@ describe("spelling word pools", () => {
 
 describe("generateSpellingProblem", () => {
 	it("returns a word from the pool", () => {
-		const allWords = [...THREE_LETTER_WORDS, ...FOUR_LETTER_WORDS];
+		const allWords = [...TWO_LETTER_WORDS, ...THREE_LETTER_WORDS];
 		const problem = generateSpellingProblem([]);
 		expect(allWords).toContain(problem.word);
 	});
@@ -54,9 +62,9 @@ describe("generateSpellingProblem", () => {
 	});
 
 	it("avoids used words", () => {
-		// Use all three-letter words, should return a four-letter word
-		const problem = generateSpellingProblem([...THREE_LETTER_WORDS]);
-		expect(FOUR_LETTER_WORDS).toContain(problem.word);
+		// Use all two-letter words, should return a three-letter word
+		const problem = generateSpellingProblem([...TWO_LETTER_WORDS]);
+		expect(THREE_LETTER_WORDS).toContain(problem.word);
 	});
 
 	it("generates non-duplicate words for a full session", () => {
@@ -70,7 +78,7 @@ describe("generateSpellingProblem", () => {
 	});
 
 	it("falls back gracefully if all words are used", () => {
-		const allWords = [...THREE_LETTER_WORDS, ...FOUR_LETTER_WORDS];
+		const allWords = [...TWO_LETTER_WORDS, ...THREE_LETTER_WORDS];
 		// Using all words should still return a valid word (fallback)
 		const problem = generateSpellingProblem(allWords);
 		expect(allWords).toContain(problem.word);
