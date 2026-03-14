@@ -48,14 +48,19 @@ export function getCorrectExplanation(
 
 	// Missing-addend: part-whole language
 	if (problem.unknownPosition === "right" && problem.target !== undefined) {
+		const isMake10 = problem.target === 10;
 		if (stars === 3 && difficulty <= 3) {
-			return `The missing part is ${problem.answer}! ${problem.left} and ${problem.answer} make ${problem.target}!`;
+			return isMake10
+				? `${problem.left} and ${problem.answer} make ten!`
+				: `The missing part is ${problem.answer}! ${problem.left} and ${problem.answer} make ${problem.target}!`;
 		}
 		if (stars === 3) {
 			return `${capitalize(numberWord(problem.answer))}!`;
 		}
 		if (difficulty <= 3) {
-			return `You figured it out! The missing part is ${problem.answer}.`;
+			return isMake10
+				? `You figured it out! ${problem.left} and ${problem.answer} make ten.`
+				: `You figured it out! The missing part is ${problem.answer}.`;
 		}
 		return null;
 	}
@@ -97,11 +102,16 @@ export function getTimeoutHint(
 
 	// Missing-addend: part-whole hints
 	if (problem.unknownPosition === "right" && problem.target !== undefined) {
+		const isMake10 = problem.target === 10;
 		if (attemptNumber === 1) {
-			return `${problem.left} and what make ${problem.target}? Try counting on from ${problem.left}.`;
+			return isMake10
+				? `${problem.left} and what make ten? Try counting on from ${problem.left}.`
+				: `${problem.left} and what make ${problem.target}? Try counting on from ${problem.left}.`;
 		}
 		if (difficulty <= 3) {
-			return `Let's find the missing part: ${numberWord(problem.left)}, then count to ${problem.target}: ${countOnFrom(problem.left, problem.answer)}. The missing part is ${problem.answer}.`;
+			return isMake10
+				? `Let's make ten: ${numberWord(problem.left)}, then count to ten: ${countOnFrom(problem.left, problem.answer)}. The missing part is ${problem.answer}.`
+				: `Let's find the missing part: ${numberWord(problem.left)}, then count to ${problem.target}: ${countOnFrom(problem.left, problem.answer)}. The missing part is ${problem.answer}.`;
 		}
 		return `The missing part is ${problem.answer}.`;
 	}

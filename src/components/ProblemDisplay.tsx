@@ -43,7 +43,9 @@ export function ProblemDisplay({
 			{!showAnswer && problem.answer >= 0 && (
 				<p className="font-body text-xl text-slate-400">
 					{isMissingAddend
-						? "What's the missing part?"
+						? problem.target === 10
+							? "How many more to make ten?"
+							: "What's the missing part?"
 						: problem.operator === "+"
 							? "How many altogether?"
 							: "How many are left?"}

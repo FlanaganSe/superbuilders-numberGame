@@ -142,15 +142,19 @@ The single highest-evidence improvements (Outhwaite 2023). These make math mode 
 
 The highest-leverage new problem type (0/18 apps — Marx et al. 2025).
 
-- [ ] M6: Missing-addend problems — `answer` = hidden operand (what child places), `target` = sum (displayed after "="). No store changes needed.
-  - [ ] Step 1 — Extend `Problem` type with optional `unknownPosition` and `target` fields. Extend `SessionData["mode"]` with `"Missing Part"`. → verify: `pnpm typecheck`
-  - [ ] Step 2 — Create `generateMissingAddend` + `MissingAddendMode` in `problem-generator.ts`. Guard against `right === 0` (trivial). Add comprehensive tests. → verify: `pnpm typecheck && pnpm test`
-  - [ ] Step 3 — Update `ProblemDisplay.tsx` for conditional missing-addend rendering ("3 + ? = 7") and math language prompt ("What's the missing part?"). → verify: `pnpm typecheck`
-  - [ ] Step 4 — Add "Missing Part" button to `TapToStart.tsx` with violet-500 styling. → verify: `pnpm typecheck`
-  - [ ] Step 5 — Add missing-addend handling to `explanation-generator.ts` (before existing operator checks) + tests. → verify: `pnpm typecheck && pnpm test && pnpm lint`
+- [x] M6: Missing-addend problems — `answer` = hidden operand (what child places), `target` = sum (displayed after "="). No store changes needed.
+  - [x] Step 1 — Extend `Problem` type with optional `unknownPosition` and `target` fields. Extend `SessionData["mode"]` with `"Missing Part"`. → verify: `pnpm typecheck`
+  - [x] Step 2 — Create `generateMissingAddend` + `MissingAddendMode` in `problem-generator.ts`. Guard against `right === 0` (trivial). Add comprehensive tests. → verify: `pnpm typecheck && pnpm test`
+  - [x] Step 3 — Update `ProblemDisplay.tsx` for conditional missing-addend rendering ("3 + ? = 7") and math language prompt ("What's the missing part?"). → verify: `pnpm typecheck`
+  - [x] Step 4 — Add "Missing Part" button to `TapToStart.tsx` with violet-500 styling. → verify: `pnpm typecheck`
+  - [x] Step 5 — Add missing-addend handling to `explanation-generator.ts` (before existing operator checks) + tests. → verify: `pnpm typecheck && pnpm test && pnpm lint`
   Commit: "feat: add missing-addend problems with part-whole reasoning"
 
 - [ ] M7: Missing-addend polish + Make-10 — Add math language for missing-addend: "What's the missing part?", "How many more to make [target]?". Create Make-10 variant: constrain `target = 10`, dedicated prompt "How many more to make ten?". Add part-whole explanatory feedback: "3 and 4 make 7!" Verify all 6 feedback paths work for missing-addend and Make-10 contexts. **Verification:** End-to-end session exercising wrong tile, timeout, strategy hint, worked support — all contextually correct for part-whole reasoning.
+  - [ ] Step 1 — Add `generateMake10` + `Make10Mode` to `problem-generator.ts`, extend `SessionData["mode"]` with `"Make 10"`. Add tests. → verify: `pnpm typecheck && pnpm test`
+  - [ ] Step 2 — Add "Make 10" button to `TapToStart.tsx` (emerald-500, 2×2 grid for math buttons). Update `startMathSession` type. → verify: `pnpm typecheck`
+  - [ ] Step 3 — Specialize math language in `ProblemDisplay.tsx`: "How many more to make ten?" when `target === 10`. Specialize explanation templates in `explanation-generator.ts` for Make-10 ("X and Y make ten!"). Add tests. → verify: `pnpm typecheck && pnpm test && pnpm lint`
+  Commit: "feat: add Make-10 mode with complement-to-ten problems"
 
 ---
 

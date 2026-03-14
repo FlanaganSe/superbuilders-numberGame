@@ -87,7 +87,12 @@ export interface SessionData {
 	readonly rounds: readonly RoundResult[];
 	readonly totalStars: number;
 	readonly difficulty: DifficultyLevel;
-	readonly mode: "Addition" | "Subtraction" | "Missing Part" | "Spelling";
+	readonly mode:
+		| "Addition"
+		| "Subtraction"
+		| "Missing Part"
+		| "Make 10"
+		| "Spelling";
 	readonly startedAt: number;
 	readonly endedAt: number;
 }

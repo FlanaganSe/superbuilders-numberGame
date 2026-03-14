@@ -3,6 +3,7 @@ import { unlockAudio } from "../audio/sound-manager";
 import type { CameraError } from "../camera/use-camera";
 import {
 	AdditionMode,
+	Make10Mode,
 	MissingAddendMode,
 	SubtractionMode,
 } from "../engine/problem-generator";
@@ -29,7 +30,7 @@ export function TapToStart({
 	const { acquire } = useWakeLock();
 
 	function startMathSession(
-		modeName: "Addition" | "Subtraction" | "Missing Part",
+		modeName: "Addition" | "Subtraction" | "Missing Part" | "Make 10",
 	): void {
 		// AudioContext unlock MUST happen in user gesture (research §4.2).
 		// Camera unlock MUST happen in the same user gesture handler (PRD §5.5).
@@ -58,6 +59,11 @@ export function TapToStart({
 	function handleMissingPartStart(): void {
 		setMode(MissingAddendMode);
 		startMathSession("Missing Part");
+	}
+
+	function handleMake10Start(): void {
+		setMode(Make10Mode);
+		startMathSession("Make 10");
 	}
 
 	function handleSpellingStart(): void {
@@ -97,7 +103,7 @@ export function TapToStart({
 				initial={{ opacity: 0, y: 10 }}
 				animate={{ opacity: 1, y: 0 }}
 				transition={{ delay: 0.2, ...GENTLE_SPRING }}
-				className="flex gap-4"
+				className="grid grid-cols-2 gap-4"
 			>
 				<m.button
 					type="button"
@@ -108,7 +114,7 @@ export function TapToStart({
 					}}
 					className="min-h-20 rounded-3xl bg-primary-500 px-14 py-6 font-display text-4xl text-white shadow-xl"
 				>
-					Math Game
+					Addition
 				</m.button>
 				<m.button
 					type="button"
@@ -131,6 +137,17 @@ export function TapToStart({
 					className="min-h-20 rounded-3xl bg-violet-500 px-14 py-6 font-display text-4xl text-white shadow-xl"
 				>
 					Missing Part
+				</m.button>
+				<m.button
+					type="button"
+					onClick={handleMake10Start}
+					whileTap={{
+						scale: 0.95,
+						transition: { type: "spring", stiffness: 400, damping: 17 },
+					}}
+					className="min-h-20 rounded-3xl bg-emerald-500 px-14 py-6 font-display text-4xl text-white shadow-xl"
+				>
+					Make 10
 				</m.button>
 			</m.div>
 

@@ -36,6 +36,19 @@ function missingAddendProblem(left: number, right: number): Problem {
 	};
 }
 
+function make10Problem(left: number): Problem {
+	const right = 10 - left;
+	return {
+		left,
+		right,
+		operator: "+",
+		answer: right,
+		displayAnswer: String(right),
+		unknownPosition: "right" as const,
+		target: 10,
+	};
+}
+
 const spellingProblem: Problem = {
 	left: 0,
 	right: 0,
@@ -135,6 +148,34 @@ describe("getCorrectExplanation", () => {
 		});
 	});
 
+	describe("make-10, first attempt (stars=3)", () => {
+		it("difficulty 1-3: concise make-ten explanation", () => {
+			const p = make10Problem(7);
+			expect(getCorrectExplanation(p, 1, 3)).toBe("7 and 3 make ten!");
+			expect(getCorrectExplanation(p, 3, 3)).toBe("7 and 3 make ten!");
+		});
+
+		it("difficulty 4-5: brief acknowledgment", () => {
+			const p = make10Problem(7);
+			expect(getCorrectExplanation(p, 4, 3)).toBe("Three!");
+			expect(getCorrectExplanation(p, 5, 3)).toBe("Three!");
+		});
+	});
+
+	describe("make-10, retry (stars=1 or 2)", () => {
+		it("difficulty 1-3: process praise with make-ten language", () => {
+			const p = make10Problem(7);
+			expect(getCorrectExplanation(p, 1, 2)).toBe(
+				"You figured it out! 7 and 3 make ten.",
+			);
+		});
+
+		it("difficulty 4-5: returns null", () => {
+			const p = make10Problem(7);
+			expect(getCorrectExplanation(p, 4, 2)).toBeNull();
+		});
+	});
+
 	describe("edge cases", () => {
 		it("0 + 5 = 5: counting from zero", () => {
 			const p = addProblem(0, 5);
@@ -230,6 +271,27 @@ describe("getTimeoutHint", () => {
 		it("repeated timeout, difficulty 4-5: just the answer", () => {
 			const p = missingAddendProblem(3, 4);
 			expect(getTimeoutHint(p, 4, 2)).toBe("The missing part is 4.");
+		});
+	});
+
+	describe("make-10 timeout", () => {
+		it("first timeout: make-ten strategy hint", () => {
+			const p = make10Problem(7);
+			expect(getTimeoutHint(p, 1, 1)).toBe(
+				"7 and what make ten? Try counting on from 7.",
+			);
+		});
+
+		it("repeated timeout, difficulty 1-3: make-ten worked support", () => {
+			const p = make10Problem(7);
+			expect(getTimeoutHint(p, 1, 2)).toBe(
+				"Let's make ten: seven, then count to ten: 8, 9, 10. The missing part is 3.",
+			);
+		});
+
+		it("repeated timeout, difficulty 4-5: just the answer", () => {
+			const p = make10Problem(7);
+			expect(getTimeoutHint(p, 4, 2)).toBe("The missing part is 3.");
 		});
 	});
 

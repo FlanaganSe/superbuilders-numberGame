@@ -127,3 +127,28 @@ export const MissingAddendMode: GameMode = {
 	generate: generateMissingAddend,
 	validate: (detected, problem) => detected.includes(problem.answer),
 };
+
+function generateMake10(_difficulty: DifficultyLevel): Problem {
+	// Make-10 problem space is small (9 problems) and all appropriate.
+	// Difficulty does not change the operand range — the streak-based
+	// difficulty system still runs but all problems are the same type.
+	const left = randomInt(1, 9);
+	const right = 10 - left;
+
+	return {
+		left,
+		right,
+		operator: "+",
+		answer: right,
+		displayAnswer: right.toString(),
+		unknownPosition: "right",
+		target: 10,
+	};
+}
+
+export const Make10Mode: GameMode = {
+	name: "Make 10",
+	operator: "+",
+	generate: generateMake10,
+	validate: (detected, problem) => detected.includes(problem.answer),
+};

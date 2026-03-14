@@ -3,6 +3,7 @@ import type { DifficultyLevel } from "../types/game";
 import {
 	AdditionMode,
 	MAX_ANSWER,
+	Make10Mode,
 	MissingAddendMode,
 	SubtractionMode,
 } from "./problem-generator";
@@ -111,5 +112,48 @@ describe("MissingAddendMode", () => {
 		expect(MissingAddendMode.validate([problem.target ?? -1], problem)).toBe(
 			false,
 		);
+	});
+});
+
+describe("Make10Mode", () => {
+	it("has correct metadata", () => {
+		expect(Make10Mode.name).toBe("Make 10");
+		expect(Make10Mode.operator).toBe("+");
+	});
+
+	it.each(
+		ALL_LEVELS,
+	)("generates valid complement-to-10 problems at difficulty %i", (level) => {
+		for (let i = 0; i < 50; i++) {
+			const problem = Make10Mode.generate(level);
+			expect(problem.operator).toBe("+");
+			expect(problem.unknownPosition).toBe("right");
+			expect(problem.target).toBe(10);
+			expect(problem.left + problem.answer).toBe(10);
+			expect(problem.answer).toBe(problem.right);
+			expect(problem.left).toBeGreaterThanOrEqual(1);
+			expect(problem.left).toBeLessThanOrEqual(9);
+			expect(problem.answer).toBeGreaterThanOrEqual(1);
+			expect(problem.answer).toBeLessThanOrEqual(9);
+			expect(problem.displayAnswer).toBe(problem.answer.toString());
+		}
+	});
+
+	it("never generates answer === 0 or answer > 9", () => {
+		for (let i = 0; i < 200; i++) {
+			const problem = Make10Mode.generate(1);
+			expect(problem.answer).toBeGreaterThan(0);
+			expect(problem.answer).toBeLessThanOrEqual(MAX_ANSWER);
+		}
+	});
+
+	it("validates against answer (complement), not target (10)", () => {
+		const problem = Make10Mode.generate(1);
+		expect(Make10Mode.validate([problem.answer], problem)).toBe(true);
+		expect(Make10Mode.validate([], problem)).toBe(false);
+		// If answer !== 10, placing 10 should not validate (can't place 10 anyway)
+		if (problem.answer !== 10) {
+			expect(Make10Mode.validate([10], problem)).toBe(false);
+		}
 	});
 });
