@@ -1,4 +1,3 @@
-import { AnimatePresence } from "motion/react";
 import * as m from "motion/react-m";
 import { useEffect, useRef } from "react";
 import { useAudio } from "../audio/use-audio";
@@ -11,9 +10,7 @@ interface CountdownTimerProps {
 }
 
 const COUNTDOWN_COLORS: Record<number, string> = {
-	5: "text-primary-500",
-	4: "text-teal-500",
-	3: "text-amber-500",
+	3: "text-primary-500",
 	2: "text-orange-500",
 	1: "text-red-500",
 } as const;
@@ -83,18 +80,15 @@ export function CountdownTimer({
 	return (
 		<div className="flex flex-col items-center gap-4">
 			<p className="font-body text-3xl text-slate-600">Get ready!</p>
-			<AnimatePresence mode="wait">
-				<m.span
-					key={secondsLeft}
-					className={`inline-block font-display text-9xl ${COUNTDOWN_COLORS[secondsLeft] ?? "text-primary-500"}`}
-					initial={{ scale: 0, opacity: 0 }}
-					animate={{ scale: 1, opacity: 1 }}
-					exit={{ scale: 0.5, opacity: 0 }}
-					transition={COUNTDOWN_SPRING}
-				>
-					{secondsLeft}
-				</m.span>
-			</AnimatePresence>
+			<m.span
+				key={secondsLeft}
+				className={`inline-block font-display text-9xl ${COUNTDOWN_COLORS[secondsLeft] ?? "text-primary-500"}`}
+				initial={{ scale: 0, opacity: 0 }}
+				animate={{ scale: 1, opacity: 1 }}
+				transition={COUNTDOWN_SPRING}
+			>
+				{secondsLeft}
+			</m.span>
 		</div>
 	);
 }

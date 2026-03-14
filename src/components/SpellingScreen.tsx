@@ -47,13 +47,13 @@ export function SpellingScreen({
 
 	const word = spellingProblem?.word ?? problem.displayAnswer;
 
-	// Auto-advance after success
+	// Auto-advance after success (3.5s celebration window)
 	useEffect(() => {
 		if (!stars) return;
 		const timer = setTimeout(() => {
 			resetCvState();
 			dispatch({ type: "NEXT_ROUND" });
-		}, 1500);
+		}, 3500);
 		return () => clearTimeout(timer);
 	}, [stars, dispatch, resetCvState]);
 

@@ -25,7 +25,7 @@ export function initialGameState(): GameState {
 
 // ─── Config ─────────────────────────────────────────────────────────────────
 
-export const COUNTDOWN_SECONDS = 5;
+export const COUNTDOWN_SECONDS = 3;
 export const MAX_PROBLEMS = DEFAULT_PROBLEM_COUNT;
 
 // ─── Reducer ────────────────────────────────────────────────────────────────

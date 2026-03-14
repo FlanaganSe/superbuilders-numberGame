@@ -120,30 +120,33 @@ export function GameScreen({
 		return () => window.removeEventListener("keydown", onKeyDown);
 	}, [handleDigit, flags.recognition]);
 
-	// Auto-advance after success (1.5s celebration window — CV is paused
+	// Auto-advance after success (3.5s celebration window — CV is paused
 	// because frame handler in App.tsx gates on phase !== "scanning")
 	useEffect(() => {
 		if (!stars) return;
 		const timer = setTimeout(() => {
 			resetCvState();
 			dispatch({ type: "NEXT_ROUND" });
-		}, 1500);
+		}, 3500);
 		return () => clearTimeout(timer);
 	}, [stars, dispatch, resetCvState]);
 
 	// ─── Sound effects ──────────────────────────────────────────────────────
 
-	// Correct answer → chime + number word (Mayer dual coding)
+	// Correct answer → number word then chime (Mayer dual coding)
 	useEffect(() => {
 		if (!stars) return;
-		play("correctChime");
-		// Play number word slightly delayed so it doesn't overlap the chime
-		if (problem.answer >= 0 && problem.answer <= 9) {
-			const timer = setTimeout(() => {
-				play(`number${problem.answer}` as SoundName);
-			}, 300);
+
+		const hasNumberWord = problem.answer >= 0 && problem.answer <= 9;
+
+		if (hasNumberWord) {
+			play(`number${problem.answer}` as SoundName);
+			// Delay chime so the number word is heard clearly first
+			const timer = setTimeout(() => play("correctChime"), 500);
 			return () => clearTimeout(timer);
 		}
+
+		play("correctChime");
 	}, [stars, play, problem.answer]);
 
 	// Timeout → encouragement

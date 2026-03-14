@@ -108,10 +108,25 @@ export function TapToStart({
 				</p>
 			)}
 
-			<m.div
+			<m.button
+				type="button"
+				onClick={handleSpellingStart}
 				initial={{ opacity: 0, y: 10 }}
 				animate={{ opacity: 1, y: 0 }}
 				transition={{ delay: 0.2, ...GENTLE_SPRING }}
+				whileTap={{
+					scale: 0.95,
+					transition: { type: "spring", stiffness: 400, damping: 17 },
+				}}
+				className="min-h-20 rounded-3xl bg-teal-500 px-14 py-6 font-display text-4xl text-white shadow-xl"
+			>
+				Spelling
+			</m.button>
+
+			<m.div
+				initial={{ opacity: 0, y: 10 }}
+				animate={{ opacity: 1, y: 0 }}
+				transition={{ delay: 0.4, ...GENTLE_SPRING }}
 				className="grid grid-cols-2 gap-4"
 			>
 				<m.button
@@ -159,24 +174,6 @@ export function TapToStart({
 					Missing Part
 				</m.button>
 			</m.div>
-
-			<m.button
-				type="button"
-				onClick={handleSpellingStart}
-				initial={{ opacity: 0, y: 10 }}
-				animate={{ opacity: 1, y: 0 }}
-				transition={{ delay: 0.4, ...GENTLE_SPRING }}
-				whileTap={{
-					scale: 0.95,
-					transition: { type: "spring", stiffness: 400, damping: 17 },
-				}}
-				className="rounded-2xl bg-teal-500 px-6 py-3 font-display text-xl text-white shadow-lg"
-			>
-				Spelling
-				<span className="block font-body text-sm">
-					{MAX_SPELLING_WORDS} words
-				</span>
-			</m.button>
 		</div>
 	);
 }
