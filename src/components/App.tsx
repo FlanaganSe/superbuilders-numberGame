@@ -51,6 +51,13 @@ const CLASS_RANGES: Record<GameKind, { min: number; max: number }> = {
 	spelling: { min: 10, max: 35 },
 };
 
+// Phase enter: subtle scale-up spring. Exit: ≤200ms opacity-only (ADR-005).
+const PHASE_ENTER_SPRING = {
+	type: "spring" as const,
+	stiffness: 300,
+	damping: 20,
+};
+
 export function App(): React.JSX.Element {
 	const phase = useGameStore(selectGamePhase);
 	const gameKind = useGameStore(selectGameKind);
@@ -273,10 +280,13 @@ export function App(): React.JSX.Element {
 							) : (
 								<m.div
 									key={phase.phase}
-									initial={{ opacity: 0 }}
-									animate={{ opacity: 1 }}
+									initial={{ opacity: 0, scale: 0.97 }}
+									animate={{ opacity: 1, scale: 1 }}
 									exit={{ opacity: 0 }}
-									transition={{ duration: 0.15 }}
+									transition={{
+										default: PHASE_ENTER_SPRING,
+										opacity: { duration: 0.15 },
+									}}
 								>
 									<PhaseRouter
 										phase={phase}

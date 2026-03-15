@@ -1,13 +1,19 @@
-import type { Problem } from "../types/game";
+import { getMathPrompt } from "../engine/math-vocabulary";
+import type { DifficultyLevel, Problem } from "../types/game";
+import { NumberBond } from "./NumberBond";
 
 interface ProblemDisplayProps {
 	readonly problem: Problem;
 	readonly showAnswer?: boolean;
+	readonly roundIndex?: number;
+	readonly difficulty?: DifficultyLevel;
 }
 
 export function ProblemDisplay({
 	problem,
 	showAnswer,
+	roundIndex = 0,
+	difficulty,
 }: ProblemDisplayProps): React.JSX.Element {
 	const isMissingAddend = problem.unknownPosition === "right";
 
@@ -39,18 +45,30 @@ export function ProblemDisplay({
 				)}
 			</div>
 
-			{/* Math language prompt — only during problem-solving, not when showing answer */}
+			{/* Math language prompt — rotated synonyms (Purpura et al. 2020) */}
 			{!showAnswer && problem.answer >= 0 && (
 				<p className="font-body text-xl text-slate-400">
-					{isMissingAddend
-						? problem.target === 10
-							? "How many more to make ten?"
-							: "What's the missing part?"
-						: problem.operator === "+"
-							? "How many altogether?"
-							: "How many are left?"}
+					{getMathPrompt(
+						problem.operator,
+						problem.unknownPosition,
+						problem.target,
+						roundIndex,
+					)}
 				</p>
 			)}
+
+			{/* Number bond scaffold — part-whole visual (Marx et al. 2025) */}
+			{!showAnswer &&
+				isMissingAddend &&
+				problem.target !== undefined &&
+				(difficulty ?? 1) <= 3 && (
+					<NumberBond
+						whole={problem.target}
+						knownPart={problem.left}
+						unknownPart={problem.answer}
+						showUnknown={false}
+					/>
+				)}
 		</div>
 	);
 }

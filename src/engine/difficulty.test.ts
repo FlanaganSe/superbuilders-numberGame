@@ -43,6 +43,64 @@ describe("difficulty", () => {
 		});
 	});
 
+	describe("recordCorrect with responseTimeMs", () => {
+		it("promotes normally when no responseTimeMs is provided", () => {
+			let state = initialDifficultyState(1);
+			state = recordCorrect(state);
+			state = recordCorrect(state);
+			state = recordCorrect(state);
+			expect(state.level).toBe(2);
+		});
+
+		it("promotes normally for fast responses", () => {
+			let state = initialDifficultyState(1);
+			state = recordCorrect(state, 5000);
+			state = recordCorrect(state, 3000);
+			state = recordCorrect(state, 8000);
+			expect(state.level).toBe(2);
+		});
+
+		it("resets consecutive count for slow correct (>25s)", () => {
+			let state = initialDifficultyState(1);
+			state = recordCorrect(state, 1000);
+			state = recordCorrect(state, 1000);
+			// Third answer is slow — should reset streak, not promote
+			state = recordCorrect(state, 26000);
+			expect(state.level).toBe(1);
+			expect(state.consecutiveCorrect).toBe(0);
+			expect(state.consecutiveWrong).toBe(0);
+		});
+
+		it("does not demote on slow correct", () => {
+			const state = {
+				level: 3 as const,
+				consecutiveCorrect: 2,
+				consecutiveWrong: 0,
+			};
+			const next = recordCorrect(state, 30000);
+			expect(next.level).toBe(3);
+			expect(next.consecutiveCorrect).toBe(0);
+		});
+
+		it("treats exactly 25000ms as fast (boundary: >25000, not >=25000)", () => {
+			let state = initialDifficultyState(1);
+			state = recordCorrect(state, 24000);
+			state = recordCorrect(state, 24000);
+			// Exactly 25000ms should count as normal, promoting to level 2
+			state = recordCorrect(state, 25000);
+			expect(state.level).toBe(2);
+		});
+
+		it("resets streak at 25001ms (just over boundary)", () => {
+			let state = initialDifficultyState(1);
+			state = recordCorrect(state, 1000);
+			state = recordCorrect(state, 1000);
+			state = recordCorrect(state, 25001);
+			expect(state.level).toBe(1);
+			expect(state.consecutiveCorrect).toBe(0);
+		});
+	});
+
 	describe("recordWrong", () => {
 		it("increments consecutive wrong count", () => {
 			const state = initialDifficultyState(2);

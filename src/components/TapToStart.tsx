@@ -123,15 +123,13 @@ export function TapToStart({
 				Spelling
 			</m.button>
 
-			<m.div
-				initial={{ opacity: 0, y: 10 }}
-				animate={{ opacity: 1, y: 0 }}
-				transition={{ delay: 0.4, ...GENTLE_SPRING }}
-				className="grid grid-cols-2 gap-4"
-			>
+			<div className="grid grid-cols-2 gap-4">
 				<m.button
 					type="button"
 					onClick={handleStart}
+					initial={{ opacity: 0, y: 10 }}
+					animate={{ opacity: 1, y: 0 }}
+					transition={{ delay: 0.4, ...GENTLE_SPRING }}
 					whileTap={{
 						scale: 0.95,
 						transition: { type: "spring", stiffness: 400, damping: 17 },
@@ -143,6 +141,9 @@ export function TapToStart({
 				<m.button
 					type="button"
 					onClick={handleSubtractionStart}
+					initial={{ opacity: 0, y: 10 }}
+					animate={{ opacity: 1, y: 0 }}
+					transition={{ delay: 0.45, ...GENTLE_SPRING }}
 					whileTap={{
 						scale: 0.95,
 						transition: { type: "spring", stiffness: 400, damping: 17 },
@@ -154,6 +155,9 @@ export function TapToStart({
 				<m.button
 					type="button"
 					onClick={handleMake10Start}
+					initial={{ opacity: 0, y: 10 }}
+					animate={{ opacity: 1, y: 0 }}
+					transition={{ delay: 0.5, ...GENTLE_SPRING }}
 					whileTap={{
 						scale: 0.95,
 						transition: { type: "spring", stiffness: 400, damping: 17 },
@@ -165,6 +169,9 @@ export function TapToStart({
 				<m.button
 					type="button"
 					onClick={handleMissingPartStart}
+					initial={{ opacity: 0, y: 10 }}
+					animate={{ opacity: 1, y: 0 }}
+					transition={{ delay: 0.55, ...GENTLE_SPRING }}
 					whileTap={{
 						scale: 0.95,
 						transition: { type: "spring", stiffness: 400, damping: 17 },
@@ -173,7 +180,7 @@ export function TapToStart({
 				>
 					Missing Part
 				</m.button>
-			</m.div>
+			</div>
 		</div>
 	);
 }

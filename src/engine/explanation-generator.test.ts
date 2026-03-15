@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 import type { DifficultyLevel, Problem } from "../types/game";
-import { getCorrectExplanation, getTimeoutHint } from "./explanation-generator";
+import {
+	getCorrectExplanation,
+	getCountSequence,
+	getTimeoutHint,
+} from "./explanation-generator";
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -320,6 +324,93 @@ describe("getTimeoutHint", () => {
 		it("spelling sentinel returns word", () => {
 			expect(getTimeoutHint(spellingProblem, 1, 1)).toBe("The word is CAT.");
 			expect(getTimeoutHint(spellingProblem, 1, 2)).toBe("The word is CAT.");
+		});
+	});
+});
+
+// ─── getCountSequence ───────────────────────────────────────────────────────
+
+describe("getCountSequence", () => {
+	describe("addition", () => {
+		it("returns count-on sequence", () => {
+			const p = addProblem(3, 4);
+			expect(getCountSequence(p)).toEqual({
+				type: "count-on",
+				start: 3,
+				steps: [4, 5, 6, 7],
+			});
+		});
+
+		it("returns null when right operand is 0", () => {
+			const p = addProblem(5, 0);
+			expect(getCountSequence(p)).toBeNull();
+		});
+	});
+
+	describe("subtraction", () => {
+		it("returns count-back sequence", () => {
+			const p = subProblem(7, 3);
+			expect(getCountSequence(p)).toEqual({
+				type: "count-back",
+				start: 7,
+				steps: [6, 5, 4],
+			});
+		});
+
+		it("returns null when right operand is 0", () => {
+			const p = subProblem(9, 0);
+			expect(getCountSequence(p)).toBeNull();
+		});
+	});
+
+	describe("missing-addend", () => {
+		it("returns count-on from known part", () => {
+			const p = missingAddendProblem(3, 4);
+			expect(getCountSequence(p)).toEqual({
+				type: "count-on",
+				start: 3,
+				steps: [4, 5, 6, 7],
+			});
+		});
+
+		it("returns null when answer is 0", () => {
+			const p = missingAddendProblem(7, 0);
+			expect(getCountSequence(p)).toBeNull();
+		});
+	});
+
+	describe("make-10", () => {
+		it("returns count-on from left to 10", () => {
+			const p = make10Problem(7);
+			expect(getCountSequence(p)).toEqual({
+				type: "count-on",
+				start: 7,
+				steps: [8, 9, 10],
+			});
+		});
+	});
+
+	describe("edge cases", () => {
+		it("spelling problem returns null", () => {
+			expect(getCountSequence(spellingProblem)).toBeNull();
+		});
+
+		it("0 + 5: counts from 0", () => {
+			const p = addProblem(0, 5);
+			expect(getCountSequence(p)).toEqual({
+				type: "count-on",
+				start: 0,
+				steps: [1, 2, 3, 4, 5],
+			});
+		});
+
+		it("5 - 5 = 0: counts down to 0", () => {
+			const p = subProblem(5, 5);
+			expect(getCountSequence(p)).toEqual({
+				type: "count-back",
+				start: 5,
+				steps: [4, 3, 2, 1, 0],
+			});
 		});
 	});
 });

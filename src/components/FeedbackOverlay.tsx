@@ -3,28 +3,47 @@ import { AnimatePresence, useReducedMotion } from "motion/react";
 import * as m from "motion/react-m";
 import { useEffect, useMemo } from "react";
 import {
+	type CountSequence,
 	getCorrectExplanation,
+	getCountSequence,
 	getTimeoutHint,
 } from "../engine/explanation-generator";
 import type { DifficultyLevel, Problem } from "../types/game";
+import { TenFrame } from "./TenFrame";
 
 // ─── Child-friendly text ────────────────────────────────────────────────────
 
-const CELEBRATION_TEXTS = [
-	"Great job!",
-	"You got it!",
-	"Amazing!",
-	"Awesome!",
-	"Way to go!",
-	"Super!",
+const CELEBRATION_FIRST_TRY = [
+	"First try!",
+	"Quick thinking!",
+	"You knew it!",
+	"Right away!",
+	"Spot on!",
+	"Nailed it!",
+] as const;
+
+const CELEBRATION_SECOND_TRY = [
+	"You figured it out!",
+	"Nice problem solving!",
+	"Good thinking!",
+	"You worked it out!",
+	"Smart move!",
+] as const;
+
+const CELEBRATION_PERSEVERED = [
+	"You didn't give up!",
+	"You kept trying!",
+	"You got there!",
+	"Way to stick with it!",
+	"Persistence pays off!",
 ] as const;
 
 const ENCOURAGEMENT_TEXTS = [
-	"Keep trying!",
-	"Almost there!",
+	"Keep going!",
+	"Let's try again!",
 	"You can do it!",
-	"Nice effort!",
-	"You're so close!",
+	"Take your time!",
+	"Try a different tile!",
 ] as const;
 
 // ─── Spring configs (from research-game-ux.md §3.3) ────────────────────────
@@ -151,6 +170,38 @@ function fireCorrectConfetti(): void {
 	});
 }
 
+// ─── Count sequence animation ────────────────────────────────────────────────
+
+function CountSequenceAnimation({
+	sequence,
+	reduced,
+}: {
+	readonly sequence: CountSequence;
+	readonly reduced: boolean;
+}): React.JSX.Element {
+	return (
+		<div className="flex items-center gap-2">
+			<span className="font-body text-lg text-slate-400">
+				{sequence.start},
+			</span>
+			{sequence.steps.map((num, i) => (
+				<m.span
+					key={num}
+					initial={reduced ? { opacity: 1 } : { opacity: 0, scale: 0.5 }}
+					animate={{ opacity: 1, scale: 1 }}
+					transition={
+						reduced ? { duration: 0 } : { delay: 0.3 + i * 0.3, duration: 0.3 }
+					}
+					className="font-display text-2xl text-primary-600"
+				>
+					{num}
+					{i < sequence.steps.length - 1 ? "," : "!"}
+				</m.span>
+			))}
+		</div>
+	);
+}
+
 // ─── Correct feedback ───────────────────────────────────────────────────────
 
 function CorrectFeedback({
@@ -163,11 +214,21 @@ function CorrectFeedback({
 	readonly difficulty: DifficultyLevel;
 }): React.JSX.Element {
 	const reduced = useReducedMotion();
-	const text = useMemo(() => pickRandom(CELEBRATION_TEXTS), []);
+	const text = useMemo(() => {
+		switch (stars) {
+			case 3:
+				return pickRandom(CELEBRATION_FIRST_TRY);
+			case 2:
+				return pickRandom(CELEBRATION_SECOND_TRY);
+			case 1:
+				return pickRandom(CELEBRATION_PERSEVERED);
+		}
+	}, [stars]);
 	const explanation = useMemo(
 		() => getCorrectExplanation(problem, difficulty, stars),
 		[problem, difficulty, stars],
 	);
+	const countSequence = useMemo(() => getCountSequence(problem), [problem]);
 
 	useEffect(() => {
 		fireCorrectConfetti();
@@ -187,6 +248,26 @@ function CorrectFeedback({
 			<p className="font-display text-6xl text-gold-500">{"★".repeat(stars)}</p>
 			{explanation && (
 				<p className="font-body text-xl text-slate-500">{explanation}</p>
+			)}
+
+			{/* Counting-on/back animation — staggered entrance (Schiffman et al. 2018) */}
+			{countSequence && difficulty <= 3 && (
+				<CountSequenceAnimation
+					sequence={countSequence}
+					reduced={reduced ?? false}
+				/>
+			)}
+
+			{/* Ten-frame visual scaffold — number relative to 10 (IRIS Vanderbilt CRA) */}
+			{problem.answer >= 1 && problem.answer <= 10 && difficulty <= 3 && (
+				<TenFrame
+					value={problem.answer}
+					splitAt={
+						problem.unknownPosition === "right" && problem.target !== undefined
+							? problem.left
+							: undefined
+					}
+				/>
 			)}
 		</m.div>
 	);
@@ -209,6 +290,7 @@ function TimeoutFeedback({
 		() => getTimeoutHint(problem, difficulty, attemptNumber),
 		[problem, difficulty, attemptNumber],
 	);
+	const countSequence = useMemo(() => getCountSequence(problem), [problem]);
 
 	return (
 		<m.div
@@ -222,6 +304,14 @@ function TimeoutFeedback({
 		>
 			<p className="font-display text-4xl text-primary-500">{text}</p>
 			<p className="font-body text-2xl text-slate-600">{hint}</p>
+
+			{/* Count sequence on repeated timeout — worked example visual (attemptNumber >= 2) */}
+			{countSequence && attemptNumber >= 2 && difficulty <= 3 && (
+				<CountSequenceAnimation
+					sequence={countSequence}
+					reduced={reduced ?? false}
+				/>
+			)}
 		</m.div>
 	);
 }

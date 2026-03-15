@@ -106,11 +106,14 @@ function handleAnswerCorrect(state: GameState, stars: 1 | 2 | 3): GameState {
 	const round: RoundResult = { problem, stars, durationMs };
 	const rounds = [...state.rounds, round];
 
-	const diffState = recordCorrect({
-		level: state.difficulty,
-		consecutiveCorrect: state.consecutiveCorrect,
-		consecutiveWrong: state.consecutiveWrong,
-	});
+	const diffState = recordCorrect(
+		{
+			level: state.difficulty,
+			consecutiveCorrect: state.consecutiveCorrect,
+			consecutiveWrong: state.consecutiveWrong,
+		},
+		durationMs,
+	);
 
 	return {
 		...state,

@@ -22,13 +22,65 @@ function numberWord(n: number): string {
 // ─── Counting helpers ────────────────────────────────────────────────────────
 
 /** countOnFrom(3, 4) → "4, 5, 6, 7" */
-function countOnFrom(start: number, steps: number): string {
+export function countOnFrom(start: number, steps: number): string {
 	return Array.from({ length: steps }, (_, i) => start + i + 1).join(", ");
 }
 
 /** countBackFrom(7, 3) → "6, 5, 4" */
-function countBackFrom(start: number, steps: number): string {
+export function countBackFrom(start: number, steps: number): string {
 	return Array.from({ length: steps }, (_, i) => start - i - 1).join(", ");
+}
+
+// ─── Count sequence (structured) ────────────────────────────────────────────
+
+export interface CountSequence {
+	readonly type: "count-on" | "count-back";
+	readonly start: number;
+	readonly steps: readonly number[];
+}
+
+/**
+ * Returns the count sequence for a problem, if applicable.
+ * Used by FeedbackOverlay to animate each step with staggered entrance.
+ */
+export function getCountSequence(problem: Problem): CountSequence | null {
+	if (problem.answer < 0) return null;
+
+	// Missing-addend: count on from known part
+	if (problem.unknownPosition === "right" && problem.target !== undefined) {
+		if (problem.answer === 0) return null;
+		return {
+			type: "count-on",
+			start: problem.left,
+			steps: Array.from(
+				{ length: problem.answer },
+				(_, i) => problem.left + i + 1,
+			),
+		};
+	}
+
+	if (problem.operator === "+") {
+		if (problem.right === 0) return null;
+		return {
+			type: "count-on",
+			start: problem.left,
+			steps: Array.from(
+				{ length: problem.right },
+				(_, i) => problem.left + i + 1,
+			),
+		};
+	}
+
+	// Subtraction
+	if (problem.right === 0) return null;
+	return {
+		type: "count-back",
+		start: problem.left,
+		steps: Array.from(
+			{ length: problem.right },
+			(_, i) => problem.left - i - 1,
+		),
+	};
 }
 
 // ─── Correct explanation ─────────────────────────────────────────────────────

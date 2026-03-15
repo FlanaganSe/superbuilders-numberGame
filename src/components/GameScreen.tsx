@@ -1,6 +1,6 @@
 import { AnimatePresence } from "motion/react";
 import * as m from "motion/react-m";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { SoundName } from "../audio/use-audio";
 import { useAudio } from "../audio/use-audio";
 import {
@@ -14,6 +14,8 @@ import type { Problem } from "../types/game";
 import { getFeatureFlags } from "../utils/feature-flags";
 import { CameraUncertaintyPrompt } from "./CameraUncertaintyPrompt";
 import { FeedbackOverlay, type FeedbackState } from "./FeedbackOverlay";
+import { GhostTileGuide } from "./GhostTileGuide";
+import { hasSeenGuide, markGuideSeen } from "./ghost-tile-storage";
 import { MockNumpad } from "./MockNumpad";
 import { ProblemDisplay } from "./ProblemDisplay";
 import { ProgressPips } from "./ProgressPips";
@@ -62,14 +64,24 @@ export function GameScreen({
 	const cameraUncertain = useGameStore((s) => s.cameraUncertain);
 	const wrongTileSeen = useGameStore((s) => s.wrongTileSeen);
 	const roundsCompleted = useGameStore((s) => s.gameState.rounds.length);
+	const rounds = useGameStore((s) => s.gameState.rounds);
 	const difficulty = useGameStore((s) => s.gameState.difficulty);
 	const modeName = useGameStore((s) => s.gameState.modeName);
 	const flags = getFeatureFlags();
 	const { play } = useAudio();
 
+	// Round stars for color-coded progress pips
+	const roundStars = useMemo(() => rounds.map((r) => r.stars), [rounds]);
+
 	// Track difficulty promotions — show "Level Up!", hide demotions (math anxiety research)
 	const prevDifficultyRef = useRef(difficulty);
 	const [showLevelUp, setShowLevelUp] = useState(false);
+
+	// Ghost tile onboarding guide — shows on first-ever scan
+	const [showGuide, setShowGuide] = useState(() => !hasSeenGuide());
+
+	// Idle timer for gentle prompt escalation
+	const [idleSeconds, setIdleSeconds] = useState(0);
 
 	useEffect(() => {
 		if (difficulty > prevDifficultyRef.current) {
@@ -130,6 +142,28 @@ export function GameScreen({
 		}, 3500);
 		return () => clearTimeout(timer);
 	}, [stars, dispatch, resetCvState]);
+
+	const isScanning = !stars && !timedOut;
+
+	// ─── Ghost tile guide dismissal ─────────────────────────────────────────
+	useEffect(() => {
+		if (tileSeen !== null && showGuide) {
+			markGuideSeen();
+			setShowGuide(false);
+		}
+	}, [tileSeen, showGuide]);
+
+	// ─── Idle timer ──────────────────────────────────────────────────────────
+	// Reset + start counting idle seconds during scanning.
+	// When isScanning or tileSeen changes, the effect re-runs and resets to 0.
+	useEffect(() => {
+		setIdleSeconds(0);
+		if (!isScanning || tileSeen !== null) return;
+		const interval = setInterval(() => {
+			setIdleSeconds((s) => s + 1);
+		}, 1000);
+		return () => clearInterval(interval);
+	}, [isScanning, tileSeen]);
 
 	// ─── Sound effects ──────────────────────────────────────────────────────
 
@@ -196,12 +230,14 @@ export function GameScreen({
 	// Auto-retry after timeout
 	useEffect(() => {
 		if (!timedOut) return;
+		// Longer display for repeated timeouts — worked examples need time to read
+		const delay = attemptNumber >= 2 ? 4000 : 2000;
 		const timer = setTimeout(() => {
 			resetCvState();
 			dispatch({ type: "NEXT_ROUND" });
-		}, 2000);
+		}, delay);
 		return () => clearTimeout(timer);
-	}, [timedOut, dispatch, resetCvState]);
+	}, [timedOut, dispatch, resetCvState, attemptNumber]);
 
 	// ─── Derive feedback state ──────────────────────────────────────────────
 	// Priority: correct > timeout > tile-seen > wrong-tile.
@@ -226,14 +262,16 @@ export function GameScreen({
 						}
 					: null;
 
-	const isScanning = !stars && !timedOut;
-
 	return (
 		<div className="flex flex-col items-center gap-6">
 			{/* Progress + mode + difficulty */}
 			<div className="flex items-center gap-3">
 				<span className="font-body text-sm text-white/70">{modeName}</span>
-				<ProgressPips current={roundsCompleted} total={MAX_PROBLEMS} />
+				<ProgressPips
+					current={roundsCompleted}
+					total={MAX_PROBLEMS}
+					roundStars={roundStars}
+				/>
 				<span className="rounded-full bg-black/20 px-2.5 py-1 font-body text-sm text-white">
 					Level {difficulty}
 				</span>
@@ -255,13 +293,26 @@ export function GameScreen({
 				)}
 			</AnimatePresence>
 
-			{/* Problem display with tile-detected pop animation */}
+			{/* Problem display with tile-held beat animation */}
 			<m.div
 				key={tileSeen !== null ? `pop-${tileSeen}` : "idle"}
-				animate={tileSeen !== null ? { scale: [1, 1.05, 1] } : { scale: 1 }}
-				transition={tileSeen !== null ? POP_SPRING : { duration: 0 }}
+				animate={tileSeen !== null ? { scale: [1, 1.03, 1] } : { scale: 1 }}
+				transition={
+					tileSeen !== null
+						? {
+								...POP_SPRING,
+								repeat: Number.POSITIVE_INFINITY,
+								repeatDelay: 0.4,
+							}
+						: { duration: 0 }
+				}
 			>
-				<ProblemDisplay problem={problem} showAnswer={!!stars} />
+				<ProblemDisplay
+					problem={problem}
+					showAnswer={!!stars}
+					roundIndex={roundsCompleted}
+					difficulty={difficulty}
+				/>
 			</m.div>
 
 			{/* Feedback overlay: correct / timeout / tile-seen */}
@@ -274,14 +325,28 @@ export function GameScreen({
 				)}
 			</AnimatePresence>
 
+			{/* Ghost tile onboarding guide — first-scan only */}
+			{isScanning &&
+				showGuide &&
+				!cameraUncertain &&
+				tileSeen === null &&
+				wrongTileSeen === null && <GhostTileGuide visible={true} />}
+
 			{/* Answer zone hint — only during scanning with no feedback showing */}
 			{isScanning &&
+				!showGuide &&
 				!cameraUncertain &&
 				tileSeen === null &&
 				wrongTileSeen === null && (
-					<div className="animate-pulse-soft rounded-3xl border-4 border-dashed border-primary-400 px-12 py-5">
+					<div
+						className={`rounded-3xl border-4 border-dashed border-primary-400 px-12 py-5 ${
+							idleSeconds >= 10 ? "animate-pulse" : "animate-pulse-soft"
+						}`}
+					>
 						<p className="font-body text-2xl text-primary-400/80">
-							Put your answer here
+							{idleSeconds >= 15
+								? "Try holding a tile up!"
+								: "Put your answer here"}
 						</p>
 					</div>
 				)}

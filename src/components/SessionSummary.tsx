@@ -97,6 +97,7 @@ export function SessionSummary({
 
 	// Show up to 5 animated star icons for visual appeal
 	const displayStarCount = Math.min(session.totalStars, 5);
+	const firstTryCount = session.rounds.filter((r) => r.stars === 3).length;
 
 	return (
 		<div className="flex flex-col items-center gap-6">
@@ -106,7 +107,7 @@ export function SessionSummary({
 				animate={{ scale: 1, opacity: 1 }}
 				transition={{ type: "spring", stiffness: 300, damping: 15 }}
 			>
-				Amazing work!
+				Great practice!
 			</m.h2>
 
 			<div className="flex flex-col items-center gap-3">
@@ -153,6 +154,12 @@ export function SessionSummary({
 				{session.rounds.length} problems completed
 			</p>
 
+			{firstTryCount > 0 && (
+				<p className="font-body text-xl text-success-600">
+					{firstTryCount} of {session.rounds.length} on your first try!
+				</p>
+			)}
+
 			<m.button
 				type="button"
 				onClick={handlePlayAgain}
@@ -162,6 +169,10 @@ export function SessionSummary({
 			>
 				Play More!
 			</m.button>
+
+			<p className="font-body text-lg text-slate-400">
+				Come back tomorrow to practice more!
+			</p>
 		</div>
 	);
 }
