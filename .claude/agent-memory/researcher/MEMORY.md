@@ -2,11 +2,14 @@
 
 ## Index
 
-- [project_superbuilders.md](project_superbuilders.md) — TileSight project context: OSMO-style math game, key tech decisions and constraints
-- [training_pipeline.md](training_pipeline.md) — Confirmed training pipeline facts: fliplr bug, class map, dataset sizes, preprocessing alignment, retraining recommendation
-- [camera_pipeline.md](camera_pipeline.md) — Camera/frame-capture pipeline: rVFC stall risk (no try/catch), stop-race, scheduling order, object-cover overlay mismatch, test gaps
 - [audio_phonics.md](audio_phonics.md) — Audio strategy for phonics/spelling game: TTS vs pre-recorded findings, Web Speech API iOS bugs, Howler sprite architecture, multimodal learning evidence
-- [project_brainlift_literacy.md](project_brainlift_literacy.md) — Literacy science for spelling mode: orthographic mapping, phonemic awareness sequence, WWC evidence ratings, four pillars, Option C recommendation
-- [math_design_research.md](math_design_research.md) — Early childhood math game design: multi-digit readiness, multiplication age limits, missing addend gap, subtraction models, explanatory feedback evidence
-- ~~ui_polish_research.md~~ — **Removed**: content absorbed into `docs/learning-science-research.md` consolidated research doc
-- [codebase_architecture.md](codebase_architecture.md) — Complete map of game engine, state machine, feedback system, audio, and visual scaffolds with file:line citations for all seams
+
+## Consolidated into docs/ (removed from agent memory)
+
+The following memories were removed because their content is fully covered by authoritative docs:
+- Training pipeline → `docs/research/digit-training-pipeline.md`
+- Literacy research → `docs/research/literacy-science.md` + `docs/research/phonics-deep-dive.md`
+- Math design research → `docs/research/math-game-design.md`
+- Codebase architecture → `docs/product-overview.md`
+- Project context → `docs/product-overview.md`
+- Camera pipeline → `docs/product-overview.md` (preprocessing duplication gotcha added to Gotchas section)

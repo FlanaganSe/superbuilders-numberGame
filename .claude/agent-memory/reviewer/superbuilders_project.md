@@ -1,12 +1,10 @@
 ---
 name: superbuilders_project
-description: OSMO-style math game project status — milestones completed and known issues
+description: OSMO-style math game — known issues from codebase reviews (2026-03-11 through 2026-03-15)
 type: project
 ---
 
-Stack: Vite 7 + React 19 + ONNX Runtime Web 1.24 (WASM), Zustand 5, Motion 12 (LazyMotion/domAnimation), canvas-confetti, Howler.js, Tailwind 4, Biome 2. Target: iPad Safari landscape.
-
-All 9 milestones complete as of 2026-03-12. Full codebase review conducted 2026-03-12.
+Known issues from multiple review passes. Line numbers may drift — verify against live code before fixing.
 
 **Issues from M6 review (2026-03-11) — updated 2026-03-12:**
 1. ~~`NEXT_ROUND` problem field~~ — Fixed.
@@ -43,3 +41,10 @@ All 9 milestones complete as of 2026-03-12. Full codebase review conducted 2026-
 13. **`droppedFrames` never resets between sessions** (`cv-store.ts`) — `useCvStore.reset()` is called on service dispose (unmount), but if the same session continues and the backend is never torn down, the counter accumulates across games. The game store is reset on `START_SESSION` but `droppedFrames` is not. Cosmetic for now.
 14. **`numClasses` optional in `RecognitionResult` but required in `WorkerToMain`** (`types/cv.ts:64`) — the type mismatch means non-ONNX paths (mock backend, error fallback) produce a `RecognitionResult` with `numClasses: undefined`, which is correctly handled by the `?.` conditional in `updateDetections`, but the asymmetry is silent. Low risk.
 15. **Spelling timeout test uses math `SAMPLE_PROBLEM`** (`game-reducer.test.ts:148`) — the spelling timeout test passes a `Problem` (math shape) to `COUNTDOWN_COMPLETE` in a Spelling session. This works because the reducer doesn't validate problem type, but the test doesn't actually verify the new word is different from the timed-out one, leaving the "new word" intent untested.
+
+**Additional issues (from researcher deep audit, 2026-03-15):**
+
+16. **Mock recognition may not close ImageBitmap** (`cv/mock-recognition.ts`) — `recognize()` receives a bitmap but the mock path may not call `.close()`, causing a GPU memory leak in mock mode. High severity for dev/test sessions.
+17. **`classId as Digit` has no bounds check** (`cv/postprocessing.ts:198`) — the cast assumes classId is within Digit range. ADR-006 `classRange` mitigates in production, but the raw cast is unchecked. Low risk in practice.
+18. **Sound files may not be precached for offline** — `globPatterns` includes `mp3,m4a` but actual precaching of all 38 audio files has not been verified on a real device with cleared cache. Medium priority for PWA offline mode.
+19. **E2E selectors use Tailwind classes not data-testid** — fragile against Tailwind class name changes. Low priority but worth addressing when E2E tests are expanded.
