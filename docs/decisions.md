@@ -162,3 +162,20 @@ Append-only log. Read during planning, not loaded every session.
 The cream background (#fef9ef) was not changed — it is a deliberate design choice (off-white for reading comprehension, Rello & Baeza-Yates 2012).
 
 **Consequences:** Placeholder "?" marks are slightly more visible (blue-500 vs blue-300). Stars shift from bright gold to warm amber — still recognizably golden. Mode name in the header is brighter white; contrast relies on the camera video backdrop in production. All combinations now meet WCAG 2.1 SC 1.4.3 for large text.
+
+---
+
+## ADR-012: Strategy-Aware Math Feedback with Subitizing Gate
+
+**Date:** 2026-03-15
+**Status:** Accepted
+
+**Context:** Feedback was operator-aware (addition → count-on, subtraction → count-back) but not strategy-specific. Different problem structures exercise different mathematical thinking: small sums are subitizable (perceived without counting), make-ten problems develop complement vocabulary, and missing-addend problems exercise part-whole reasoning. Outhwaite et al. (2023) found that explanatory + motivational feedback with levelling is a necessary condition for learning gains.
+
+**Decision:** Extended `explanation-generator.ts` with four strategy-specific feedback paths, all gated by the existing difficulty ≤ 3 constraint (Sweller's expertise reversal):
+1. **Subitizing** (both operands ≤ 3, sum ≤ 5): direct composition language ("One and two make three!"), no count sequence animation. Threshold based on Clements/Sarama learning trajectories — children can subitize quantities up to ~4.
+2. **Make-ten partner vocabulary**: "Three is the partner of seven" (Purpura et al. 2020 — math vocabulary predicts development).
+3. **Part-whole process praise**: "You found it!" (Dweck — process over outcome praise).
+4. **Caregiver coaching tip**: deterministic, process-oriented tip on session summary (Berkowitz et al. 2015 RCT). Separate module `caregiver-prompts.ts`.
+
+**Consequences:** The subitizing threshold (≤ 3, ≤ 3, sum ≤ 5) is a judgment call — `2 + 3 = 5` is subitizable, `3 + 3 = 6` is not. The gate also checks `unknownPosition === undefined` to avoid suppressing count sequences for missing-addend problems. Partner vocabulary only appears at difficulty ≤ 3. All paths are pure functions, fully tested.

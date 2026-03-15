@@ -1,76 +1,77 @@
 ---
 name: camera_pipeline
-description: Confirmed facts about the camera and frame capture pipeline: rVFC loop mechanics, stall risk, stop-race, overlay coordinate mismatch, test gaps
+description: Confirmed facts about the full CV pipeline: camera capture, ONNX worker, preprocessing, postprocessing, interpretation, temporal buffer, class-range filtering, mock/fixture systems, constraints
 type: project
 ---
 
-## Key findings (updated 2026-03-15 — full pipeline re-survey)
+## Key findings (updated 2026-03-15 — full pipeline exhaustive re-survey)
 
-### rVFC loop — try/catch NOW EXISTS (previously missing)
-As of the current codebase, `frame-capture.ts:onVideoFrame` has a try/catch at line 84 with `scheduleNext(video)` in the `finally` block (line 125). The stall risk noted in the 2026-03-13 audit has been fixed. The `catch {}` block is intentionally empty — errors are swallowed silently without logging even in debug mode. This is a low-severity issue.
+### rVFC loop — try/catch exists
+`frame-capture.ts:onVideoFrame` has a try/catch at line 84 with `scheduleNext(video)` in the `finally` block (line 125). The stall risk from an earlier audit has been fixed. `catch {}` swallows errors silently.
+
+### Async callback not awaited
+`frame-capture.ts:103` calls `cb(bitmap)` without await. The App.tsx async callback's returned Promise is silently discarded. Exceptions inside are unhandled rejections. Intentional — busy-flag in `onnx-recognition.ts:115` is the backpressure.
 
 ### Stop-during-await race
-Mitigated by the try/catch. The `catch {}` silently swallows the `InvalidStateError` from zeroed canvas and `scheduleNext` in `finally` re-chains safely.
+Mitigated by try/catch. `InvalidStateError` from zeroed canvas is swallowed; `scheduleNext` in `finally` re-chains safely.
 
-### rVFC scheduling: next frame fires BEFORE inference completes
-`scheduleNext(video)` fires at line 122, immediately after `cb(bitmap)` is invoked synchronously. The async `cb` (ONNX inference) runs concurrently. The busy-flag in `onnx-recognition.ts:103` is what prevents queuing — frames are dropped, not buffered.
+### Preprocessing duplication (critical)
+The worker (`inference.worker.ts:48-78`) duplicates letterbox+normalize logic inline using pre-allocated module-level buffers (`Float32Array(3*640*640)`, `OffscreenCanvas(640,640)`). It does NOT import from `preprocessing.ts`. Any change to letterbox behavior must be applied to BOTH files.
 
-### `onFrame` callback is NOT awaited
-`frame-capture.ts:106` calls `cb(bitmap)` without awaiting. The App.tsx async callback's returned promise is silently discarded. Exceptions inside the callback are unhandled rejections.
+### Postprocessing parameters
+- CONF_THRESHOLD=0.50 (raised from YOLO default 0.25 for physical tile use case, `postprocessing.ts:17`).
+- IOU_THRESHOLD=0.45. NMS is class-agnostic.
+- Output sorted L→R by x1. All bboxes normalized to [0,1].
+- Channel-major indexing: `output[(4 + classId) * numAnchors + anchorIdx]`.
+- classRange applied at argmax level — prevents letter classes from winning argmax over digit classes on 36-class model, which would suppress valid detections via NMS.
 
-### OffscreenCanvas: reused, not recreated
-Canvas created once per `createFrameCapture()` call, resized in-place if dimensions change. `stop()` zeroes dimensions then nulls refs (PRD §5.13 compliance).
+### Interpretation grouping
+- `HORIZONTAL_PROXIMITY_FACTOR=1.0 x pairAvgWidth` (pair-local, not scene-wide).
+- `VERTICAL_ALIGNMENT_FACTOR=0.5 x pairAvgHeight`.
+- Overlapping detections (gap < 0) skipped regardless of class — duplicate anchors for same physical tile.
+- `matchAnswer` uses string equality, so digit-count gate prevents ones-digit false positives.
 
-### object-cover coordinate mismatch in debug overlay
-`camera-overlay.tsx` draws bounding boxes by multiplying normalized (0–1) coords by canvas CSS px dimensions. Video uses `object-cover` — when container AR differs from 16:9, the visible video frame is cropped and boxes appear offset. Developer-only feature (`?overlay=boxes`), acceptable to defer. Add a comment to `drawDetections`.
+### Temporal buffer
+- REQUIRED_CONSECUTIVE_FRAMES=3, MAX_CONSECUTIVE_MISSES=2.
+- Generic over T — `number` (math) or `string` (spelling).
+- During miss-streak 1–2, count is NOT decremented — resumes from prior value on next valid detection. Only hard reset (missStreak > 2) clears count.
+- Game store has TWO separate buffers: `temporalBuffer<number>` and `spellingTemporalBuffer<string>` (game-store.ts:60-61).
 
-### Stale boxes on dropped frames
-When the worker is busy, `updateDetections` is never called and the canvas is never cleared. Old boxes persist until the next successful inference.
+### Class range filtering
+- Defined at `App.tsx:49-52`: math `{min:0, max:9}`, spelling `{min:10, max:35}`.
+- `setClassRange()` updates stored value in OnnxRecognitionService; range travels with next `infer` message.
+- No "current mode" state in the worker — mode is per-inference parameter.
 
-### Test coverage: near zero
-`frame-capture.test.ts`: 4 tests, all structural (stats/subscribe). Zero coverage of async loop, error paths, or multi-consumer logic.
-`use-camera.test.ts`: 2 type-shape tests only.
-
-### iPad resolution
-Constraints request `ideal: 1280x720`. Safari typically delivers 1920x1080 rear camera. Actual resolution read via `track.getSettings()` at `use-camera.ts:119`. Frame capture always uses live `video.videoWidth/videoHeight`.
-
----
-
-## Full pipeline state (2026-03-15 exhaustive survey)
-
-### Preprocessing (inference.worker.ts)
-Pre-allocated at module level: `Float32Array(3 * 640 * 640)` and `OffscreenCanvas(640,640)`.
-Worker duplicates the letterbox+normalize logic inline rather than importing from `preprocessing.ts`.
-Gray fill: 114/255 (YOLO standard). bitmap.close() immediately after getImageData, also in finally.
-
-### Postprocessing (postprocessing.ts)
-Channel-major output: `output[(4 + classId) * numAnchors + anchorIdx]`.
-CONF_THRESHOLD=0.5 (default 0.25 raised for physical tile use case).
-IOU_THRESHOLD=0.45.
-NMS is class-agnostic. Output sorted L-to-R by x1. All bboxes normalized to [0,1].
-classRange parameter is critical: without it, letter classes can suppress digit detections via NMS.
-
-### Interpretation (interpretation.ts)
-HORIZONTAL_PROXIMITY_FACTOR=1.0 x pairAvgWidth (pair-local, not scene-wide).
-VERTICAL_ALIGNMENT_FACTOR=0.5 x pairAvgHeight.
-Overlapping detections (gap < 0) skipped regardless of class -- duplicate anchors for one physical tile.
-
-### Temporal buffer (temporal-buffer.ts)
-REQUIRED_CONSECUTIVE_FRAMES=3, MAX_CONSECUTIVE_MISSES=2.
-Generic over T -- number (math) or string (spelling).
-count is NOT reset during miss-streak tolerance -- resumes from prior value on next valid detection.
-Game store has TWO separate buffers: temporalBuffer<number> and spellingTemporalBuffer<string>.
-
-### Class range filtering (ADR-006, App.tsx:49-52)
-math: {min:0, max:9}, spelling: {min:10, max:35}.
-Set via service.setClassRange() which updates currentClassRange sent with every infer message.
-Updated reactively when gameKind changes.
-
-### Wrong-tile feedback (game-store.ts)
-Separate from temporal buffer. Activates only after 3000ms into round.
-Requires 2+ consecutive wrong detections before surfacing wrongTileSeen.
-wrongTileSeen and cameraUncertain are mutually exclusive by construction.
+### Wrong-tile feedback
+- Separate from temporal buffer. Activates only after 3000ms into round.
+- Requires 2+ consecutive wrong detections before surfacing `wrongTileSeen`.
+- `wrongTileSeen` and `cameraUncertain` are mutually exclusive by construction.
+- Spelling mode has no wrong-tile or cameraUncertain logic.
 
 ### Model filename
-Hardcoded at `src/cv/onnx-recognition.ts:102` as `/models/digit-tiles.onnx`.
-Rename requires code change. App uses StaleWhileRevalidate so overwriting in-place is safe.
+- Hardcoded as `/models/digit-tiles.onnx` at `onnx-recognition.ts:102`. Rename requires code change.
+
+### object-cover overlay coordinate mismatch
+`camera-overlay.tsx:105-107` draws boxes by multiplying normalized coords by CSS canvas dimensions. With `object-cover` and non-matching AR, video is cropped and boxes appear offset. Developer-only feature (`?overlay=boxes`), acceptable to defer.
+
+### Mock system
+- `?recognition=mock` → no camera, no worker, no frame capture. MockNumpad calls `processDetections()` directly.
+- Two-digit answers: tapping the tens digit sends the full adjacently-positioned pair.
+- `MockRecognitionControl.emitDigit/emitDigits` bypass `recognize()` entirely for unit tests.
+
+### Fixture frame source
+- `FixtureFrameSource` implements `FrameSource` for test/regression use.
+- NOT wired into running app. `pipeline-regression.test.ts` uses synthetic tensors (`createSyntheticTensor`) directly.
+- Infrastructure for future real-image regression — not yet end-to-end.
+
+### ORT worker constraints (immutable)
+- `import from 'onnxruntime-web/wasm'` only — JSEP/WebGPU crashes Safari.
+- `numThreads = 1` — no SharedArrayBuffer, no COOP/COEP headers.
+- `wasmPaths = "/"` absolute — relative breaks from Worker URL context.
+- `isInferring` cleared in `finally` block — critical; otherwise worker deadlocks on inference error.
+
+### Video → canvas → bitmap (immutable)
+Never `createImageBitmap(video)` directly — WebKit bug #234920. Must go through canvas.
+
+### CV phase gate
+CV processing gated to `scanning` phase only (`App.tsx:165-169`). Non-scanning frames: `bitmap.close(); return`.

@@ -8,3 +8,5 @@
 - [audio_phonics.md](audio_phonics.md) — Audio strategy for phonics/spelling game: TTS vs pre-recorded findings, Web Speech API iOS bugs, Howler sprite architecture, multimodal learning evidence
 - [project_brainlift_literacy.md](project_brainlift_literacy.md) — Literacy science for spelling mode: orthographic mapping, phonemic awareness sequence, WWC evidence ratings, four pillars, Option C recommendation
 - [math_design_research.md](math_design_research.md) — Early childhood math game design: multi-digit readiness, multiplication age limits, missing addend gap, subtraction models, explanatory feedback evidence
+- ~~ui_polish_research.md~~ — **Removed**: content absorbed into `docs/learning-science-research.md` consolidated research doc
+- [codebase_architecture.md](codebase_architecture.md) — Complete map of game engine, state machine, feedback system, audio, and visual scaffolds with file:line citations for all seams
