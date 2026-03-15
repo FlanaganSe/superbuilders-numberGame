@@ -58,7 +58,7 @@ async function waitForScanning(
 }
 
 const CELEBRATION_PATTERN =
-	/Great job!|You got it!|Amazing!|Awesome!|Way to go!|Super!/;
+	/First try!|Quick thinking!|You knew it!|Right away!|Spot on!|Nailed it!|You figured it out!|Nice problem solving!|Good thinking!|You worked it out!|Smart move!|You didn't give up!|You kept trying!|You got there!|Way to stick with it!|Persistence pays off!/;
 
 test.describe("Game loop (mock recognition)", () => {
 	test("plays through start, countdown, answer, and celebration", async ({
