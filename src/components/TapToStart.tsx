@@ -86,7 +86,7 @@ export function TapToStart({
 	}
 
 	return (
-		<div className="flex flex-col items-center gap-8">
+		<div className="flex w-full flex-col items-center gap-6 px-4 sm:gap-8 sm:px-0">
 			<m.h1
 				initial={{ opacity: 0, y: -10 }}
 				animate={{ opacity: 1, y: 0 }}
@@ -118,12 +118,12 @@ export function TapToStart({
 					scale: 0.95,
 					transition: { type: "spring", stiffness: 400, damping: 17 },
 				}}
-				className="min-h-20 rounded-3xl bg-teal-500 px-14 py-6 font-display text-4xl text-white shadow-xl"
+				className="w-full min-h-16 rounded-3xl bg-teal-500 px-8 py-4 font-display text-2xl text-white shadow-xl sm:w-auto sm:min-h-20 sm:px-14 sm:py-6 sm:text-4xl"
 			>
 				Spelling
 			</m.button>
 
-			<div className="grid grid-cols-2 gap-4">
+			<div className="grid w-full grid-cols-1 gap-3 sm:w-auto sm:grid-cols-2 sm:gap-4">
 				<m.button
 					type="button"
 					onClick={handleStart}
@@ -134,7 +134,7 @@ export function TapToStart({
 						scale: 0.95,
 						transition: { type: "spring", stiffness: 400, damping: 17 },
 					}}
-					className="min-h-20 rounded-3xl bg-primary-500 px-14 py-6 font-display text-4xl text-white shadow-xl"
+					className="min-h-16 rounded-3xl bg-primary-500 px-6 py-4 font-display text-2xl text-white shadow-xl sm:min-h-20 sm:px-14 sm:py-6 sm:text-4xl"
 				>
 					Addition
 				</m.button>
@@ -148,7 +148,7 @@ export function TapToStart({
 						scale: 0.95,
 						transition: { type: "spring", stiffness: 400, damping: 17 },
 					}}
-					className="min-h-20 rounded-3xl bg-orange-500 px-14 py-6 font-display text-4xl text-white shadow-xl"
+					className="min-h-16 rounded-3xl bg-orange-500 px-6 py-4 font-display text-2xl text-white shadow-xl sm:min-h-20 sm:px-14 sm:py-6 sm:text-4xl"
 				>
 					Subtraction
 				</m.button>
@@ -162,7 +162,7 @@ export function TapToStart({
 						scale: 0.95,
 						transition: { type: "spring", stiffness: 400, damping: 17 },
 					}}
-					className="min-h-20 rounded-3xl bg-emerald-500 px-14 py-6 font-display text-4xl text-white shadow-xl"
+					className="min-h-16 rounded-3xl bg-emerald-500 px-6 py-4 font-display text-2xl text-white shadow-xl sm:min-h-20 sm:px-14 sm:py-6 sm:text-4xl"
 				>
 					Make 10
 				</m.button>
@@ -176,7 +176,7 @@ export function TapToStart({
 						scale: 0.95,
 						transition: { type: "spring", stiffness: 400, damping: 17 },
 					}}
-					className="min-h-20 rounded-3xl bg-violet-500 px-14 py-6 font-display text-4xl text-white shadow-xl"
+					className="min-h-16 rounded-3xl bg-violet-500 px-6 py-4 font-display text-2xl text-white shadow-xl sm:min-h-20 sm:px-14 sm:py-6 sm:text-4xl"
 				>
 					Missing Part
 				</m.button>
