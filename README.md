@@ -231,3 +231,4 @@ The spelling mode design is grounded in [orthographic mapping research](docs/res
 | [`docs/requirements.md`](docs/requirements.md) | Original PRD |
 | [`docs/learning-science-research.md`](docs/learning-science-research.md) | Learning science synthesis and product implications |
 | [`docs/research/`](docs/research/) | Deep evidence base (math design, literacy, phonics, ML pipeline) |
+| [`ML Training Pipeline`](https://github.com/FlanaganSe/ml-digit-training) | Link to repo for ML training |
