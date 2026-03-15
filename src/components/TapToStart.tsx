@@ -97,7 +97,7 @@ export function TapToStart({
 			</m.h1>
 
 			{cumulative.totalStars > 0 && (
-				<p className="font-display text-2xl text-gold-500">
+				<p className="font-display text-2xl text-amber-600">
 					{"★"} {cumulative.totalStars} stars collected
 				</p>
 			)}

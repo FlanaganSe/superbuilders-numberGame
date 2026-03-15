@@ -27,20 +27,17 @@ function markCalibrated(): void {
 
 interface CalibrationGuideProps {
 	readonly captureStats: FrameCaptureStats;
-	readonly onComplete: () => void;
 }
 
 export function CalibrationGuide({
 	captureStats,
-	onComplete,
 }: CalibrationGuideProps): React.JSX.Element | null {
 	const [dismissed, setDismissed] = useState(isCalibrated);
 
 	const handleComplete = useCallback(() => {
 		markCalibrated();
 		setDismissed(true);
-		onComplete();
-	}, [onComplete]);
+	}, []);
 
 	if (dismissed) return null;
 

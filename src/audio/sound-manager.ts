@@ -63,7 +63,8 @@ export type SoundName =
 	| "wordJug"
 	| "wordFig"
 	| "wordKid"
-	| "wordHug";
+	| "wordHug"
+	| "idleWonder";
 
 // ─── File mapping ───────────────────────────────────────────────────────────
 // Individual files (not sprites). Swap to a single sprite by changing
@@ -117,6 +118,7 @@ const SOUND_FILES: Record<SoundName, string> = {
 	wordFig: "word-fig",
 	wordKid: "word-kid",
 	wordHug: "word-hug",
+	idleWonder: "idle-wonder",
 };
 
 // ─── Howl instance cache ────────────────────────────────────────────────────

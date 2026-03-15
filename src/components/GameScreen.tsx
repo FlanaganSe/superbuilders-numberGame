@@ -213,6 +213,13 @@ export function GameScreen({
 		}
 	}, [problem, stars, timedOut, play]);
 
+	// Idle audio prompt — plays once when idle crosses 10s (JLS 2020)
+	useEffect(() => {
+		if (idleSeconds === 10 && isScanning && tileSeen === null) {
+			play("idleWonder");
+		}
+	}, [idleSeconds, isScanning, tileSeen, play]);
+
 	// Timeout handling — `stars` in deps ensures the timer is cancelled when
 	// a correct answer arrives (otherwise the old 30s timer survives into the
 	// next round's scanning phase and fires a phantom ROUND_TIMEOUT).
@@ -266,15 +273,12 @@ export function GameScreen({
 		<div className="flex flex-col items-center gap-6">
 			{/* Progress + mode + difficulty */}
 			<div className="flex items-center gap-3">
-				<span className="font-body text-sm text-white/70">{modeName}</span>
+				<span className="font-body text-sm text-white">{modeName}</span>
 				<ProgressPips
 					current={roundsCompleted}
 					total={MAX_PROBLEMS}
 					roundStars={roundStars}
 				/>
-				<span className="rounded-full bg-black/20 px-2.5 py-1 font-body text-sm text-white">
-					Level {difficulty}
-				</span>
 			</div>
 
 			{/* Level Up! indicator — only on promotion, never demotion */}
@@ -286,7 +290,7 @@ export function GameScreen({
 						animate={{ opacity: 1, scale: [0.8, 1.15, 1] }}
 						exit={{ opacity: 0 }}
 						transition={{ duration: 0.4 }}
-						className="font-display text-2xl text-gold-500"
+						className="font-display text-2xl text-amber-600"
 					>
 						Level Up!
 					</m.p>
@@ -343,7 +347,7 @@ export function GameScreen({
 							idleSeconds >= 10 ? "animate-pulse" : "animate-pulse-soft"
 						}`}
 					>
-						<p className="font-body text-2xl text-primary-400/80">
+						<p className="font-body text-2xl text-primary-500">
 							{idleSeconds >= 15
 								? "Try holding a tile up!"
 								: "Put your answer here"}

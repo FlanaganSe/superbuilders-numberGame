@@ -48,7 +48,7 @@ export function ProgressiveLoader({
 					Something went wrong loading the game.
 				</p>
 				{errorMessage && (
-					<p className="max-w-sm text-center font-body text-lg text-slate-400">
+					<p className="max-w-sm text-center font-body text-lg text-slate-500">
 						{errorMessage}
 					</p>
 				)}

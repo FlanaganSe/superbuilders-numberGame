@@ -182,7 +182,7 @@ function CountSequenceAnimation({
 }): React.JSX.Element {
 	return (
 		<div className="flex items-center gap-2">
-			<span className="font-body text-lg text-slate-400">
+			<span className="font-body text-lg text-slate-500">
 				{sequence.start},
 			</span>
 			{sequence.steps.map((num, i) => (
@@ -252,7 +252,9 @@ function CorrectFeedback({
 			<p className="font-display text-5xl text-success-600 drop-shadow-md">
 				{text}
 			</p>
-			<p className="font-display text-6xl text-gold-500">{"★".repeat(stars)}</p>
+			<p className="font-display text-6xl text-amber-600">
+				{"★".repeat(stars)}
+			</p>
 			{explanation && (
 				<p className="font-body text-xl text-slate-500">{explanation}</p>
 			)}

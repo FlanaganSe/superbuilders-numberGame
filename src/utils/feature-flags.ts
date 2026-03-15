@@ -5,12 +5,14 @@ export interface FeatureFlags {
 	readonly recognition: RecognitionMode;
 	readonly debug: boolean;
 	readonly overlay: OverlayMode;
+	readonly cvConfidence: boolean;
 }
 
 const DEFAULTS: FeatureFlags = {
 	recognition: "onnx",
 	debug: false,
 	overlay: "none",
+	cvConfidence: false,
 } as const;
 
 function parseRecognitionMode(value: string | null): RecognitionMode {
@@ -31,6 +33,7 @@ export function parseFeatureFlags(params: URLSearchParams): FeatureFlags {
 		recognition: parseRecognitionMode(params.get("recognition")),
 		debug: parseBool(params.get("debug")),
 		overlay: parseOverlayMode(params.get("overlay")),
+		cvConfidence: parseBool(params.get("cv-confidence")),
 	};
 }
 

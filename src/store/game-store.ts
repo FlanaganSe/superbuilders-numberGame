@@ -12,6 +12,7 @@ import type {
 	GameState,
 	SpellingProblem,
 } from "../types/game";
+import { getFeatureFlags } from "../utils/feature-flags";
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 
@@ -166,6 +167,12 @@ function processMathDetections(
 		set({ tileSeen: null, wrongTileSeen: null });
 	}
 
+	// Capture avg confidence before interpret() discards it (M2: confidence-aware CV)
+	const avgConfidence =
+		detections.length > 0
+			? detections.reduce((sum, d) => sum + d.confidence, 0) / detections.length
+			: 0;
+
 	// Run interpretation with digit-count gate
 	const expectedDigitCount = problem.answer.toString().length;
 	const values = interpretationLayer.interpret(detections, expectedDigitCount);
@@ -193,29 +200,27 @@ function processMathDetections(
 			break;
 	}
 
-	// Camera uncertainty: we saw a tile before, but raw detections dropped to zero.
-	// Gate on tileSeen === null to avoid contradicting the "I see X!" feedback
-	// (tileSeen clears after hard reset at missStreak > MAX_CONSECUTIVE_MISSES).
+	// Camera uncertainty: two sources — (1) miss-streak after seeing a correct
+	// tile, or (2) low-confidence wrong-tile detection (confidence-aware CV).
+	// hadTileThisRound and cameraMissStreak are updated here; cameraUncertain
+	// is computed after the wrong-tile block so both sources contribute.
 	const hadTile = get().hadTileThisRound || event.type === "TILE_SEEN";
 	const missStreak = temporalBuffer.getMissStreak();
-	const uncertain =
+	const missStreakUncertain =
 		hadTile &&
 		detections.length === 0 &&
 		get().tileSeen === null &&
 		missStreak >= 1;
-	set({
-		cameraUncertain: uncertain,
-		cameraMissStreak: missStreak,
-		hadTileThisRound: hadTile,
-	});
+	set({ cameraMissStreak: missStreak, hadTileThisRound: hadTile });
 
 	// Wrong-answer tracking: separate from temporal buffer.
 	// Only activate > 3s into scanning to avoid false triggers during initial placement.
-	// Note: wrongTileSeen and cameraUncertain are mutually exclusive by construction —
-	// cameraUncertain requires hadTileThisRound (set only on TILE_SEEN for correct answers),
-	// while wrongTileSeen requires !matched (wrong answers). They occupy the same UI space.
 	const roundStartedAt = gameState.currentRoundStartedAt;
 	const scanningTime = roundStartedAt ? Date.now() - roundStartedAt : 0;
+
+	const CONFIDENCE_THRESHOLD = 0.65;
+	const flags = getFeatureFlags();
+	let lowConfidenceUncertain = false;
 
 	const wrongValue = values[0];
 	if (wrongValue !== undefined && !matched && scanningTime > 3000) {
@@ -225,8 +230,20 @@ function processMathDetections(
 			wrongCandidate = wrongValue;
 			wrongConsecutive = 1;
 		}
-		if (wrongConsecutive >= 2 && get().wrongTileSeen !== wrongValue) {
+
+		// Only show wrong-tile if confidence is high enough (or flag is off)
+		const confidentEnough =
+			!flags.cvConfidence || avgConfidence >= CONFIDENCE_THRESHOLD;
+
+		if (
+			wrongConsecutive >= 2 &&
+			confidentEnough &&
+			get().wrongTileSeen !== wrongValue
+		) {
 			set({ wrongTileSeen: wrongValue });
+		} else if (wrongConsecutive >= 2 && !confidentEnough) {
+			// Low confidence wrong detection — use system attribution instead
+			lowConfidenceUncertain = true;
 		}
 	} else {
 		// Reset when: correct match found, no values, or too early in round
@@ -236,6 +253,9 @@ function processMathDetections(
 			set({ wrongTileSeen: null });
 		}
 	}
+
+	// Final cameraUncertain — from either miss-streak OR low-confidence wrong-tile
+	set({ cameraUncertain: missStreakUncertain || lowConfidenceUncertain });
 
 	return {
 		detectionCount: detections.length,

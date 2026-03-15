@@ -131,3 +131,34 @@ Append-only log. Read during planning, not loaded every session.
 **Decision:** Wrong-answer detection is a separate module-level tracker in `game-store.ts`, not a modification to the temporal buffer. It tracks consecutive frames of the same non-answer value (2+ frames, >3s into scanning) and surfaces `wrongTileSeen: number | null` in the store. The temporal buffer's code and tests remain completely unchanged.
 
 **Consequences:** The temporal buffer stays simple and well-tested. Wrong-answer sensitivity can be tuned independently (frame count threshold, time guard) without risk to the critical correct-answer path. Trade-off: two separate detection mechanisms to understand — but they serve clearly different purposes and have different consumers.
+
+---
+
+## ADR-011: WCAG 2.1 Contrast Compliance
+
+**Date:** 2026-03-15
+**Status:** Accepted
+
+**Context:** Audited all text-on-background combinations against the cream background (#fef9ef, relative luminance 0.95). Since all TileSight text uses 48pt+ Fredoka One or 24pt+ Lexend, the WCAG 2.1 SC 1.4.3 large text threshold of 3:1 applies. Five color classes failed:
+
+| Color class | Hex | Ratio on cream | Passes 3:1? |
+|---|---|---|---|
+| text-primary-300 | #93c5fd | 1.72:1 | No |
+| text-primary-400/80 | ~blended | 2.01:1 | No |
+| text-slate-400 | #94a3b8 | 2.44:1 | No |
+| text-gold-500 | #eab308 | 1.83:1 | No |
+| text-white/70 | — | N/A (camera bg) | Marginal |
+
+**Decision:** Darkened each failing class to the next shade that meets 3:1:
+
+| Original | Replacement | New ratio | Used for |
+|---|---|---|---|
+| text-primary-300 | text-primary-500 (#3b82f6) | 3.75:1 | "?" placeholders |
+| text-primary-400/80 | text-primary-500 | 3.75:1 | Hint zone text |
+| text-slate-400 | text-slate-500 (#64748b) | 4.56:1 | Secondary labels, icons |
+| text-gold-500 | text-amber-600 (#d97706) | 3.05:1 | Star ratings |
+| text-white/70 | text-white | — | Mode name (camera backdrop) |
+
+The cream background (#fef9ef) was not changed — it is a deliberate design choice (off-white for reading comprehension, Rello & Baeza-Yates 2012).
+
+**Consequences:** Placeholder "?" marks are slightly more visible (blue-500 vs blue-300). Stars shift from bright gold to warm amber — still recognizably golden. Mode name in the header is brighter white; contrast relies on the camera video backdrop in production. All combinations now meet WCAG 2.1 SC 1.4.3 for large text.

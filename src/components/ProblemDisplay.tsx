@@ -28,7 +28,7 @@ export function ProblemDisplay({
 					showAnswer ? (
 						<span className="text-success-600">{problem.answer}</span>
 					) : (
-						<span className="text-8xl text-primary-300">?</span>
+						<span className="text-8xl text-primary-500">?</span>
 					)
 				) : (
 					<span>{problem.right}</span>
@@ -41,13 +41,13 @@ export function ProblemDisplay({
 				) : showAnswer ? (
 					<span className="text-success-600">{problem.answer}</span>
 				) : (
-					<span className="text-8xl text-primary-300">?</span>
+					<span className="text-8xl text-primary-500">?</span>
 				)}
 			</div>
 
 			{/* Math language prompt — rotated synonyms (Purpura et al. 2020) */}
 			{!showAnswer && problem.answer >= 0 && (
-				<p className="font-body text-xl text-slate-400">
+				<p className="font-body text-xl text-slate-500">
 					{getMathPrompt(
 						problem.operator,
 						problem.unknownPosition,

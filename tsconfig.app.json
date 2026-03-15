@@ -21,13 +21,7 @@
 		"noUnusedParameters": true,
 		"noFallthroughCasesInSwitch": true,
 		"exactOptionalPropertyTypes": true,
-		"forceConsistentCasingInFileNames": true,
-
-		/* Paths */
-		"baseUrl": ".",
-		"paths": {
-			"@/*": ["./src/*"]
-		}
+		"forceConsistentCasingInFileNames": true
 	},
 	"include": ["src"]
 }

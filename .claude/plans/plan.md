@@ -120,7 +120,13 @@ Single pure function returning one process-oriented tip:
 ---
 
 ### M2: UX Polish, Accessibility & Confidence-Aware CV
-- [ ] M2: WCAG audit, remove Level N, idle audio, confidence-aware wrong-tile messaging, minor bug fixes
+- [x] M2: WCAG audit, remove Level N, idle audio, confidence-aware wrong-tile messaging, minor bug fixes
+  - [x] Step 1 — Feature flag (`cvConfidence`) + CalibrationGuide dead prop removal + tsconfig path alias removal + feature flag test → verify: `pnpm test src/utils/feature-flags.test.ts && pnpm typecheck`
+  - [x] Step 2 — WCAG contrast audit + fixes + write ADR-011 → verify: `pnpm typecheck`
+  - [x] Step 3 — Remove Level badge from GameScreen + register idle audio + add idle audio effect → verify: `pnpm typecheck`
+  - [x] Step 4 — Confidence-aware wrong-tile policy in game-store.ts + tests → verify: `pnpm test src/store/game-store.test.ts`
+  - [x] Step 5 — Full verification gate → verify: `pnpm test && pnpm typecheck && pnpm lint:fix && pnpm build`
+  Commit: "feat: add WCAG contrast fixes, confidence-aware CV, and UX polish"
 
 **Research basis:** WCAG 2.1 SC 1.4.3 — contrast. CLT — extraneous visual elements cost attention. NN/G — "Level N" not meaningful for 5-8. JLS (2020) — audio reduces feedback neglect. Math anxiety (Frontiers 2024) — CV misclassification experienced as "I'm bad at math" is a motivational event.
 

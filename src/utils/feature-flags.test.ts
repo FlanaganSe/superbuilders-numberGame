@@ -9,6 +9,7 @@ describe("parseFeatureFlags", () => {
 			recognition: "onnx",
 			debug: false,
 			overlay: "none",
+			cvConfidence: false,
 		} satisfies FeatureFlags);
 	});
 
@@ -62,6 +63,22 @@ describe("parseFeatureFlags", () => {
 			recognition: "mock",
 			debug: true,
 			overlay: "boxes",
+			cvConfidence: false,
 		} satisfies FeatureFlags);
+	});
+
+	it("parses cv-confidence=true", () => {
+		const flags = parseFeatureFlags(new URLSearchParams("?cv-confidence=true"));
+		expect(flags.cvConfidence).toBe(true);
+	});
+
+	it("defaults cvConfidence to false", () => {
+		const flags = parseFeatureFlags(new URLSearchParams(""));
+		expect(flags.cvConfidence).toBe(false);
+	});
+
+	it("parses bare cv-confidence flag as truthy", () => {
+		const flags = parseFeatureFlags(new URLSearchParams("?cv-confidence"));
+		expect(flags.cvConfidence).toBe(true);
 	});
 });

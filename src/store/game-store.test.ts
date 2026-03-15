@@ -3,6 +3,7 @@ import { MAX_CONSECUTIVE_MISSES } from "../cv/temporal-buffer";
 import { MAX_SPELLING_WORDS } from "../engine/spelling-words";
 import type { DetectedDigit } from "../types/cv";
 import type { Problem, SpellingProblem } from "../types/game";
+import * as featureFlagsModule from "../utils/feature-flags";
 import { useGameStore } from "./game-store";
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -17,11 +18,12 @@ const testProblem: Problem = {
 
 function makeDetection(
 	digit: 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9,
+	confidence = 0.9,
 ): readonly DetectedDigit[] {
 	return [
 		{
 			digit,
-			confidence: 0.9,
+			confidence,
 			bbox: { x: 0.5, y: 0.5, width: 0.1, height: 0.1 },
 		},
 	];
@@ -484,5 +486,96 @@ describe("game-store wrong-answer detection", () => {
 
 		processDetections(makeDetection(5)); // Frame 3: consecutive=2 for 5
 		expect(useGameStore.getState().wrongTileSeen).toBe(5);
+	});
+});
+
+// ─── Confidence-aware wrong-tile tests ───────────────────────────────────
+
+describe("game-store confidence-aware wrong-tile", () => {
+	beforeEach(() => {
+		const { dispatch, resetCvState, setGameKind } = useGameStore.getState();
+		dispatch({ type: "RESET" });
+		resetCvState();
+		setGameKind("math");
+	});
+
+	afterEach(() => {
+		vi.restoreAllMocks();
+	});
+
+	function enterScanningAndAdvanceTime(): void {
+		enterScanningPhase();
+		const roundStart =
+			useGameStore.getState().gameState.currentRoundStartedAt ?? 0;
+		vi.spyOn(Date, "now").mockReturnValue(roundStart + 3100);
+	}
+
+	it("with cvConfidence OFF: wrong-tile fires regardless of confidence", () => {
+		vi.spyOn(featureFlagsModule, "getFeatureFlags").mockReturnValue({
+			recognition: "mock",
+			debug: false,
+			overlay: "none",
+			cvConfidence: false,
+		});
+		enterScanningAndAdvanceTime();
+		const { processDetections } = useGameStore.getState();
+
+		// Low confidence detection
+		processDetections(makeDetection(8, 0.55));
+		processDetections(makeDetection(8, 0.55));
+		expect(useGameStore.getState().wrongTileSeen).toBe(8);
+		expect(useGameStore.getState().cameraUncertain).toBe(false);
+	});
+
+	it("with cvConfidence ON + high confidence: wrong-tile fires normally", () => {
+		vi.spyOn(featureFlagsModule, "getFeatureFlags").mockReturnValue({
+			recognition: "mock",
+			debug: false,
+			overlay: "none",
+			cvConfidence: true,
+		});
+		enterScanningAndAdvanceTime();
+		const { processDetections } = useGameStore.getState();
+
+		processDetections(makeDetection(8, 0.85));
+		processDetections(makeDetection(8, 0.85));
+		expect(useGameStore.getState().wrongTileSeen).toBe(8);
+		expect(useGameStore.getState().cameraUncertain).toBe(false);
+	});
+
+	it("with cvConfidence ON + low confidence: cameraUncertain instead of wrongTileSeen", () => {
+		vi.spyOn(featureFlagsModule, "getFeatureFlags").mockReturnValue({
+			recognition: "mock",
+			debug: false,
+			overlay: "none",
+			cvConfidence: true,
+		});
+		enterScanningAndAdvanceTime();
+		const { processDetections } = useGameStore.getState();
+
+		processDetections(makeDetection(8, 0.55));
+		processDetections(makeDetection(8, 0.55));
+		expect(useGameStore.getState().wrongTileSeen).toBeNull();
+		expect(useGameStore.getState().cameraUncertain).toBe(true);
+
+		// Third frame — cameraUncertain must remain stable (no oscillation)
+		processDetections(makeDetection(8, 0.55));
+		expect(useGameStore.getState().cameraUncertain).toBe(true);
+		expect(useGameStore.getState().wrongTileSeen).toBeNull();
+	});
+
+	it("with cvConfidence ON + borderline confidence (exactly 0.65): fires wrong-tile", () => {
+		vi.spyOn(featureFlagsModule, "getFeatureFlags").mockReturnValue({
+			recognition: "mock",
+			debug: false,
+			overlay: "none",
+			cvConfidence: true,
+		});
+		enterScanningAndAdvanceTime();
+		const { processDetections } = useGameStore.getState();
+
+		processDetections(makeDetection(8, 0.65));
+		processDetections(makeDetection(8, 0.65));
+		expect(useGameStore.getState().wrongTileSeen).toBe(8);
 	});
 });

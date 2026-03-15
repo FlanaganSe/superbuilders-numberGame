@@ -58,7 +58,7 @@ export function GhostTileGuide({
 					5
 				</text>
 			</svg>
-			<p className="font-body text-lg text-slate-400">
+			<p className="font-body text-lg text-slate-500">
 				Hold a tile up to the camera
 			</p>
 		</m.div>

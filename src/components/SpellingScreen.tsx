@@ -183,7 +183,7 @@ export function SpellingScreen({
 						className={
 							cell.revealed
 								? "flex h-20 w-16 items-center justify-center rounded-xl border-4 border-primary-300 bg-primary-50 font-display text-6xl text-primary-600 shadow-md"
-								: "flex h-20 w-16 items-center justify-center rounded-xl border-4 border-dashed border-primary-200 bg-primary-50/50 font-display text-5xl text-primary-300 shadow-sm"
+								: "flex h-20 w-16 items-center justify-center rounded-xl border-4 border-dashed border-primary-200 bg-primary-50/50 font-display text-5xl text-primary-500 shadow-sm"
 						}
 					>
 						{cell.revealed ? cell.letter : "?"}
@@ -194,7 +194,7 @@ export function SpellingScreen({
 			{/* Detected letters (what the camera sees) */}
 			{isScanning && detectedLetters.length > 0 && (
 				<div className="flex gap-2">
-					<span className="font-body text-xl text-slate-400">Camera sees:</span>
+					<span className="font-body text-xl text-slate-500">Camera sees:</span>
 					{detectedLetters.map((letter, i) => (
 						<span
 							// biome-ignore lint/suspicious/noArrayIndexKey: transient detection array
@@ -233,7 +233,7 @@ export function SpellingScreen({
 							idleSeconds >= 10 ? "animate-pulse" : "animate-pulse-soft"
 						}`}
 					>
-						<p className="font-body text-2xl text-primary-400/80">
+						<p className="font-body text-2xl text-primary-500">
 							{idleSeconds >= 15
 								? "Try holding a tile up!"
 								: "Put your letter tiles here"}

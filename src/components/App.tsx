@@ -244,10 +244,7 @@ export function App(): React.JSX.Element {
 						/>
 					)}
 					{!isMockMode && camera.status === "active" && (
-						<CalibrationGuide
-							captureStats={captureStats}
-							onComplete={() => {}}
-						/>
+						<CalibrationGuide captureStats={captureStats} />
 					)}
 					{camera.status === "interrupted" && (
 						<div className="absolute inset-0 z-20 flex items-center justify-center bg-black/50">

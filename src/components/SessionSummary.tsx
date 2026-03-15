@@ -124,7 +124,7 @@ export function SessionSummary({
 						<m.span
 							key={`star-${i.toString()}`}
 							variants={starVariants}
-							className="font-display text-6xl text-gold-500"
+							className="font-display text-6xl text-amber-600"
 						>
 							★
 						</m.span>
@@ -132,7 +132,7 @@ export function SessionSummary({
 				</m.div>
 
 				<m.p
-					className="font-display text-5xl text-gold-500"
+					className="font-display text-5xl text-amber-600"
 					initial={{ opacity: 0, y: 10 }}
 					animate={{ opacity: 1, y: 0 }}
 					transition={{ delay: displayStarCount * 0.15 + 0.2 }}
@@ -145,7 +145,7 @@ export function SessionSummary({
 				<p className="font-body text-2xl text-slate-500">
 					Total stars collected
 				</p>
-				<p className="font-display text-3xl text-gold-500">
+				<p className="font-display text-3xl text-amber-600">
 					{cumulative.totalStars}
 				</p>
 			</div>
@@ -170,7 +170,7 @@ export function SessionSummary({
 				Play More!
 			</m.button>
 
-			<p className="font-body text-lg text-slate-400">
+			<p className="font-body text-lg text-slate-500">
 				Come back tomorrow to practice more!
 			</p>
 		</div>
