@@ -69,7 +69,8 @@ export type SoundName =
 	| "phraseMake"
 	| "phraseTakeAway"
 	| "phraseIs"
-	| "phraseTheAnswerIs";
+	| "phraseTheAnswerIs"
+	| "phraseMakeTen";
 
 // ─── File mapping ───────────────────────────────────────────────────────────
 // Individual files (not sprites). Swap to a single sprite by changing
@@ -129,6 +130,7 @@ const SOUND_FILES: Record<SoundName, string> = {
 	phraseTakeAway: "phrase-take-away",
 	phraseIs: "phrase-is",
 	phraseTheAnswerIs: "phrase-the-answer-is",
+	phraseMakeTen: "phrase-make-ten",
 };
 
 // ─── Howl instance cache ────────────────────────────────────────────────────
