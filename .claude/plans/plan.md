@@ -66,12 +66,18 @@ None.
 
 ## Milestone outline
 
-- [ ] **M1: App identity + source code** — Update all user-facing and build-config references including PWA icons (8 files, ~10 edits). Verify with `pnpm build && pnpm test && pnpm lint`.
+- [x] **M1: App identity + source code** — Update all user-facing and build-config references including PWA icons (8 files, ~10 edits). Verify with `pnpm build && pnpm test && pnpm lint`.
   - [x] Step 1 — Edit package.json, index.html, manifest.json, TapToStart.tsx, CLAUDE.md, README.md → verify: `pnpm typecheck`
   - [x] Step 2 — Update PWA icon SVGs (S → T) → verify: visual inspection via read
   - [x] Step 3 — Full verify → `pnpm build && pnpm test && pnpm lint`
   Commit: "feat: rename project from Superbuilders to TileSight"
 - [ ] **M2: Documentation + agent memory** — Update all documentation prose and agent memory descriptions (~15 files, ~50 edits). Verify with grep for remaining "Superbuilders" to confirm only KEEP items remain.
+  - [ ] Step 1 — Update docs/product-overview.md, docs/research.md → verify: grep count
+  - [ ] Step 2 — Update docs/research/math-game-design.md, docs/research/literacy-science.md → verify: grep count
+  - [ ] Step 3 — Update docs/learning-science-research.md (13 project-name refs, skip 5 company refs) → verify: grep count
+  - [ ] Step 4 — Update agent memory files (6 files) → verify: grep count
+  - [ ] Step 5 — Final grep: confirm only KEEP items remain
+  Commit: "docs: rename Superbuilders to TileSight in documentation and agent memory"
 
 ## Manual setup tasks
 

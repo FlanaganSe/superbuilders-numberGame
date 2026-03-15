@@ -1,6 +1,6 @@
 # Research: Platform Knowledge Base
 
-**Project:** Superbuilders — OSMO-style math game with real-time computer vision
+**Project:** TileSight — OSMO-style math game with real-time computer vision
 **Last verified:** 2026-03-11
 **Status:** Verified platform facts and constraints. For architecture and implementation details, see `product-overview.md`.
 

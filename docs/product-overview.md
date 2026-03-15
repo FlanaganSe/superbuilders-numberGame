@@ -2,7 +2,7 @@
 
 ## What this is
 
-Superbuilders is an OSMO-style educational game that uses real-time computer vision to recognize physical tiles placed in front of an iPad camera. Children ages 5-8 solve math and spelling problems by placing physical tiles on a play surface. The app detects answers through the camera feed and provides instant, research-backed celebratory feedback. Five game modes are live: Addition, Subtraction, Missing Part, Make 10, and Spelling. The entire CV pipeline runs on-device in the browser via WebAssembly — no cloud, no backend, fully offline after first load.
+TileSight is an OSMO-style educational game that uses real-time computer vision to recognize physical tiles placed in front of an iPad camera. Children ages 5-8 solve math and spelling problems by placing physical tiles on a play surface. The app detects answers through the camera feed and provides instant, research-backed celebratory feedback. Five game modes are live: Addition, Subtraction, Missing Part, Make 10, and Spelling. The entire CV pipeline runs on-device in the browser via WebAssembly — no cloud, no backend, fully offline after first load.
 
 ## Why it exists
 

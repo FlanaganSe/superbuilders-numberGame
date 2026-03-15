@@ -1,6 +1,6 @@
 ---
 name: Early childhood math game design research
-description: Evidence-based findings on multi-digit numbers, multiplication, part-whole, missing addend, subtraction models, and top-evidence app features for ages 5-8 — with direct Superbuilders applicability
+description: Evidence-based findings on multi-digit numbers, multiplication, part-whole, missing addend, subtraction models, and top-evidence app features for ages 5-8 — with direct TileSight applicability
 type: project
 ---
 

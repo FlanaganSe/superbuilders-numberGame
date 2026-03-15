@@ -4,7 +4,7 @@
 
 Six specific questions about math content and design for ages 5–8, answered from
 authoritative peer-reviewed and government sources. Organized by question, then
-synthesized into recommendations for Superbuilders.
+synthesized into recommendations for TileSight.
 
 ---
 
@@ -63,7 +63,7 @@ Names: From Emerging Competence to Mastery") found:
 Symbols-only training (exposure to written numerals without base-10 block manipulatives)
 produced the most reliable improvement.
 
-### Relevance for Superbuilders
+### Relevance for TileSight
 
 The current game has a hard constraint: `MAX_ANSWER = 9` — only single-digit answers
 are accepted by the CV system (`docs/product-overview.md:240`). The subtraction operand
@@ -123,9 +123,9 @@ found that Australian children at mean age 5y6m could "imagine equal group struc
 and recognise composite units" — i.e., they see 3 groups of 4 rather than just 12 objects.
 This is informal multiplicative thinking, not × symbol fluency.
 
-### Relevance for Superbuilders
+### Relevance for TileSight
 
-Superbuilders' target range is 5–8. Multiplication as a symbolic arithmetic operation
+TileSight's target range is 5–8. Multiplication as a symbolic arithmetic operation
 (e.g., "3 × 4 = ?") is not developmentally appropriate until age 7–8 at the earliest,
 and informal understanding is fragile until 8–9. Including × problems alongside + and −
 in a mixed-mode game for this age range would be incorrect for the younger end (5–6)
@@ -197,7 +197,7 @@ the *rationale* of subtraction-as-unknown-addend was "significantly more efficac
 in promoting fluency with unpracticed subtraction items" than drill alone.
 Source: Springer link.springer.com/article/10.1007/BF03172907
 
-### Relevance for Superbuilders
+### Relevance for TileSight
 
 The game currently shows arithmetic problems ("3 + 4 = ?") requiring the child to
 produce the answer. This is a **result-unknown** format. It does not expose children
@@ -275,7 +275,7 @@ and the RCT descriptions) include:
 The Outhwaite et al. (2023) content analysis (referenced in docs/learning-science-research.md)
 confirms the combination of **explanatory feedback + motivational feedback + programmatic
 levelling** was a *necessary condition* for apps producing significant learning gains.
-Motivational-only feedback (what Superbuilders currently uses) was not sufficient.
+Motivational-only feedback (what TileSight currently uses) was not sufficient.
 
 ### The Frontiers systematic review (2023)
 
@@ -292,9 +292,9 @@ The review emphasized that foundational numeracy (cardinal principle, magnitude
 understanding) provides stronger long-term benefits than early arithmetic instruction
 when children are below age 5.
 
-### Relevance for Superbuilders
+### Relevance for TileSight
 
-The single most evidence-supported improvement Superbuilders can make is adding
+The single most evidence-supported improvement TileSight can make is adding
 **explanatory feedback** on wrong answers. Every RCT and content analysis of successful
 apps identifies this as a necessary condition. The current implementation (motivational
 encouragement on timeout: "Keep trying!") is insufficient. The research-supported
@@ -302,7 +302,7 @@ alternative: when the time runs out or the wrong tile is placed, the feedback na
 the correct answer and briefly shows a decomposition or visual representation ("7 = 3 + 4,
 you needed 4!").
 
-The dose-response finding is also important: Superbuilders' 15-round session structure
+The dose-response finding is also important: TileSight's 15-round session structure
 is reasonable, but *time on task within a well-designed system* is what produces gains.
 This argues for making sessions replayable and rewarding rather than gating content
 volume.
@@ -371,7 +371,7 @@ grades one through three" (*Journal for Research in Mathematics Education*), and
 
 This is also the ordering in CCSS (K–2 OA standards).
 
-### Relevance for Superbuilders
+### Relevance for TileSight
 
 The current game presents only type #1 (result-unknown addition) and type #2 (result-
 unknown subtraction with the take-away model). The evidence supports introducing type
@@ -408,13 +408,13 @@ g = 0.76 mean effect size. frontiersin.org/journals/education/articles/10.3389/f
 **3. James-Brabham et al. (2025)** — *Child Development*. "Do home mathematical activities
 relate to early mathematical skills? A systematic review and meta-analysis." Key finding:
 early math attainment gaps are visible by age 4; home math activities have a positive
-but modest effect. Relevant because Superbuilders is a home-use product.
+but modest effect. Relevant because TileSight is a home-use product.
 Source: srcd.onlinelibrary.wiley.com/doi/full/10.1111/cdev.14162
 
 **4. Springer/Knezek measurement review (2024)** — "Measuring Mathematical Skills in
 Early Childhood: a Systematic Review of the Psychometric Properties of Early Maths
 Assessments and Screeners." Identified 41 assessments + 25 screeners for ages 0–8.
-Relevant for benchmarking Superbuilders outcomes.
+Relevant for benchmarking TileSight outcomes.
 Source: link.springer.com/article/10.1007/s10648-024-09950-6
 
 **5. Nuffield Foundation "Can maths apps add value to learning?" (ongoing as of 2025)**
@@ -433,7 +433,7 @@ Source: bfi.uchicago.edu/wp-content/uploads/2025/09/BFI_WP_2025-129.pdf
 - The field is actively producing evidence, but most RCTs are still on commercial
   products (My Math Academy, DreamBox) with limited external validity
 - The quality framework problem is unsolved: most apps lack the pedagogical scaffolding
-  research recommends, consistent with what Superbuilders currently does
+  research recommends, consistent with what TileSight currently does
 - Home use products have strong potential but require parent engagement features
 - The Marx et al. (2025) finding about part-whole gaps is the most directly actionable
   for this codebase

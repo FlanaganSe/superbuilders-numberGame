@@ -1,19 +1,19 @@
 # Learning Science Research
 
-The single reference for all education and learning-science research behind Superbuilders: a camera-based tangible arithmetic and literacy game for ages 5-8.
+The single reference for all education and learning-science research behind TileSight: a camera-based tangible arithmetic and literacy game for ages 5-8.
 
 ---
 
 ## 1. Purpose / Central Problem
 
-Superbuilders currently operates as a **camera-verified worksheet** in math mode and a **visual pattern-matching exercise** in spelling mode. The core loops are:
+TileSight currently operates as a **camera-verified worksheet** in math mode and a **visual pattern-matching exercise** in spelling mode. The core loops are:
 
 - **Math:** Show arithmetic prompt, detect tile, celebrate or reveal answer, next round. The child's only cognitive task is: read the equation, produce the answer, place a tile.
 - **Spelling:** Show word as text ("DOG"), child finds letter tiles D, O, G, camera recognizes match, celebrate. No phonological analysis is required or prompted.
 
 The research is unambiguous that both modes are insufficient. For math, Outhwaite et al. (2023) found that **explanatory feedback + motivational feedback + programmatic levelling** was a necessary condition for apps that produced significant learning gains. For spelling, Ehri (2014) established that orthographic mapping requires the child to produce the spelling from phonological analysis, not copy it from a visible model.
 
-This document synthesizes the research base to guide product decisions that move Superbuilders from engagement theater toward measurable learning outcomes.
+This document synthesizes the research base to guide product decisions that move TileSight from engagement theater toward measurable learning outcomes.
 
 ---
 
@@ -21,7 +21,7 @@ This document synthesizes the research base to guide product decisions that move
 
 ### 2.1 Why Early Math Matters
 
-**School-entry math is the strongest predictor of later achievement** among the readiness skills studied across six longitudinal datasets (Duncan et al., 2007). This is the clearest justification for caring whether Superbuilders changes actual math understanding, not just engagement. [PubMed](https://pubmed.ncbi.nlm.nih.gov/18020822/)
+**School-entry math is the strongest predictor of later achievement** among the readiness skills studied across six longitudinal datasets (Duncan et al., 2007). This is the clearest justification for caring whether TileSight changes actual math understanding, not just engagement. [PubMed](https://pubmed.ncbi.nlm.nih.gov/18020822/)
 
 The National Research Council's *Mathematics Learning in Early Childhood* (2009) is the most authoritative field-level synthesis on early-childhood mathematics, equity, and instruction. [PDF](https://math4all.onmason.com/wp-content/blogs.dir/1543/files/2014/09/Math-learning-in-Early-Childhood.pdf)
 
@@ -29,7 +29,7 @@ A 2023 Frontiers systematic review of ECE math interventions found a mean effect
 
 ### 2.2 Learning Trajectories and Developmental Sequencing
 
-**Clements and Sarama's Learning Trajectories / Building Blocks** work treats early math as a sequence of developmental progressions and intentionally sequenced activities. This is probably the single most relevant research program for Superbuilders' content design. A product for ages 5-8 should start from magnitude, counting principles, comparison, and composition/decomposition, then move into more fluent addition/subtraction strategies. [Learning Trajectories](https://www.learningtrajectories.org/math/learning-trajectories) | [IES/WWC](https://ies.ed.gov/ncee/WWC/Intervention/2151)
+**Clements and Sarama's Learning Trajectories / Building Blocks** work treats early math as a sequence of developmental progressions and intentionally sequenced activities. This is probably the single most relevant research program for TileSight's content design. A product for ages 5-8 should start from magnitude, counting principles, comparison, and composition/decomposition, then move into more fluent addition/subtraction strategies. [Learning Trajectories](https://www.learningtrajectories.org/math/learning-trajectories) | [IES/WWC](https://ies.ed.gov/ncee/WWC/Intervention/2151)
 
 The **IES/WWC Practice Guide, *Teaching Math to Young Children*** gives five evidence-rated recommendations for preschool through kindergarten math instruction. Its first recommendation: "Teach number and operations using a developmental progression." This is the closest thing to a government-issued checklist for early math apps. [IES](https://ies.ed.gov/ncee/wwc/PracticeGuide/18)
 
@@ -51,7 +51,7 @@ The NAEYC + NCTM joint position statement describes what high-quality mathematic
 
 ### 2.4 Guided Play
 
-**Skene et al. (2022) meta-analysis:** Guided play showed a greater positive effect than direct instruction on early math skills, shape knowledge, and task switching, and outperformed free play on spatial vocabulary. The strongest version of Superbuilders is one where the child has agency, but the environment strongly channels attention toward the mathematical idea. [JAACAP](https://www.jaacap.org/article/S0890-8567(22)00020-2/fulltext) | [PubMed](https://pubmed.ncbi.nlm.nih.gov/35018635/)
+**Skene et al. (2022) meta-analysis:** Guided play showed a greater positive effect than direct instruction on early math skills, shape knowledge, and task switching, and outperformed free play on spatial vocabulary. The strongest version of TileSight is one where the child has agency, but the environment strongly channels attention toward the mathematical idea. [JAACAP](https://www.jaacap.org/article/S0890-8567(22)00020-2/fulltext) | [PubMed](https://pubmed.ncbi.nlm.nih.gov/35018635/)
 
 The right product stance is **guided play, not drill and not free play.** The task architecture should be precise (trajectory, mastery gating, explanatory feedback), but the child's experience should feel playful (physical tiles, warm language, no rigid pacing). This is what guided play actually means: child agency within a structured path.
 
@@ -69,11 +69,11 @@ The right product stance is **guided play, not drill and not free play.** The ta
 
 ### 2.6 Mathematical Language
 
-Math language -- terms like many, most, fewest, before, after, near, far -- predicts children's math development (Purpura et al.). There is also evidence that children's language proficiency matters in app-based math learning in bilingual settings. The best version of Superbuilders teaches vocabulary and relationships, not just symbol manipulation. Mathematical language is part of the learning mechanism, not decoration. [Frontiers](https://doi.org/10.3389/fpsyg.2020.01925) | [BJET](https://bera-journals.onlinelibrary.wiley.com/doi/10.1111/bjet.12912)
+Math language -- terms like many, most, fewest, before, after, near, far -- predicts children's math development (Purpura et al.). There is also evidence that children's language proficiency matters in app-based math learning in bilingual settings. The best version of TileSight teaches vocabulary and relationships, not just symbol manipulation. Mathematical language is part of the learning mechanism, not decoration. [Frontiers](https://doi.org/10.3389/fpsyg.2020.01925) | [BJET](https://bera-journals.onlinelibrary.wiley.com/doi/10.1111/bjet.12912)
 
 ### 2.7 Part-Whole Reasoning
 
-**Marx et al. (2025) systematic review:** 0 of 18 reviewed math apps implemented a systematic approach to part-whole learning from hands-on to more abstract compositions/decompositions. This is both a pedagogical gap and a market gap. Missing-addend problems ("3 + ? = 7") require inverse reasoning -- understanding that 7 decomposes into 3 and something. This is the foundation of algebraic thinking and the single highest-leverage new problem type for Superbuilders. [IEJME](https://dx.doi.org/10.29333/iejme/15677)
+**Marx et al. (2025) systematic review:** 0 of 18 reviewed math apps implemented a systematic approach to part-whole learning from hands-on to more abstract compositions/decompositions. This is both a pedagogical gap and a market gap. Missing-addend problems ("3 + ? = 7") require inverse reasoning -- understanding that 7 decomposes into 3 and something. This is the foundation of algebraic thinking and the single highest-leverage new problem type for TileSight. [IEJME](https://dx.doi.org/10.29333/iejme/15677)
 
 ### 2.8 Strategy Traces
 
@@ -157,7 +157,7 @@ There is tangible-game work on math + sign language in inclusive settings. App-e
 
 ---
 
-## 3. Product Implications for Superbuilders
+## 3. Product Implications for TileSight
 
 ### Physical tiles should reveal structure, not just confirm answers
 
@@ -217,7 +217,7 @@ Formal multiplicative thinking is not reliable until ages 7-9 (Nunes and Bryant)
 
 ## 4. SPOVs (Spiky Points of View)
 
-**SPOV 1: The moat is not computer vision; the moat is representational fidelity.** A better detector does not automatically produce better learning. The benefit of physical materials depends on whether they make mathematical structure visible. Superbuilders wins when tile placement reveals number relationships, not when the CV stack merely reads answers faster.
+**SPOV 1: The moat is not computer vision; the moat is representational fidelity.** A better detector does not automatically produce better learning. The benefit of physical materials depends on whether they make mathematical structure visible. TileSight wins when tile placement reveals number relationships, not when the CV stack merely reads answers faster.
 
 **SPOV 2: The right product stance is guided play, not drill and not free play.** The strongest design pattern is child agency inside an intentionally scaffolded path. Guided play outperforms more didactic formats on some early-math outcomes, and the strongest app results come from systems that blend playfulness with explanatory feedback and progression.
 
@@ -267,7 +267,7 @@ Formal multiplicative thinking is not reliable until ages 7-9 (Nunes and Bryant)
 
 17. **"Cognitive coherence" should not harden into a blanket anti-imagination stance.** The useful principle is not "no fantasy ever"; it is "don't spend cognitive budget on fantasy that is pedagogically idle."
 
-18. **Optimal hint timing for camera-based interaction.** The graduated hint research was conducted in screen-tap apps. Superbuilders has a gray zone between "child placed wrong tile," "camera can't see the tile," and "child hasn't placed any tile yet."
+18. **Optimal hint timing for camera-based interaction.** The graduated hint research was conducted in screen-tap apps. TileSight has a gray zone between "child placed wrong tile," "camera can't see the tile," and "child hasn't placed any tile yet."
 
 19. **Whether progressive encoding works without verbal instruction.** The app replaces the teacher with audio. Whether pre-recorded audio is sufficient to guide phonological analysis in a 5-year-old without an adult present is not established.
 

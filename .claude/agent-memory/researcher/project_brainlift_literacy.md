@@ -1,6 +1,6 @@
 ---
 name: project_brainlift_literacy
-description: Literacy science research findings for Superbuilders spelling mode — orthographic mapping, phonemic awareness, WWC evidence ratings, four pillars
+description: Literacy science research findings for TileSight spelling mode — orthographic mapping, phonemic awareness, WWC evidence ratings, four pillars
 type: project
 ---
 

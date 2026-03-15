@@ -1,4 +1,4 @@
-# Research: Early Childhood Literacy Science for Superbuilders Spelling Mode
+# Research: Early Childhood Literacy Science for TileSight Spelling Mode
 
 *Date: 2026-03-14. Read-only investigation. No source files modified.*
 
@@ -34,7 +34,7 @@ Understanding in Kindergarten Through 3rd Grade*. IES Practice Guide.
 URL: https://ies.ed.gov/ncee/wwc/practiceguide/21
 
 **Target age range:** Kindergarten through Grade 3 (approximately ages 5–9). Directly
-overlaps Superbuilders' 5–8 target.
+overlaps TileSight's 5–8 target.
 
 **The four recommendations with evidence ratings:**
 
@@ -145,7 +145,7 @@ strengthen the same neural pathways activated during reading.
    meanings and secure sight words
 
 **Critical finding for game design:** Guideline 4 describes a three-step encoding
-cycle that Superbuilders can directly implement: show the word → child analyzes
+cycle that TileSight can directly implement: show the word → child analyzes
 grapheme-phoneme pairs → child places tiles from memory. The "from memory" step
 is the OM-strengthening act. Showing the answer continuously while the child places
 tiles eliminates the memory retrieval that creates the bond.
@@ -184,13 +184,13 @@ Phoneme-level awareness is rarely established before age 5. Benchmark data:
 
 *Segmenting (productive — hearing a word, producing phonemes):*
 - Elkonin boxes (sound boxes): draw boxes, push token/tile per phoneme — directly
-  analogous to placing physical tiles in Superbuilders
+  analogous to placing physical tiles in TileSight
 - Tap counting: tap each phoneme on fingers
 - Bead threading: push bead left per sound, push all right to blend
 - Playdough smash: make ball per phoneme, smash while saying sound
 - LEGO/pennies: physical object per sound
 
-**Direct mapping to Superbuilders:** Elkonin boxes are already the closest physical
+**Direct mapping to TileSight:** Elkonin boxes are already the closest physical
 analogue to the game's tile-placement mechanic. The child is, in effect, doing a
 physical Elkonin box exercise each time they place letter tiles. This is not a
 coincidence — it is a feature worth explicitly designing around.
@@ -259,7 +259,7 @@ paid apps still scored poorly.
 - Ineffective apps use nonspecific feedback — excessive visual/sound effects — that "may
   undermine users' intrinsic motivation"
 
-**Critical finding for game design:** Superbuilders' current motivational-only feedback
+**Critical finding for game design:** TileSight's current motivational-only feedback
 ("Great job!") fails Pillar 2's engagement standard and provides none of the corrective/
 formative feedback that research marks as distinguishing effective from ineffective apps.
 This maps directly to the finding in `docs/learning-science-research.md` that "explanatory
@@ -275,7 +275,7 @@ Tangible User Interfaces (TUIs) — physical objects that interact with digital 
 have a growing evidence base for early childhood literacy specifically:
 
 - **Tiggly** (4–8 year olds): physical vowel letter tiles placed on iPad → phonics word-
-  building activity. Direct precedent for Superbuilders' letter tile mechanic.
+  building activity. Direct precedent for TileSight's letter tile mechanic.
 - **PhonoBlocks / VocaBlocks**: AR system for spelling acquisition; extended TUI reading
   systems for children with dyslexia
 - TUI enables learning that is "cognitive, emotional, physical, and social simultaneously"
@@ -284,7 +284,7 @@ have a growing evidence base for early childhood literacy specifically:
 
 **Critical alignment:** The Elkonin box research (Source C) and the TUI research converge
 on the same mechanism: physical token manipulation while performing phonological tasks
-simultaneously engages motor, visual, and phonological processing channels. Superbuilders'
+simultaneously engages motor, visual, and phonological processing channels. TileSight's
 tile-placement mechanic is a TUI Elkonin box. The pedagogy should be designed to exploit
 this, not ignore it.
 
