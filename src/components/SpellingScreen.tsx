@@ -1,15 +1,21 @@
+import { AnimatePresence } from "motion/react";
 import * as m from "motion/react-m";
-import { useEffect } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useAudio } from "../audio/use-audio";
-import { MAX_SPELLING_WORDS } from "../engine/spelling-words";
+import { getScaffoldReveal } from "../engine/spelling-scaffold";
+import { getWordAudioName, MAX_SPELLING_WORDS } from "../engine/spelling-words";
 import {
 	selectDetectedLetters,
 	selectSpellingProblem,
 	useGameStore,
 } from "../store/game-store";
 import type { Problem } from "../types/game";
+import { CameraUncertaintyPrompt } from "./CameraUncertaintyPrompt";
 import { FeedbackOverlay, type FeedbackState } from "./FeedbackOverlay";
+import { GhostTileGuide } from "./GhostTileGuide";
+import { hasSeenGuide, markGuideSeen } from "./ghost-tile-storage";
 import { ProgressPips } from "./ProgressPips";
+import { SpellingWordAudio } from "./SpellingWordAudio";
 
 // ─── Spring config ──────────────────────────────────────────────────────────
 
@@ -39,6 +45,7 @@ export function SpellingScreen({
 	const dispatch = useGameStore((s) => s.dispatch);
 	const resetCvState = useGameStore((s) => s.resetCvState);
 	const tileSeen = useGameStore((s) => s.tileSeen);
+	const cameraUncertain = useGameStore((s) => s.cameraUncertain);
 	const roundsCompleted = useGameStore((s) => s.gameState.rounds.length);
 	const difficulty = useGameStore((s) => s.gameState.difficulty);
 	const spellingProblem = useGameStore(selectSpellingProblem);
@@ -46,6 +53,16 @@ export function SpellingScreen({
 	const { play } = useAudio();
 
 	const word = spellingProblem?.word ?? problem.displayAnswer;
+	const scaffoldCells = getScaffoldReveal(word, attemptNumber);
+
+	// Ghost tile onboarding guide — shows on first-ever scan
+	const [showGuide, setShowGuide] = useState(() => !hasSeenGuide());
+
+	// Idle timer for gentle prompt escalation
+	const [idleSeconds, setIdleSeconds] = useState(0);
+
+	// Track which word we've auto-played audio for (reset on new word)
+	const lastAutoPlayedWordRef = useRef<string>("");
 
 	// Auto-advance after success (3.5s celebration window)
 	useEffect(() => {
@@ -57,7 +74,28 @@ export function SpellingScreen({
 		return () => clearTimeout(timer);
 	}, [stars, dispatch, resetCvState]);
 
-	// Sound effects
+	// ─── Ghost tile guide dismissal ─────────────────────────────────────────
+	useEffect(() => {
+		if (tileSeen !== null && showGuide) {
+			markGuideSeen();
+			setShowGuide(false);
+		}
+	}, [tileSeen, showGuide]);
+
+	// ─── Idle timer ──────────────────────────────────────────────────────────
+	const isScanning = !stars && !timedOut;
+
+	useEffect(() => {
+		setIdleSeconds(0);
+		if (!isScanning || tileSeen !== null) return;
+		const interval = setInterval(() => {
+			setIdleSeconds((s) => s + 1);
+		}, 1000);
+		return () => clearInterval(interval);
+	}, [isScanning, tileSeen]);
+
+	// ─── Sound effects ──────────────────────────────────────────────────────
+
 	useEffect(() => {
 		if (stars) play("correctChime");
 	}, [stars, play]);
@@ -69,6 +107,20 @@ export function SpellingScreen({
 	useEffect(() => {
 		if (tileSeen !== null) play("tileDetectedPop");
 	}, [tileSeen, play]);
+
+	// Auto-play word audio on scaffold 1 only (once per word).
+	// On scaffold 2-3, the replay button is available but no auto-play
+	// to avoid jarring repeated audio during rapid timeout→retry cycles.
+	useEffect(() => {
+		if (stars || timedOut) return;
+		if (attemptNumber !== 1) return;
+		if (lastAutoPlayedWordRef.current === word) return;
+		lastAutoPlayedWordRef.current = word;
+		const timer = setTimeout(() => {
+			play(getWordAudioName(word));
+		}, 300);
+		return () => clearTimeout(timer);
+	}, [attemptNumber, stars, timedOut, play, word]);
 
 	// Timeout handling — 45s for spelling (more tiles to place)
 	useEffect(() => {
@@ -82,7 +134,8 @@ export function SpellingScreen({
 		return () => clearTimeout(timer);
 	}, [timedOut, stars, dispatch]);
 
-	// Auto-retry after timeout
+	// Auto-retry after timeout (2s for all scaffold transitions —
+	// spelling hints are short and aimed at young readers)
 	useEffect(() => {
 		if (!timedOut) return;
 		const timer = setTimeout(() => {
@@ -93,6 +146,9 @@ export function SpellingScreen({
 	}, [timedOut, dispatch, resetCvState]);
 
 	// ─── Derive feedback state ──────────────────────────────────────────────
+	// Note: wrong-tile feedback is intentionally omitted for spelling in this
+	// milestone. The progressive encoding redesign changes the interaction
+	// model (what does "wrong tile" mean when the word is hidden?). See plan.
 
 	const feedback: FeedbackState = stars
 		? { type: "correct", stars, problem, difficulty }
@@ -102,30 +158,35 @@ export function SpellingScreen({
 				? { type: "tile-seen", answer: tileSeen }
 				: null;
 
-	const isScanning = !stars && !timedOut;
-
 	return (
 		<div className="flex flex-col items-center gap-6">
 			{/* Progress indicator */}
 			<ProgressPips current={roundsCompleted} total={MAX_SPELLING_WORDS} />
 
-			{/* "Spell:" label */}
-			<p className="font-body text-2xl text-slate-500">Spell the word:</p>
+			{/* "Spell:" label + audio replay button */}
+			<div className="flex items-center gap-3">
+				<p className="font-body text-2xl text-slate-500">Spell the word:</p>
+				<SpellingWordAudio word={word} />
+			</div>
 
-			{/* Target word with letter boxes */}
+			{/* Target word with scaffold-aware letter boxes */}
 			<m.div
 				key={tileSeen !== null ? `pop-${String(tileSeen)}` : "idle"}
 				animate={tileSeen !== null ? { scale: [1, 1.05, 1] } : { scale: 1 }}
 				transition={tileSeen !== null ? POP_SPRING : { duration: 0 }}
 				className="flex gap-3"
 			>
-				{word.split("").map((letter, i) => (
+				{scaffoldCells.map((cell, i) => (
 					<span
 						// biome-ignore lint/suspicious/noArrayIndexKey: static word, never reorders
 						key={i}
-						className="flex h-20 w-16 items-center justify-center rounded-xl border-4 border-primary-300 bg-primary-50 font-display text-6xl text-primary-600 shadow-md"
+						className={
+							cell.revealed
+								? "flex h-20 w-16 items-center justify-center rounded-xl border-4 border-primary-300 bg-primary-50 font-display text-6xl text-primary-600 shadow-md"
+								: "flex h-20 w-16 items-center justify-center rounded-xl border-4 border-dashed border-primary-200 bg-primary-50/50 font-display text-5xl text-primary-300 shadow-sm"
+						}
 					>
-						{letter}
+						{cell.revealed ? cell.letter : "?"}
 					</span>
 				))}
 			</m.div>
@@ -149,14 +210,36 @@ export function SpellingScreen({
 			{/* Feedback overlay */}
 			<FeedbackOverlay feedback={feedback} />
 
-			{/* Hint text when no tiles detected */}
-			{isScanning && tileSeen === null && detectedLetters.length === 0 && (
-				<div className="animate-pulse-soft rounded-3xl border-4 border-dashed border-teal-400 px-12 py-5">
-					<p className="font-body text-2xl text-teal-400/80">
-						Put your letter tiles here
-					</p>
-				</div>
+			{/* Camera uncertainty prompt — shown when tile was seen but lost */}
+			<AnimatePresence>
+				{isScanning && cameraUncertain && (
+					<CameraUncertaintyPrompt key="camera-uncertainty" />
+				)}
+			</AnimatePresence>
+
+			{/* Ghost tile onboarding guide — first-scan only */}
+			{isScanning && showGuide && !cameraUncertain && tileSeen === null && (
+				<GhostTileGuide visible={true} />
 			)}
+
+			{/* Answer zone hint — only during scanning with no feedback showing */}
+			{isScanning &&
+				!showGuide &&
+				!cameraUncertain &&
+				tileSeen === null &&
+				detectedLetters.length === 0 && (
+					<div
+						className={`rounded-3xl border-4 border-dashed border-primary-400 px-12 py-5 ${
+							idleSeconds >= 10 ? "animate-pulse" : "animate-pulse-soft"
+						}`}
+					>
+						<p className="font-body text-2xl text-primary-400/80">
+							{idleSeconds >= 15
+								? "Try holding a tile up!"
+								: "Put your letter tiles here"}
+						</p>
+					</div>
+				)}
 		</div>
 	);
 }

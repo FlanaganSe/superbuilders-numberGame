@@ -313,6 +313,20 @@ function processSpellingDetections(
 			break;
 	}
 
+	// Camera uncertainty: same pattern as math — gate on hadTileThisRound and tileSeen cleared
+	const hadTile = get().hadTileThisRound || event.type === "TILE_SEEN";
+	const missStreak = spellingTemporalBuffer.getMissStreak();
+	const uncertain =
+		hadTile &&
+		detections.length === 0 &&
+		get().tileSeen === null &&
+		missStreak >= 1;
+	set({
+		cameraUncertain: uncertain,
+		cameraMissStreak: missStreak,
+		hadTileThisRound: hadTile,
+	});
+
 	return {
 		detectionCount: detections.length,
 		candidateCount: letters.length,

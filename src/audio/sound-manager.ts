@@ -36,7 +36,34 @@ export type SoundName =
 	| "promptAltogether"
 	| "promptLeft"
 	| "promptMissing"
-	| "promptMakeTen";
+	| "promptMakeTen"
+	| "wordAt"
+	| "wordGo"
+	| "wordIn"
+	| "wordIt"
+	| "wordNo"
+	| "wordOn"
+	| "wordUp"
+	| "wordCat"
+	| "wordDog"
+	| "wordHat"
+	| "wordCup"
+	| "wordPig"
+	| "wordHen"
+	| "wordMop"
+	| "wordNut"
+	| "wordRug"
+	| "wordBed"
+	| "wordBat"
+	| "wordFan"
+	| "wordPen"
+	| "wordMug"
+	| "wordBug"
+	| "wordCub"
+	| "wordJug"
+	| "wordFig"
+	| "wordKid"
+	| "wordHug";
 
 // ─── File mapping ───────────────────────────────────────────────────────────
 // Individual files (not sprites). Swap to a single sprite by changing
@@ -63,6 +90,33 @@ const SOUND_FILES: Record<SoundName, string> = {
 	promptLeft: "prompt-left",
 	promptMissing: "prompt-missing",
 	promptMakeTen: "prompt-make-ten",
+	wordAt: "word-at",
+	wordGo: "word-go",
+	wordIn: "word-in",
+	wordIt: "word-it",
+	wordNo: "word-no",
+	wordOn: "word-on",
+	wordUp: "word-up",
+	wordCat: "word-cat",
+	wordDog: "word-dog",
+	wordHat: "word-hat",
+	wordCup: "word-cup",
+	wordPig: "word-pig",
+	wordHen: "word-hen",
+	wordMop: "word-mop",
+	wordNut: "word-nut",
+	wordRug: "word-rug",
+	wordBed: "word-bed",
+	wordBat: "word-bat",
+	wordFan: "word-fan",
+	wordPen: "word-pen",
+	wordMug: "word-mug",
+	wordBug: "word-bug",
+	wordCub: "word-cub",
+	wordJug: "word-jug",
+	wordFig: "word-fig",
+	wordKid: "word-kid",
+	wordHug: "word-hug",
 };
 
 // ─── Howl instance cache ────────────────────────────────────────────────────

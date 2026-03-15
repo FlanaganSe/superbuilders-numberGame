@@ -321,9 +321,25 @@ describe("getTimeoutHint", () => {
 			);
 		});
 
-		it("spelling sentinel returns word", () => {
-			expect(getTimeoutHint(spellingProblem, 1, 1)).toBe("The word is CAT.");
-			expect(getTimeoutHint(spellingProblem, 1, 2)).toBe("The word is CAT.");
+		it("spelling scaffold 1: encoding prompt", () => {
+			expect(getTimeoutHint(spellingProblem, 1, 1)).toBe(
+				"Listen again! What letters do you hear?",
+			);
+		});
+
+		it("spelling scaffold 2: first letter hint", () => {
+			expect(getTimeoutHint(spellingProblem, 1, 2)).toBe(
+				"The first letter is C. What comes next?",
+			);
+		});
+
+		it("spelling scaffold 3+: full word reveal", () => {
+			expect(getTimeoutHint(spellingProblem, 1, 3)).toBe(
+				"The word is CAT. Place the tiles to match!",
+			);
+			expect(getTimeoutHint(spellingProblem, 1, 4)).toBe(
+				"The word is CAT. Place the tiles to match!",
+			);
 		});
 	});
 });

@@ -8,6 +8,7 @@ import {
 	getCountSequence,
 	getTimeoutHint,
 } from "../engine/explanation-generator";
+import { getSpellingProcessPraise } from "../engine/spelling-scaffold";
 import type { DifficultyLevel, Problem } from "../types/game";
 import { TenFrame } from "./TenFrame";
 
@@ -214,16 +215,22 @@ function CorrectFeedback({
 	readonly difficulty: DifficultyLevel;
 }): React.JSX.Element {
 	const reduced = useReducedMotion();
+	const isSpelling = problem.answer < 0;
 	const text = useMemo(() => {
+		if (isSpelling) {
+			// Stars map inversely to attemptNumber: 3→1, 2→2, 1→3
+			const attemptNumber = 4 - stars;
+			return getSpellingProcessPraise(attemptNumber);
+		}
 		switch (stars) {
 			case 3:
 				return pickRandom(CELEBRATION_FIRST_TRY);
 			case 2:
 				return pickRandom(CELEBRATION_SECOND_TRY);
-			case 1:
+			default:
 				return pickRandom(CELEBRATION_PERSEVERED);
 		}
-	}, [stars]);
+	}, [stars, isSpelling]);
 	const explanation = useMemo(
 		() => getCorrectExplanation(problem, difficulty, stars),
 		[problem, difficulty, stars],

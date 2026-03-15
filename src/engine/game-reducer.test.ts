@@ -139,7 +139,7 @@ describe("gameReducer", () => {
 			}
 		});
 
-		it("skips to countdown for a new word on spelling timeout", () => {
+		it("retries same word with attemptNumber 2 on spelling timeout at attemptNumber 1", () => {
 			let state = dispatch(initialGameState(), {
 				type: "START_SESSION",
 				maxProblems: 3,
@@ -149,12 +149,132 @@ describe("gameReducer", () => {
 				type: "COUNTDOWN_COMPLETE",
 				problem: SAMPLE_PROBLEM,
 			});
+			expect(state.phase.phase).toBe("scanning");
+			if (state.phase.phase === "scanning") {
+				expect(state.phase.attemptNumber).toBe(1);
+			}
 			state = dispatch(state, { type: "ROUND_TIMEOUT" });
 			state = dispatch(state, { type: "NEXT_ROUND" });
-			// Spelling: should go to countdown (new word), not retry same problem
+			// Spelling at attemptNumber 1: retry same word with attemptNumber 2
+			expect(state.phase.phase).toBe("scanning");
+			if (state.phase.phase === "scanning") {
+				expect(state.phase.attemptNumber).toBe(2);
+				expect(state.phase.problem).toEqual(SAMPLE_PROBLEM);
+			}
+		});
+
+		it("retries same word with attemptNumber 3 on spelling timeout at attemptNumber 2", () => {
+			let state = dispatch(initialGameState(), {
+				type: "START_SESSION",
+				maxProblems: 3,
+				modeName: "Spelling",
+			});
+			state = dispatch(state, {
+				type: "COUNTDOWN_COMPLETE",
+				problem: SAMPLE_PROBLEM,
+			});
+			// Timeout → retry at 2
+			state = dispatch(state, { type: "ROUND_TIMEOUT" });
+			state = dispatch(state, { type: "NEXT_ROUND" });
+			// Timeout → retry at 3
+			state = dispatch(state, { type: "ROUND_TIMEOUT" });
+			state = dispatch(state, { type: "NEXT_ROUND" });
+			expect(state.phase.phase).toBe("scanning");
+			if (state.phase.phase === "scanning") {
+				expect(state.phase.attemptNumber).toBe(3);
+				expect(state.phase.problem).toEqual(SAMPLE_PROBLEM);
+			}
+		});
+
+		it("skips to countdown for a new word on spelling timeout at attemptNumber 3", () => {
+			let state = dispatch(initialGameState(), {
+				type: "START_SESSION",
+				maxProblems: 3,
+				modeName: "Spelling",
+			});
+			state = dispatch(state, {
+				type: "COUNTDOWN_COMPLETE",
+				problem: SAMPLE_PROBLEM,
+			});
+			// Exhaust all 3 scaffold levels
+			state = dispatch(state, { type: "ROUND_TIMEOUT" });
+			state = dispatch(state, { type: "NEXT_ROUND" }); // → scanning at 2
+			state = dispatch(state, { type: "ROUND_TIMEOUT" });
+			state = dispatch(state, { type: "NEXT_ROUND" }); // → scanning at 3
+			state = dispatch(state, { type: "ROUND_TIMEOUT" });
+			state = dispatch(state, { type: "NEXT_ROUND" }); // → countdown (new word)
 			expect(state.phase.phase).toBe("countdown");
 			if (state.phase.phase === "countdown") {
 				expect(state.phase.secondsLeft).toBe(COUNTDOWN_SECONDS);
+			}
+		});
+
+		it("math timeout retries without cap (unchanged behavior)", () => {
+			let state = toScanning(initialGameState());
+			// Timeout → retry at 2
+			state = dispatch(state, { type: "ROUND_TIMEOUT" });
+			state = dispatch(state, { type: "NEXT_ROUND" });
+			expect(state.phase.phase).toBe("scanning");
+			if (state.phase.phase === "scanning") {
+				expect(state.phase.attemptNumber).toBe(2);
+			}
+			// Timeout → retry at 3
+			state = dispatch(state, { type: "ROUND_TIMEOUT" });
+			state = dispatch(state, { type: "NEXT_ROUND" });
+			expect(state.phase.phase).toBe("scanning");
+			if (state.phase.phase === "scanning") {
+				expect(state.phase.attemptNumber).toBe(3);
+			}
+			// Timeout → retry at 4 (math has no cap)
+			state = dispatch(state, { type: "ROUND_TIMEOUT" });
+			state = dispatch(state, { type: "NEXT_ROUND" });
+			expect(state.phase.phase).toBe("scanning");
+			if (state.phase.phase === "scanning") {
+				expect(state.phase.attemptNumber).toBe(4);
+			}
+		});
+
+		it("session completion works with mixed spelling scaffold levels", () => {
+			let state = dispatch(initialGameState(), {
+				type: "START_SESSION",
+				maxProblems: 3,
+				modeName: "Spelling",
+			});
+
+			// Word 1: correct at scaffold 1 (3 stars)
+			state = dispatch(state, {
+				type: "COUNTDOWN_COMPLETE",
+				problem: SAMPLE_PROBLEM,
+			});
+			state = dispatch(state, { type: "ANSWER_CORRECT", stars: 3 });
+			expect(state.rounds).toHaveLength(1);
+
+			// Word 2: timeout at scaffold 1, correct at scaffold 2 (2 stars)
+			state = dispatch(state, { type: "NEXT_ROUND" });
+			state = dispatch(state, {
+				type: "COUNTDOWN_COMPLETE",
+				problem: SAMPLE_PROBLEM,
+			});
+			state = dispatch(state, { type: "ROUND_TIMEOUT" });
+			state = dispatch(state, { type: "NEXT_ROUND" }); // → scanning at 2
+			state = dispatch(state, { type: "ANSWER_CORRECT", stars: 2 });
+			expect(state.rounds).toHaveLength(2);
+
+			// Word 3: timeout at all scaffolds, then correct at scaffold 1 of next word
+			state = dispatch(state, { type: "NEXT_ROUND" });
+			state = dispatch(state, {
+				type: "COUNTDOWN_COMPLETE",
+				problem: SAMPLE_PROBLEM,
+			});
+			state = dispatch(state, { type: "ANSWER_CORRECT", stars: 1 });
+			expect(state.rounds).toHaveLength(3);
+
+			// Should auto-end session
+			state = dispatch(state, { type: "NEXT_ROUND" });
+			expect(state.phase.phase).toBe("session-end");
+			if (state.phase.phase === "session-end") {
+				expect(state.phase.session.rounds).toHaveLength(3);
+				expect(state.phase.session.totalStars).toBe(6); // 3+2+1
 			}
 		});
 	});

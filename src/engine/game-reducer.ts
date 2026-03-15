@@ -155,10 +155,22 @@ function handleNextRound(state: GameState): GameState {
 		return handleEndSession(state);
 	}
 
-	// For timeout: spelling skips to a new word (countdown), math retries same problem
+	// For timeout: spelling retries with escalated scaffold (up to 3), math retries same problem
 	if (state.phase.phase === "timeout") {
 		if (state.modeName === "Spelling") {
-			// Spelling: move to countdown so CountdownTimer generates a new word
+			if (state.phase.attemptNumber < 3) {
+				// Retry same word with escalated scaffold
+				return {
+					...state,
+					phase: {
+						phase: "scanning",
+						problem: state.phase.problem,
+						attemptNumber: state.phase.attemptNumber + 1,
+					},
+					currentRoundStartedAt: Date.now(),
+				};
+			}
+			// Exhausted all scaffold levels — move to next word
 			return {
 				...state,
 				phase: { phase: "countdown", secondsLeft: COUNTDOWN_SECONDS },

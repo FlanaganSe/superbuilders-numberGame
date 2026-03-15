@@ -5,6 +5,7 @@
 // Pool is intentionally small for physical-tile games: children need to own
 // the tiles and place them in front of the camera.
 
+import type { SoundName } from "../audio/sound-manager";
 import type { SpellingProblem } from "../types/game";
 
 // ─── Word pools ─────────────────────────────────────────────────────────────
@@ -72,4 +73,60 @@ export function generateSpellingProblem(
 		word,
 		letters: word.split(""),
 	};
+}
+
+// ─── Audio helper ────────────────────────────────────────────────────────────
+
+/**
+ * Compile-time mapping from word to SoundName. Adding a word to ALL_WORDS
+ * without a matching entry here will cause a silent audio gap — the Record
+ * type doesn't enforce exhaustiveness against the word arrays, but keeping
+ * this map adjacent to the word pools makes drift obvious in review.
+ */
+const WORD_AUDIO_MAP: Readonly<Record<string, SoundName>> = {
+	AT: "wordAt",
+	GO: "wordGo",
+	IN: "wordIn",
+	IT: "wordIt",
+	NO: "wordNo",
+	ON: "wordOn",
+	UP: "wordUp",
+	CAT: "wordCat",
+	DOG: "wordDog",
+	HAT: "wordHat",
+	CUP: "wordCup",
+	PIG: "wordPig",
+	HEN: "wordHen",
+	MOP: "wordMop",
+	NUT: "wordNut",
+	RUG: "wordRug",
+	BED: "wordBed",
+	BAT: "wordBat",
+	FAN: "wordFan",
+	PEN: "wordPen",
+	MUG: "wordMug",
+	BUG: "wordBug",
+	CUB: "wordCub",
+	JUG: "wordJug",
+	FIG: "wordFig",
+	KID: "wordKid",
+	HUG: "wordHug",
+};
+
+/**
+ * Maps a spelling word to its pronunciation audio SoundName.
+ * Throws in dev if the word has no registered audio (fail-fast over silent gap).
+ */
+export function getWordAudioName(word: string): SoundName {
+	const name = WORD_AUDIO_MAP[word];
+	if (!name) {
+		if (import.meta.env.DEV) {
+			console.warn(`No audio registered for spelling word: ${word}`);
+		}
+		// Fallback: construct the name so Howler logs a load error rather than crash
+		const lower = word.toLowerCase();
+		const capitalized = lower.charAt(0).toUpperCase() + lower.slice(1);
+		return `word${capitalized}` as SoundName;
+	}
+	return name;
 }

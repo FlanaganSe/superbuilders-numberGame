@@ -147,9 +147,16 @@ export function getTimeoutHint(
 	difficulty: DifficultyLevel,
 	attemptNumber: number,
 ): string {
-	// Spelling sentinel — word-based fallback
+	// Spelling sentinel — scaffold-aware hints
 	if (problem.answer < 0) {
-		return `The word is ${problem.displayAnswer}.`;
+		if (attemptNumber <= 1) {
+			return "Listen again! What letters do you hear?";
+		}
+		if (attemptNumber === 2) {
+			const firstLetter = problem.displayAnswer.charAt(0);
+			return `The first letter is ${firstLetter}. What comes next?`;
+		}
+		return `The word is ${problem.displayAnswer}. Place the tiles to match!`;
 	}
 
 	// Missing-addend: part-whole hints
