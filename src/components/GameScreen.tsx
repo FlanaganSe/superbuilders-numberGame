@@ -320,11 +320,11 @@ export function GameScreen({
 		const seq = buildTimeoutSequence(problem, difficulty, attemptNumber);
 		if (seq.length === 0) return;
 
-		// Start after encouragement clip (~0.5s) + small buffer
+		// Start after encouragement clip (measured at 1.043s) + small buffer
 		let cancel: (() => void) | null = null;
 		const startTimer = setTimeout(() => {
 			cancel = playSentence(seq, play);
-		}, 600);
+		}, 1200);
 
 		return () => {
 			clearTimeout(startTimer);
