@@ -4,17 +4,13 @@ description: Confirmed facts about the camera and frame capture pipeline: rVFC l
 type: project
 ---
 
-## Key findings from deep camera pipeline research (2026-03-13)
+## Key findings (updated 2026-03-14)
 
-### rVFC loop — no error recovery (HIGH risk)
-`frame-capture.ts:onVideoFrame` is async. `createImageBitmap` (line 99) and multi-consumer `Promise.all` (line 115) can throw. There is **no try/catch**. One throw permanently stalls the loop with no user-visible error. Fix: wrap entire `onVideoFrame` body in try/catch; re-chain with `scheduleNext` in the catch block.
-
-**Why:** Confirmed by reading all 169 lines of frame-capture.ts. No error handling exists anywhere in the async frame path.
-
-**How to apply:** Any plan touching frame-capture.ts must include or assume this fix is present. When implementing, single outer try/catch resolves both the stall risk and the stop-race.
+### rVFC loop — try/catch NOW EXISTS (previously missing)
+As of the current codebase, `frame-capture.ts:onVideoFrame` has a try/catch at line 84 with `scheduleNext(video)` in the `finally` block (line 125). The stall risk noted in the 2026-03-13 audit has been fixed. The `catch {}` block is intentionally empty — errors are swallowed silently without logging even in debug mode. This is a low-severity issue.
 
 ### Stop-during-await race
-`stop()` zeroes `canvas.width/height` (lines 150–151). If called between `drawImage` (line 96) and `createImageBitmap` (line 99), the bitmap creation throws `InvalidStateError`. Resolved by the try/catch fix above.
+Mitigated by the try/catch. The `catch {}` silently swallows the `InvalidStateError` from zeroed canvas and `scheduleNext` in `finally` re-chains safely.
 
 ### rVFC scheduling: next frame fires BEFORE inference completes
 `scheduleNext(video)` fires at line 122, immediately after `cb(bitmap)` is invoked synchronously. The async `cb` (ONNX inference) runs concurrently. The busy-flag in `onnx-recognition.ts:103` is what prevents queuing — frames are dropped, not buffered.

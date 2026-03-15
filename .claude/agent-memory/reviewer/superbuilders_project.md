@@ -21,7 +21,7 @@ All 9 milestones complete as of 2026-03-12. Full codebase review conducted 2026-
 
 1. **Worker `onerror` not handled** (`src/cv/onnx-recognition.ts:83–95`) — unhandled worker exceptions leave `pendingInit` unsettled forever; user sees infinite spinner with no fallback.
 2. **`pendingInfer` never rejected on dispose** (`onnx-recognition.ts:110–121`) — Promise leaks when component unmounts mid-inference; closure kept alive, worse in StrictMode.
-3. **`createImageBitmap` not wrapped in try/catch** (`src/camera/frame-capture.ts:99`) — if it rejects (GPU context loss, canvas resize race on Safari), `scheduleNext` never called, frame capture stops permanently with no recovery.
+3. ~~**`createImageBitmap` not wrapped in try/catch**~~ — Fixed. try/catch now exists at `frame-capture.ts:84`.
 4. **Timeout does not push to `state.rounds`** (`src/engine/game-reducer.ts:119–136`) — `handleEndSession` totalStars/rounds count excludes timed-out rounds; `MAX_PROBLEMS` check allows more than 15 total attempts.
 5. **`CountdownTimer` interval re-registers on every tick** (`src/components/CountdownTimer.tsx:26–48`) — `difficulty` in deps triggers re-render on each `COUNTDOWN_TICK`; can cause skipped or doubled ticks.
 

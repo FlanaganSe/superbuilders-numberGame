@@ -1,39 +1,93 @@
 ---
 name: training_pipeline
-description: Confirmed facts about the digit-tile ONNX model training pipeline — class mapping, dataset sizes, augmentation bugs, preprocessing alignment, and retraining guidance
+description: Current state of the digit-tile ONNX model training pipeline -- train3 (deployed 2026-03-15), class mapping, pipeline scripts, dataset config, and retraining guidance
 type: project
 ---
 
 # Training Pipeline Facts
 
-**Why:** Deep research done 2026-03-13. Future sessions should not re-derive these from scratch.
+**Why:** Deep research done 2026-03-13 (app side) + 2026-03-14 (digit-training repo, train2)
++ 2026-03-15 (full re-survey after train3 completion). train3 fixed every known issue from train2.
 
-## Confirmed facts
+## Deployed model state (as of 2026-03-15)
 
-### Active model (as of 2026-03-13, commit 3e2133c)
-- **Active model:** `digit-tiles.onnx` is a **36-class alphanumeric model** outputting `[1, 40, 8400]`. Classes: `0-9` + `A-Z`. Date embedded: 2026-03-13.
-- **Backup model:** `digit-tiles.onnx.bak` is the **original 10-class digit model** outputting `[1, 14, 8400]`. Date embedded: 2026-03-12.
-- **Contract mismatch:** The game only uses digits 0–9 but the active model includes 26 letter classes. Letter class IDs 10–35 pass through as phantom "digit" values with no bounds check (`postprocessing.ts:198`).
-- **No lineage for active model:** No training logs, dataset manifests, or eval metrics exist for the 2026-03-13 36-class model.
+- **Active model:** `digit-tiles.onnx` is **train3** -- YOLOv11n, 36-class, outputting `[1, 40, 8400]`.
+  Classes: `0-9` + `A-Z`.
+- **Backup:** `digit-tiles.onnx.pre-train3` -- the old train2 model.
+- **Val metrics:** mAP50=0.995, mAP50-95=0.973, Precision=0.993, Recall=0.998.
+- **Test mAP:** 0.907 -- lower due to thin test samples for some letter classes (F, L), not real failures.
+- **ONNX:** 10.6 MB, opset 17, float32, batch=1.
 
-### 10-class `.bak` model (last known good digit-only model)
-- **Class map:** classId 0→digit 0, ..., classId 9→digit 9. Verified from ONNX metadata `names` field.
-- **Dataset size:** train=417 (≈42/class), valid=25 (≈2–3/class), test=14. Metrics are high-variance noise.
-- **Confirmed training bug:** `fliplr=0.5` was used (YOLO default not overridden). 50% of training images horizontally flipped — invalid for asymmetric digits.
-- **Active augmentations:** HSV saturation (0.7), HSV value (0.4), scale (0.5), mosaic (1.0) — all YOLO defaults, all active.
-- **Roboflow resize:** "Stretch to 640×640" — distorts aspect ratio. Inference uses **letterbox** with gray 114 padding. Minor train/inference mismatch.
-- **Preprocessing at inference:** letterbox → gray 114 fill → planar RGB [R,G,B] → /255 → Float32Array [1,3,640,640].
-- **Weak classes:** 0 (50% recall), 1 (83%), 5 (50%), 8 (0% recall) in confusion matrix.
-- **Export:** opset=17, FP32, no embedded NMS, batch=1. All correct.
-- **Inference output:** [1, 14, 8400] — 14 = 4 box + 10 class scores, 8400 anchors at 640×640.
+## digit-training repo location
 
-## CacheFirst + in-place swap = split device population
-The model was replaced in-place at the same URL (`/models/digit-tiles.onnx`) in commit `3e2133c`. CacheFirst never revalidates. Devices that cached the old 10-class model serve it indefinitely; fresh devices get the 36-class model. **Always version model filenames** (e.g., `digit-tiles-v1.onnx`) on any update.
+`/Users/seanflanagan/proj/digit-training` -- separate Python project, not in superbuilders repo.
 
-## Retraining recommendation
+## Key files
 
-Priority 0 (no training): restore 10-class `.bak` as `digit-tiles-v1.onnx`, add classId bounds check in `postprocessing.ts:198`, preserve single-digit candidates in interpretation grouping.
+- `scripts/config.py` -- 36-class map, OpenRouter API config, annotation prompt, YOLO thresholds
+- `scripts/filter.py` -- blur (Laplacian variance, threshold=**1.0**) + perceptual hash dedup (hamming=8), within-prefix
+- `scripts/annotate.py` -- Gemini via OpenRouter, base64 image, json_schema structured output
+- `scripts/convert.py` -- Gemini 0-1000 coords -> YOLO 0-1.0 cx/cy/w/h format
+- `scripts/qa.py` -- draws boxes, class distribution, consistency, geometry checks
+- `scripts/upload.py` -- Roboflow batch upload (workspace: seans-workspace-zsmup, project: digital-tiles)
+- `scripts/split.py` -- stratified grouped split by video prefix (NEW in train3 era; absent in train2)
+- `kaggle/train-digit-tiles.ipynb` -- full Kaggle P100 training notebook
+- `docs/training.md` -- authoritative end-to-end guide (~734 lines)
 
-Priority 1 (next training): fix `fliplr=0.0`, change Roboflow preprocessing to letterbox (not stretch), add data for weak classes (0, 1, 5, 8) from real iPad camera in deployment environment, expand validation to 10–15/class, train 200 epochs with `patience=50 label_smoothing=0.1`, deploy as `digit-tiles-v2.onnx`.
+**`scripts/run.py` does not exist** -- pipeline runs module-by-module.
 
-**How to apply:** When any retrain discussion comes up, start from these verified facts rather than re-inspecting artifacts. When model swap or deployment is discussed, always raise the versioned filename requirement.
+## LLM annotation details
+
+- Model: `google/gemini-3.1-flash-lite-preview` via OpenRouter (OpenAI-compatible SDK)
+- Fallbacks: `google/gemini-3-flash-preview`, `google/gemini-2.5-flash`
+- Prompt: detect white card tiles, return label + box_2d [y_min, x_min, y_max, x_max] 0-1000
+- `json_schema` strict mode with provider pinning to Google
+- Temperature: 0.1
+- Gemini coordinate order: **[y_min, x_min, y_max, x_max]** (not x-first -- Gemini-specific)
+- `is_prediction=False` on upload -- annotations go to ground truth, not review queue
+
+## Class map
+
+36 classes, IDs 0-9 = digits, 10-35 = letters A-Z. Stable since train2.
+(`scripts/config.py:22-29`)
+
+## train3 pipeline settings
+
+- Filter blur threshold: **1.0** (recalibrated from 3.0 -- white-surface tiles have low texture)
+- Roboflow resize: "Fit (white edges)" 640x640 (not "Stretch")
+- Augmentation: 4x multiplier, training set only (brightness, exposure, blur, noise; no flip/rotation)
+- No split in Roboflow (all assigned to train/); local `scripts/split.py` redistributes
+- Grouped split target: 70% train / 20% valid / 10% test; all 36 classes in every split
+- Training: 150 epochs, Kaggle P100, ~3.3 hrs
+- Key YOLO flags: `fliplr=0.0`, `flipud=0.0`, `degrees=10`, `hsv_v=0.5`, `cos_lr=True`,
+  `patience=50`, `close_mosaic=15`
+- ONNX export: `opset=17, half=False, batch=1, imgsz=640`
+
+## What train3 fixed (vs. train2)
+
+- `fliplr=0.5` default was corrupting mirrored characters -> now `fliplr=0.0` explicit
+- Random Roboflow split leaking sequential frames -> now grouped by video prefix via `scripts/split.py`
+- Val set was only 50 images -> now ~250 images, all 36 classes covered
+- Letterbox resize was unconfirmed -> now "Fit (white edges)" documented and enforced
+- Deployed from epoch 28 checkpoint -> now full 150-epoch run with patience=50
+- Local MPS training -> now Kaggle P100 (3.3 hrs vs. ~11 hrs)
+
+## App integration
+
+- Model path hardcoded: `src/cv/onnx-recognition.ts:102` -- `/models/digit-tiles.onnx`
+- App uses StaleWhileRevalidate (not CacheFirst) -- overwriting same filename is safe
+- `classRange` param in app selects digit-only (0-9) vs. letter mode (10-35)
+
+## How to apply
+
+For next retraining, `docs/training.md` is the authoritative guide.
+Key invariants that must not change:
+1. `fliplr=0.0` and `flipud=0.0` -- mirrored characters are invalid training data
+2. `imgsz=640` in both training and ONNX export
+3. `opset=17, half=False, batch=1` for ONNX (ORT Web 1.24.3 WASM EP constraint)
+4. Always run `scripts/split.py` locally; never use Roboflow's random split
+5. Upload dataset to Kaggle as a Dataset (not Code input) to preserve local splits
+6. Roboflow resize: "Fit (white edges)" not "Stretch"
+
+When deployment is discussed: overwriting `digit-tiles.onnx` in place is safe (StaleWhileRevalidate).
+The CacheFirst concern from train2 era was resolved -- the app's service worker uses SWR.

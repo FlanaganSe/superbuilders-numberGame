@@ -98,7 +98,7 @@ AGPL-3.0 or enterprise. Fine for demo sprint. Flag immediately if commercial use
 
 | Risk | Status | Detail |
 |---|---|---|
-| Model accuracy insufficient | ACTIVE (mitigated) | COCO pretrained model working; custom training guide ready in `model-training-guide.md` |
+| Model accuracy insufficient | RESOLVED | Custom 36-class YOLO11n model (train3) deployed — mAP50: 0.995. Training pipeline documented in `~/proj/digit-training` |
 | Custom model not ready in time | RESOLVED | Mock recognition mode + COCO model shipped; game fully playable without custom model |
 | Camera/screen geometry unsolvable | RESOLVED | Rear camera working; guided device placement implemented |
 | iPad thermal throttling | ACTIVE | 4fps cap implemented, but not stress-tested for long sessions |

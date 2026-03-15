@@ -95,7 +95,7 @@ React UI: celebration animation, confetti, next problem
 
 **Temporal buffer:** Raw CV detections are noisy. A single frame might see a "7" that's actually a hand passing over. The buffer requires 3 consecutive frames with the same matched answer before committing. At ~5fps, this is ~600ms of stability — long enough to filter noise, short enough to feel responsive. The buffer emits `TILE_SEEN` on frame 1 (instant visual feedback) and `ANSWER_COMMITTED` on frame 3 (game logic fires).
 
-**Class-count agnostic postprocessing:** `numClasses` is read from the ONNX output tensor dimensions (`dims[1] - 4`), not hardcoded. When a new model with 36 classes (digits + letters) replaces the current 10-class digit model, no postprocessing code changes are needed — the loop over class scores automatically adapts.
+**Class-count agnostic postprocessing:** `numClasses` is read from the ONNX output tensor dimensions (`dims[1] - 4`), not hardcoded. The current 36-class model (digits 0–9 + letters A–Z) outputs `[1, 40, 8400]`. In math mode, ADR-006 `classRange` filtering constrains the argmax loop to digit classes only (0–9), so letter detections are ignored during arithmetic gameplay. Postprocessing adapts automatically to any class count.
 
 ---
 
@@ -107,7 +107,7 @@ src/
 ├── index.css                   # Tailwind @theme: colors, fonts, animations
 ├── vite-env.d.ts               # Vite client types
 │
-├── components/                 # React UI layer (13 components)
+├── components/                 # React UI layer (16 components)
 │   ├── App.tsx                 # Root orchestrator: CV pipeline wiring, phase routing
 │   ├── GameScreen.tsx          # Active game: problem display, tile detection, feedback, progress
 │   ├── TapToStart.tsx          # Idle screen: audio + camera + wake lock unlock in one gesture
@@ -119,6 +119,8 @@ src/
 │   ├── CalibrationGuide.tsx    # One-time camera setup checklist
 │   ├── ProblemDisplay.tsx      # "3 + 4 = ?" renderer
 │   ├── MuteButton.tsx          # Fixed-position audio toggle
+│   ├── SpellingScreen.tsx       # Spelling game mode UI
+│   ├── CameraUncertaintyPrompt.tsx  # System-attribution camera feedback
 │   ├── MockNumpad.tsx          # Dev-only digit input for mock mode
 │   └── DebugHUD.tsx            # Dev-only stats overlay (?debug=true)
 │
@@ -144,6 +146,9 @@ src/
 │   ├── game-reducer.ts         # State machine: idle→countdown→scanning→success/timeout→end
 │   ├── problem-generator.ts    # Addition/Subtraction modes, difficulty-scaled operands
 │   ├── difficulty.ts           # Adaptive difficulty: promote after 3, demote after 2
+│   ├── explanation-generator.ts  # Research-backed instructional feedback — ADR-009
+│   ├── camera-uncertainty.ts   # System-attribution for camera issues — ADR-010
+│   ├── spelling-words.ts       # Age-appropriate CVC/CVCC word lists
 │   └── session.ts              # Star calculation, cumulative stats, localStorage persistence
 │
 ├── store/                      # Zustand state management
@@ -171,7 +176,7 @@ public/
 ├── _redirects                  # SPA fallback: /* → /index.html 200
 ├── icons/                      # SVG icons (192, 512)
 ├── models/
-│   └── digit-tiles.onnx        # Custom YOLO11n model (~11MB, FP32, 10 classes: digits 0–9)
+│   └── digit-tiles.onnx        # Custom YOLO11n model (~10.6 MB, FP32, 36 classes: digits 0–9 + letters A–Z)
 └── sounds/                     # Dual-format audio (MP3 + M4A per sound)
     ├── correct.{mp3,m4a}
     ├── encourage.{mp3,m4a}
@@ -184,11 +189,15 @@ e2e/
 
 docs/
 ├── product-overview.md         # This file
-├── decisions.md                # Append-only ADR log (5 decisions)
+├── decisions.md                # Append-only ADR log (10 decisions)
 ├── requirements.md             # Original PRD
-├── research.md                 # Verified platform facts and constraints (~160 lines)
-├── deep-analysis.md            # Extended CV pipeline audit (~160 lines)
-└── model-training-guide.md     # Step-by-step YOLO training guide (~600 lines)
+├── research.md                 # Verified platform facts and constraints
+├── learning-science-research.md  # Consolidated learning science research (read first)
+└── research/                   # Deep evidence base (read when implementing)
+    ├── literacy-science.md     # Full literacy/encoding evidence (IES, Ehri, four pillars)
+    ├── math-game-design.md     # Full math design evidence (6 research questions)
+    ├── phonics-deep-dive.md    # Full phonics instruction evidence (Elkonin, CVC, multimodal)
+    └── digit-training-pipeline.md  # ML training pipeline documentation (digit-training repo)
 ```
 
 ---
@@ -247,7 +256,7 @@ Difficulty adapts per-round: 3 consecutive correct promotes (max 5), 2 consecuti
 
 2. **Preprocessing** — In the worker. Letterbox resize maintains aspect ratio with gray padding (114/255, YOLO standard). RGBA pixel data from canvas is converted to planar RGB `[R₀…Rₙ, G₀…Gₙ, B₀…Bₙ]` normalized to [0, 1]. Pre-allocated `Float32Array` buffer (3 × 640² = 1,228,800 floats) avoids per-frame allocation.
 
-3. **Inference** — ONNX `session.run()` with input tensor `[1, 3, 640, 640]`. Output: `[1, 4+numClasses, numAnchors]` in channel-major layout. For the current 10-class digit model: `[1, 14, 8400]`. A future 36-class model (digits + letters) would output `[1, 40, 8400]` — postprocessing handles this automatically.
+3. **Inference** — ONNX `session.run()` with input tensor `[1, 3, 640, 640]`. Output: `[1, 4+numClasses, numAnchors]` in channel-major layout. The current 36-class model outputs `[1, 40, 8400]`. In math mode, `classRange` filtering (ADR-006) restricts detection to digits only (classes 0–9).
 
 4. **Postprocessing** — Iterates all 8400 anchors. For each: find max class score across channels 4–(4+numClasses-1), filter by confidence threshold (0.65). Decode center-form box to corner-form. Reverse letterbox padding and scale to recover original frame coordinates. Apply class-agnostic NMS (IoU 0.45). Sort left-to-right by x1.
 
@@ -257,45 +266,41 @@ Difficulty adapts per-round: 3 consecutive correct promotes (max 5), 2 consecuti
 
 ### The model
 
-The current model is a custom **YOLO11n** (Ultralytics nano variant) trained on 417 images of physical digit tiles.
+The current model is a custom **YOLO11n** (Ultralytics nano variant) trained on physical digit and letter tiles.
 
 | Property | Value |
 |---|---|
 | File | `public/models/digit-tiles.onnx` |
-| Size | ~11MB (FP32) |
+| Size | ~10.6 MB (FP32) |
 | Input | `[1, 3, 640, 640]` (RGB, normalized [0,1]) |
-| Output | `[1, 14, 8400]` (channel-major: 4 box + 10 class scores × 8400 anchors) |
-| Classes | 10 (digits 0–9, classId maps directly to digit value) |
-| Training | Physical tiles → iPhone video → ffmpeg 2fps extraction → Roboflow annotation → Ultralytics training (50 epochs, MPS) |
-| Metrics | mAP50: 0.887, mAP50-95: 0.877, Precision: 0.923, Recall: 0.876 |
+| Output | `[1, 40, 8400]` (channel-major: 4 box + 36 class scores × 8400 anchors) |
+| Classes | 36 (digits 0–9 + letters A–Z; classId 0–9 maps to digits, 10–35 maps to letters) |
+| Training | Physical tiles → iPhone video → ffmpeg 2fps extraction → Gemini annotation (OpenRouter) → Roboflow → Kaggle P100 training (150 epochs) |
+| Metrics | mAP50: 0.995, mAP50-95: 0.973, Precision: 0.993, Recall: 0.998 |
 | Export | `yolo export format=onnx imgsz=640 opset=17 half=False batch=1` |
 
-Training is documented end-to-end in `docs/model-training-guide.md` (~600 lines, from printing physical tiles to deploying the model). The same pipeline applies to training a 36-class model (digits + letters) for the spelling game — add 26 letter classes to Roboflow, capture letter tile videos, retrain.
+Training is documented in the standalone `digit-training` project at `~/proj/digit-training`, which includes an automated Gemini annotation pipeline for labeling tile images at scale.
 
-### Expanding to letters
+### Letter recognition and spelling mode
 
-The architecture was designed from day one to support more than digits. The expansion path:
+The architecture was designed from day one to support more than digits. The expansion to letters is partially complete:
 
-**What's already model-agnostic:**
+**Done:**
+- 36-class YOLO11n model deployed (`digit-tiles.onnx`) — digits 0–9 + letters A–Z
+- ADR-006: `classRange` filtering in postprocessing constrains argmax to relevant classes per game mode
+- ADR-007: Parallel type path — `SpellingProblem` type, `gameKind` discriminant on `Problem`, separate generate/validate logic
+- `SpellingScreen.tsx` component exists for spelling game mode UI
+- `spelling-words.ts` provides age-appropriate CVC/CVCC word lists
 - `postprocessing.ts` reads `numClasses` from the output tensor — loops dynamically over however many class channels the model provides
 - `inference.worker.ts` reads dims from the model output, not hardcoded
 - `synthetic-tensor.ts` test factory accepts `numClasses` as a parameter and already has a test for 80-class models
 - The `RecognitionService` interface is backend-agnostic
 - The `VocabularyRegistry` interface (defined in `types/cv.ts`) exists as a seam for label definitions and ambiguity resolution
 
-**What needs to change for letter recognition:**
-- `types/cv.ts`: The `Digit` type is currently `0 | 1 | ... | 9` and `DetectedDigit` uses it — these need to become a more general detected-symbol type
-- `interpretation.ts`: Grouping logic currently produces numeric values — needs to also produce string values for letter sequences
-- `game-store.ts`: `processDetections` matches against `problem.answer` (a number) — needs to match against string answers for spelling
-- `engine/problem-generator.ts`: New `GameMode` implementations for spelling (word prompts, letter-based validation)
-- `types/game.ts`: `Problem` has `answer: number` — needs to support string answers
-- `components/GameScreen.tsx` and `ProblemDisplay.tsx`: UI for displaying word prompts vs arithmetic
-- Training: New YOLO model with 36 classes (or more, to handle uppercase/lowercase)
-
-**What's architecturally clean about this expansion:**
-- The `GameMode` interface already supports pluggable generate/validate functions
-- The `TapToStart` screen already has disabled "Spelling" and "Image Quiz" buttons ready to be wired up
-- The `deep-analysis.md` audit confirmed this expansion is feasible with "Medium" effort
+**Remaining work:**
+- Full `SpellingScreen` UI polish (visual design, animations, child-friendly feedback)
+- Phonics audio integration (letter sounds, word pronunciation)
+- Learning trajectory redesign (progression, difficulty scaling for spelling)
 
 ---
 
@@ -392,7 +397,7 @@ Opens a public HTTPS URL. No account needed. Append `?debug=true` on the device 
 - `assetsInclude: ["**/*.onnx"]` — treat model files as static assets
 - `vite-plugin-static-copy` — copies ONNX WASM runtime files to dist
 - `worker.format: "es"` — Web Worker output as ES module
-- PWA service worker: `CacheFirst` for `.onnx` files (1-year TTL, 30MB max per entry)
+- PWA service worker: `StaleWhileRevalidate` for `.onnx` files (30MB max per entry)
 
 ### TypeScript strictness
 Every strict flag is enabled: `strict`, `noUncheckedIndexedAccess`, `noUnusedLocals`, `noUnusedParameters`, `noFallthroughCasesInSwitch`, `exactOptionalPropertyTypes`, `forceConsistentCasingInFileNames`. Target: ES2022.
@@ -468,10 +473,10 @@ The codebase has an explicit rule (`.claude/rules/immutable.md`) that all game f
 `AnimatePresence mode="wait"` keeps exiting components mounted during exit. CountdownTimer owns a `setInterval` that reads phase from the store — exceeding ~200ms could cause stale ticks. The 200ms ceiling is a hard constraint.
 
 ### No flip augmentation in training data
-Horizontal/vertical flips in data augmentation create invalid examples. A flipped "3" is not a "3". Rotation is capped at ±10°. This is a domain-specific constraint documented in `model-training-guide.md`.
+Horizontal/vertical flips in data augmentation create invalid examples. A flipped "3" is not a "3". Rotation is capped at ±10°. This is a domain-specific constraint documented in the `digit-training` project (`~/proj/digit-training`).
 
-### PWA with CacheFirst for models
-The ~11MB ONNX model is cached with a 1-year TTL. Subsequent visits load from cache instantly. Model updates require a service worker update cycle (`registerType: "autoUpdate"`).
+### PWA with StaleWhileRevalidate for models (ADR-008)
+The ~10.6 MB ONNX model is cached with `StaleWhileRevalidate`. Model updates propagate within one session — cached model served immediately, background fetch ensures new version available on next load.
 
 ### Dual audio format (MP3 + M4A)
 Every sound exists in both formats. Howler.js selects the best for the browser. M4A (AAC) is Safari's preferred codec. MP3 is the universal fallback. Doubles audio asset size (~500KB total) but guarantees playback everywhere.
@@ -480,11 +485,11 @@ Every sound exists in both formats. Howler.js selects the best for the browser. 
 
 ## Known issues and planned improvements
 
-### Must fix (catalogued in deep-analysis.md)
+### Must fix
 | ID | Severity | File | Issue |
 |----|----------|------|-------|
 | S5 | High | `cv/mock-recognition.ts` | `recognize()` doesn't call `frame.close()` — ImageBitmap leak in mock mode |
-| N3 | High | `cv/postprocessing.ts:198` | `d.classId as Digit` has no bounds check — a model producing classId > 9 silently passes |
+| N3 | High | `cv/postprocessing.ts:198` | `d.classId as Digit` has no bounds check — ADR-006 `classRange` filtering now constrains the argmax loop, mitigating this for production use, but the raw bounds check is still missing |
 
 ### Should fix
 | ID | Severity | File | Issue |
@@ -496,8 +501,8 @@ Every sound exists in both formats. Howler.js selects the best for the browser. 
 ### Active risks
 | Risk | Status | Detail |
 |---|---|---|
-| 6/9 confusion | Active | Depends on training data with underlined tiles |
-| Small validation set | Active | Only 25 val / 14 test images — metrics could be optimistic |
+| 6/9 confusion | Mitigated | Model now trains on diverse data including underlined tiles |
+| Small validation set | Improved | Val set is now ~250 images — metrics are more representative |
 | Camera lighting variance | Active | No adaptive preprocessing — recognition degrades in poor lighting |
 | iPad thermal throttling | Active | 4fps cap keeps CPU ~90% idle, but not stress-tested for long sessions |
 
