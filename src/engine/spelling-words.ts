@@ -18,31 +18,30 @@ export const TWO_LETTER_WORDS: readonly string[] = [
 	"NO",
 	"ON",
 	"UP",
-	"WE",
 ] as const;
 
 /** 3-letter CVC words — high-frequency, concrete nouns kids can picture. */
 export const THREE_LETTER_WORDS: readonly string[] = [
 	"CAT",
 	"DOG",
-	"SUN",
-	"FOX",
 	"HAT",
 	"CUP",
-	"BUS",
 	"PIG",
 	"HEN",
-	"LOG",
 	"MOP",
 	"NUT",
 	"RUG",
-	"VAN",
 	"BED",
 	"BAT",
 	"FAN",
 	"PEN",
 	"MUG",
 	"BUG",
+	"CUB",
+	"JUG",
+	"FIG",
+	"KID",
+	"HUG",
 ] as const;
 
 /** Combined pool for random selection (2-3 letter words only). */
@@ -60,7 +59,7 @@ export const MAX_SPELLING_WORDS = 3;
 
 /**
  * Generates a spelling problem, avoiding words already used in this session.
- * Falls back to any word if the pool is exhausted (unlikely with 28 words
+ * Falls back to any word if the pool is exhausted (unlikely with 27 words
  * and 3-word sessions).
  */
 export function generateSpellingProblem(

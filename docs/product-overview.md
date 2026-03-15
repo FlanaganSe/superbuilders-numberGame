@@ -240,7 +240,7 @@ Missing Part uses addition ranges (the answer is the unknown addend). Make 10 ha
 
 Difficulty adapts per-round: 3 consecutive correct promotes (max 5), 2 consecutive wrong demotes (min 1). Streaks cross-reset — a correct answer clears the wrong streak and vice versa. Level Up is shown visually on promotion; demotion is silent (math anxiety research).
 
-Spelling uses a pool of 28 words (8 two-letter sight words + 20 three-letter CVC words). 3 words per session, no repeats within a session.
+Spelling uses a pool of 27 words (7 two-letter sight words + 20 three-letter CVC words). 3 words per session, no repeats within a session. Words are restricted to letters the CV model recognizes reliably (excludes L, S, V, W, X).
 
 ### Research-backed feedback (ADR-009)
 
