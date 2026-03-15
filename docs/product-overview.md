@@ -117,7 +117,7 @@ src/
 |   |-- ProgressPips.tsx        # Round progress dots
 |   |-- NumberBond.tsx           # SVG number bond for Missing Part / Make 10
 |   |-- TenFrame.tsx             # SVG ten-frame for post-correct visualization
-|   |-- GhostTileGuide.tsx       # First-scan ghost tile placement hint (localStorage-gated)
+|   |-- GhostTileGuide.tsx       # First-scan animated onboarding: tile floats toward camera icon (ADR-014)
 |   |-- SpellingWordAudio.tsx    # Word pronunciation playback for spelling mode
 |   |-- MuteButton.tsx          # Fixed-position audio toggle
 |   |-- MockNumpad.tsx          # Dev-only digit input (?recognition=mock)
@@ -162,7 +162,8 @@ src/
 |
 |-- audio/
 |   |-- sound-manager.ts        # Howler.js config, AudioContext unlock, visibility resume
-|   +-- use-audio.ts            # Mute-aware playback hook
+|   |-- use-audio.ts            # Mute-aware playback hook
+|   +-- spoken-feedback.ts      # Pure functions: compose SoundName[] sequences for spoken math (ADR-015)
 |
 |-- types/
 |   |-- game.ts                 # Problem, SpellingProblem, GamePhase, GameAction, GameMode
@@ -179,14 +180,14 @@ public/
 |-- icons/                      # SVG icons (192, 512)
 |-- models/
 |   +-- digit-tiles.onnx        # Custom YOLO11n (~10.6 MB, FP32, 36 classes)
-+-- sounds/                     # Dual-format audio (MP3 + M4A, 19 sounds, 38 files)
++-- sounds/                     # Dual-format audio (MP3 + M4A, 53 registered sounds = 106 files + 4 unregistered phrases = 114 total)
 
 e2e/
 +-- game-loop.spec.ts           # Playwright WebKit: full game loop with mock recognition
 
 docs/
 |-- product-overview.md         # This file
-|-- decisions.md                # Append-only ADR log (12 decisions)
+|-- decisions.md                # Append-only ADR log (15 decisions)
 |-- requirements.md             # Original PRD
 |-- research.md                 # Verified platform facts and constraints
 |-- learning-science-research.md  # Consolidated learning science research
@@ -209,11 +210,11 @@ The game is a finite state machine with six phases, defined as a discriminated u
 
 2. **countdown** — 3-second countdown with tick sounds, per-digit spring animation, and color urgency (3=blue, 2=orange, 1=red). Generates the next problem on completion.
 
-3. **scanning** — Active detection. Camera feeds frames to the CV pipeline. The problem displays with `?` as the answer placeholder. A dashed "Put your answer here" zone pulses until a tile is detected. Progress pips show the current round. Math: 30-second timeout. Spelling: 45-second timeout.
+3. **scanning** — Active detection. Camera feeds frames to the CV pipeline. All game text overlays the camera inside a semi-transparent dark card (`bg-black/55`, ADR-013). The problem displays with `?` as the answer placeholder. Below the card, a dashed "Put your answer here" clear zone pulses until a tile is detected. On first-ever scan, an animated onboarding guide shows a tile floating toward a camera icon (ADR-014). Progress pips show the current round. Math: 30-second timeout. Spelling: 45-second timeout.
 
-4. **success** — Correct answer detected. Stars awarded (3 on first attempt, 2 on second, 1 on third+). Celebration animation + confetti + chime with randomized pitch. Research-backed explanation text shown at difficulty 1-3 (fades at 4+ per Sweller's expertise reversal principle, ADR-009). Auto-advances after 3.5s.
+4. **success** — Correct answer detected. Stars awarded (3 on first attempt, 2 on second, 1 on third+). Celebration animation + confetti + chime with randomized pitch. Research-backed explanation text shown at difficulty 1-3 (fades at 4+ per Sweller's expertise reversal principle, ADR-009). Spoken feedback plays after the chime — audio speaks the math fact (e.g., "three and five make eight") while the visual teaches the process (ADR-015). Auto-advances after 3.5s.
 
-5. **timeout** — Timer expired without correct answer. Shows encouragement (never punitive language) plus instructional feedback: strategy hint on first timeout, worked example on repeat (ADR-009). Spelling timeout goes to countdown (new word); math timeout retries the same problem with incremented attempt number. Auto-retries after 2s.
+5. **timeout** — Timer expired without correct answer. Shows encouragement (never punitive language) plus instructional feedback: strategy hint on first timeout, worked example on repeat (ADR-009). On repeated timeout (attempt >= 2, difficulty <= 3), spoken audio plays "the answer is [N]" after the encouragement clip (ADR-015). Spelling timeout goes to countdown (new word); math timeout retries the same problem with incremented attempt number. Auto-retries after 2s (math first attempt) or 4s (math repeated timeout, to allow worked example reading).
 
 6. **session-end** — 15 problems completed (math) or 3 words (spelling). Double-cannon confetti. Staggered star animation. Cumulative stats from localStorage. "Play Again!" returns to idle.
 
@@ -290,12 +291,26 @@ Training is documented in the standalone `digit-training` project at `~/proj/dig
 
 ### Audio system
 
-19 named sounds via Howler.js with individual files (MP3 + M4A per sound = 38 files):
+53 registered sounds via Howler.js with individual files (MP3 + M4A per sound = 106 registered files + 8 unregistered reserve files = 114 total files on disk):
+
 - 5 game sounds: correct chime, encouragement, tile-detected pop, session-end fanfare, countdown tick
-- 10 number words: zero through nine (played before chime on correct answer)
-- 4 math prompts: prompt-altogether, prompt-left, prompt-missing, prompt-make-ten
+- 10 number words: zero through nine (played before chime on correct answer for dual-coding)
+- 4 math prompts: prompt-altogether, prompt-left, prompt-missing, prompt-make-ten (Purpura math vocabulary)
+- 27 word pronunciations: 7 two-letter sight words + 20 three-letter CVC words (ElevenLabs TTS)
+- 1 idle prompt: idle-wonder (plays at 10s idle during scanning)
+- 6 spoken feedback phrases: phrase-and, phrase-make, phrase-take-away, phrase-is, phrase-the-answer-is, phrase-make-ten (composed into sentences by `spoken-feedback.ts`)
+
+4 additional phrase clips sit on disk unregistered for future use: `phrase-then`, `phrase-more`, `phrase-you-found-it`, `phrase-missing-part-is`.
 
 Correct chime plays at randomized rate (`0.9 + Math.random() * 0.2`) so consecutive correct answers sound distinct. Lazy Howl instantiation: each sound created on first access and cached in a `Map`. `preloadSounds()` triggers all during the start gesture.
+
+### Spoken feedback (ADR-015)
+
+`spoken-feedback.ts` composes audible sentences from number-word clips and connecting-phrase clips. Pure functions with no Howler dependency — receives `play` via dependency injection for testability. Three exports:
+
+- **`buildCorrectSequence(problem, difficulty, stars)`** — Returns `SoundName[]` for correct-answer audio. Addition: "N and M make R". Subtraction: "N take away M is R". Missing-addend: "N and M make target". Make-10: uses single `phraseMakeTen` clip. Returns `[]` for difficulty > 3 (Sweller), spelling, or operands > 9 (no clips).
+- **`buildTimeoutSequence(problem, difficulty, attemptNumber)`** — Returns `["phraseTheAnswerIs", "numberN"]` for repeated timeouts (attempt >= 2). Returns `[]` for first timeout, difficulty > 3, or spelling.
+- **`playSentence(sequence, play, gapMs?)`** — Schedules `play()` calls with 300ms gaps via `setTimeout` chain. Returns a cancel function that clears all pending timeouts.
 
 ---
 
@@ -327,10 +342,17 @@ const { problem, attemptNumber } = state.phase; // TypeScript narrows
 ### Frame ownership
 `ImageBitmap` holds GPU memory that won't be garbage collected. Single consumer owns and calls `.close()`. Multiple consumers: clone per listener, original closed. Zero consumers: closed immediately. Worker always closes in `finally` block.
 
+### Camera-safe UI pattern (ADR-013)
+All game screens split into two zones:
+- **Card zone** — `bg-black/55 rounded-2xl px-8 py-6` wrapper. Contains problem display, feedback overlay, progress pips. All text uses light-on-dark colors (`text-white`, `text-slate-300`, `text-primary-300`).
+- **Clear zone** — Below the card. Dashed border answer hint with `bg-black/30`. Minimal camera obstruction so children can see their tiles.
+
+CountdownTimer and SessionSummary have their own standalone dark cards since they render outside the game screen flow.
+
 ### Animation patterns
 - **Spring configs are intentional:** Buttons: `stiffness: 400, damping: 17` (snappy). Celebrations: `stiffness: 300, damping: 15` (bouncier). Tile pop: `stiffness: 400, damping: 10` (very bouncy).
 - **Phase fade transitions:** `AnimatePresence mode="wait"` + 150ms opacity-only fades (ADR-005). Duration must not exceed 200ms.
-- **Reduced motion:** `MotionConfig reducedMotion="user"`. Confetti: `disableForReducedMotion: true`. FeedbackOverlay falls back to fade-only.
+- **Reduced motion:** `MotionConfig reducedMotion="user"`. Confetti: `disableForReducedMotion: true`. FeedbackOverlay falls back to fade-only. GhostTileGuide: `useReducedMotion()` — treats `null` (unresolved) as reduced-motion to avoid motion flash.
 
 ### Error handling
 - Camera errors mapped to child-friendly messages (no technical jargon)
@@ -355,6 +377,7 @@ No database. All persistence is localStorage with graceful degradation:
 | `superbuilders-cumulative` | `{ totalStars: number, sessionsPlayed: number }` | Lifetime stats across sessions |
 | `superbuilders-mute` | `"true" \| "false"` | Audio preference |
 | `superbuilders_calibrated` | `"true"` | First-run camera setup completed |
+| `superbuilders_first_scan` | `"true"` | Ghost tile onboarding guide dismissed |
 
 Note the inconsistent separator (hyphens vs underscore). All reads/writes wrapped in try/catch. If localStorage is unavailable (private browsing, quota exceeded), the app continues with defaults.
 
@@ -404,7 +427,7 @@ Every strict flag enabled: `strict`, `noUncheckedIndexedAccess`, `noUnusedLocals
 
 ## Testing
 
-### Unit tests (Vitest, ~23 test files)
+### Unit tests (Vitest, 24 test files)
 
 **Game engine (heavy coverage):**
 - `game-reducer.test.ts` — All phase transitions, invalid action handling, session completion
@@ -426,6 +449,9 @@ Every strict flag enabled: `strict`, `noUncheckedIndexedAccess`, `noUnusedLocals
 - `pipeline-regression.test.ts` — Full synthetic pipeline: tensor -> postProcess -> group -> match -> temporal buffer. Covers all 10 digits, two-tile answers, 6/9 distinction, NMS dedup.
 - `mock-recognition.test.ts` — Mock service lifecycle
 - `fixture-frame-source.test.ts` — Image replay
+
+**Audio:**
+- `spoken-feedback.test.ts` — Sequence building for all math modes, edge cases (Make-10, difficulty > 3, operands > 9), `playSentence` scheduling + cancellation
 
 **State and utilities:**
 - `game-store.test.ts` — `tileSeen` lifecycle, `processDetections`, wrong answer handling
@@ -453,7 +479,7 @@ pnpm test:e2e         # E2E (Playwright WebKit, requires pnpm build first)
 
 ## Important decisions and tradeoffs
 
-Decisions are logged in `docs/decisions.md` (ADR-001 through ADR-012). Key ones:
+Decisions are logged in `docs/decisions.md` (ADR-001 through ADR-015). Key ones:
 
 **WASM-only inference, no WebGPU fallback (ADR-002):** Rather than building a fallback chain (try WebGPU -> WASM), the codebase hardcodes `executionProviders: ["wasm"]`. Simpler, avoids 2-5 second crash-and-retry penalty. The `RecognitionService` interface preserves the seam.
 
@@ -476,6 +502,12 @@ Decisions are logged in `docs/decisions.md` (ADR-001 through ADR-012). Key ones:
 **WCAG 2.1 contrast compliance (ADR-011):** All text-on-background combinations audited against cream background (#fef9ef). Five color classes were darkened to meet 3:1 (large text) or 4.5:1 (normal text) thresholds. The cream background is a deliberate design choice (off-white for reading comprehension).
 
 **Strategy-aware math feedback with subitizing gate (ADR-012):** Feedback is now strategy-specific, not just operator-aware. Subitizing gate (both operands ≤ 3, sum ≤ 5) uses direct composition language instead of count-on. Make-ten uses "partner" vocabulary. Missing-addend uses process praise. Caregiver coaching tip on session summary. All gated by difficulty ≤ 3 (Sweller's expertise reversal).
+
+**Camera-safe semi-transparent cards (ADR-013):** All game-phase text overlaying the camera sits inside `bg-black/55 rounded-2xl` cards. Screens split into a card zone (problem + feedback + progress) and a clear zone (answer hint with `bg-black/30`). All text within cards uses light-on-dark variants. Ensures readability regardless of camera content.
+
+**Animated onboarding over text instructions (ADR-014):** GhostTileGuide uses a looping Motion animation (tile floats toward camera icon) instead of text. Pre-readers can't read "Hold a tile up" — visual demonstration is required (NN/G research). `useReducedMotion` fallback shows static tile + text label. Dismisses on first tile detection, never shows again (localStorage gate).
+
+**Spoken feedback via DI-based audio composition (ADR-015):** Pure functions compose `SoundName[]` sequences from number-word and phrase clips. Audio speaks the math fact while the visual teaches the process (Mayer's dual-coding — complementary channels, not redundant). `playSentence` uses `setTimeout` chain with 300ms gaps. All functions receive `play` via dependency injection — zero coupling to React or Howler. Gated on difficulty ≤ 3.
 
 ---
 
@@ -506,6 +538,10 @@ Decisions are logged in `docs/decisions.md` (ADR-001 through ADR-012). Key ones:
 - **SessionSummary StrictMode guard.** Module-level `Set` prevents `recordSession()` double-fire.
 - **Spelling timeout goes to countdown (new word), not retry.** Math timeout retries the same problem. This is intentional — children shouldn't be stuck on one word.
 - **`resetCvState()` must be called before every `NEXT_ROUND` dispatch.** Clears temporal buffers but preserves `spellingWordsUsed`.
+
+### Audio timing specifics
+- **Spoken feedback uses a dual-cleanup pattern.** The outer `setTimeout` delays the start (1500ms after correct, 600ms after timeout). The inner `playSentence` returns a cancel function for its `setTimeout` chain. The useEffect cleanup must clear both: `clearTimeout(startTimer); cancel?.();`. If `NEXT_ROUND` fires while audio is playing, both timers must be cancelled to prevent stale audio in the next round.
+- **`playSentence` fires the first clip at `i=0 * gapMs = 0ms`** (immediately). This means the start delay is the actual delay before the first sound is heard.
 
 ### Build and deployment
 - **ONNX WASM files must be statically copied** — cannot be imported as ES modules. `vite-plugin-static-copy` handles this.
