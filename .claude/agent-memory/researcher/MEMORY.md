@@ -2,8 +2,7 @@
 
 ## Index
 
-- [audio_phonics.md](audio_phonics.md) — Audio strategy for phonics/spelling game: TTS vs pre-recorded findings, Web Speech API iOS bugs, Howler sprite architecture, multimodal learning evidence
-- [ui_readability.md](ui_readability.md) — No scrim between camera video and game text; frosted-glass card is the recommended fix; CalibrationGuide.tsx:47 is the existing proof-of-concept
+(No active memories — all research has been consolidated into docs/)
 
 ## Consolidated into docs/ (removed from agent memory)
 
@@ -14,3 +13,5 @@ The following memories were removed because their content is fully covered by au
 - Codebase architecture → `docs/product-overview.md`
 - Project context → `docs/product-overview.md`
 - Camera pipeline → `docs/product-overview.md` (preprocessing duplication gotcha added to Gotchas section)
+- Audio/phonics strategy → `docs/product-overview.md` (Audio system section) + `docs/research.md` §4
+- UI readability over camera → ADR-013 + `docs/product-overview.md` (Camera-safe UI pattern section)

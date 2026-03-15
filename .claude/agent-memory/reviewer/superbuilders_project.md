@@ -10,7 +10,7 @@ Known issues from multiple review passes. Line numbers may drift — verify agai
 1. ~~`NEXT_ROUND` problem field~~ — Fixed.
 2. ~~`SessionSummary.tsx` double-counts~~ — Fixed (useEffect with StrictMode guard).
 3. `FeedbackOverlay` exit animation priority — Open.
-4. `GameScreen` timeout effect deps missing `attemptNumber` — Open (see critical issue #5).
+4. ~~`GameScreen` timeout effect deps missing `attemptNumber`~~ — Fixed. `attemptNumber` now in deps at `GameScreen.tsx:295`.
 5. `key`-based remount of `m.div` for pop animation — Open.
 6. Zero-star session shows bare `0` — Unknown.
 7. Manual `useReducedMotion` branches redundant with `MotionConfig` — Open.
@@ -27,7 +27,7 @@ Known issues from multiple review passes. Line numbers may drift — verify agai
 
 6. **Post-`await` active check missing in `onVideoFrame`** (`frame-capture.ts:99–122`) — listeners notified after `stop()` is called; minor but can trigger recognize() on disposed service.
 7. **`requestCamera()` not awaited in `handleStart`** (`TapToStart.tsx:21–30`) — game enters countdown before camera succeeds; camera failure after START_SESSION leaves game running with no video. Still open after M1/M2.
-8. **`ctx.resume()` in visibilitychange handler unhandled rejection** (`sound-manager.ts:105–108`) — can surface in browser console on iOS.
+8. ~~**`ctx.resume()` in visibilitychange handler unhandled rejection**~~ — Fixed. Both `ctx.resume()` calls now have `.catch(() => {})` at `sound-manager.ts:198,218`.
 9. **`ANSWER_COMMITTED` double-fire window** (`temporal-buffer.ts`, `game-store.ts`) — narrow but possible if two frames pass motion gate in rapid succession before Zustand flush.
 10. **Unbounded do/while in problem generator** (`problem-generator.ts:41–45, 63–66`) — no iteration cap; future constraint changes could spin indefinitely on main thread.
 
@@ -46,5 +46,5 @@ Known issues from multiple review passes. Line numbers may drift — verify agai
 
 16. **Mock recognition may not close ImageBitmap** (`cv/mock-recognition.ts`) — `recognize()` receives a bitmap but the mock path may not call `.close()`, causing a GPU memory leak in mock mode. High severity for dev/test sessions.
 17. **`classId as Digit` has no bounds check** (`cv/postprocessing.ts:198`) — the cast assumes classId is within Digit range. ADR-006 `classRange` mitigates in production, but the raw cast is unchecked. Low risk in practice.
-18. **Sound files may not be precached for offline** — `globPatterns` includes `mp3,m4a` but actual precaching of all 38 audio files has not been verified on a real device with cleared cache. Medium priority for PWA offline mode.
+18. **Sound files may not be precached for offline** — `globPatterns` includes `mp3,m4a` but actual precaching of all 114 audio files (57 MP3 + 57 M4A) has not been verified on a real device with cleared cache. Medium priority for PWA offline mode.
 19. **E2E selectors use Tailwind classes not data-testid** — fragile against Tailwind class name changes. Low priority but worth addressing when E2E tests are expanded.
