@@ -94,6 +94,23 @@ describe("buildCorrectSequence", () => {
 		expect(buildCorrectSequence(p, 1, 3)).toEqual([]);
 	});
 
+	it("returns [] for unknownPosition 'left' (unsupported)", () => {
+		const p = makeProblem({
+			left: 3,
+			right: 5,
+			answer: 3,
+			operator: "+",
+			unknownPosition: "left",
+			target: 8,
+		});
+		expect(buildCorrectSequence(p, 1, 3)).toEqual([]);
+	});
+
+	it("returns [] for subtraction with answer > 9", () => {
+		const p = makeProblem({ left: 5, right: 3, answer: 12, operator: "-" });
+		expect(buildCorrectSequence(p, 1, 3)).toEqual([]);
+	});
+
 	it("handles addition with right === 0", () => {
 		const p = makeProblem({ left: 5, right: 0, answer: 5, operator: "+" });
 		expect(buildCorrectSequence(p, 1, 3)).toEqual([

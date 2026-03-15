@@ -179,3 +179,42 @@ The cream background (#fef9ef) was not changed — it is a deliberate design cho
 4. **Caregiver coaching tip**: deterministic, process-oriented tip on session summary (Berkowitz et al. 2015 RCT). Separate module `caregiver-prompts.ts`.
 
 **Consequences:** The subitizing threshold (≤ 3, ≤ 3, sum ≤ 5) is a judgment call — `2 + 3 = 5` is subitizable, `3 + 3 = 6` is not. The gate also checks `unknownPosition === undefined` to avoid suppressing count sequences for missing-addend problems. Partner vocabulary only appears at difficulty ≤ 3. All paths are pure functions, fully tested.
+
+---
+
+## ADR-013: Camera-Safe Semi-Transparent Cards
+
+**Date:** 2026-03-15
+**Status:** Accepted
+
+**Context:** All game-phase text overlaid the live camera feed with no background, making readability completely dependent on what the camera saw. Light text on a white wall, dark text on a dark surface — both failed.
+
+**Decision:** Wrap all game-phase text in `bg-black/55 rounded-2xl` cards. Split each screen into a card zone (problem + feedback + progress) and a clear answer zone (dashed border hint). All text within cards uses light-on-dark variants (`text-white`, `text-slate-300`, `text-primary-300`). The clear zone uses `bg-black/30` for minimal camera obstruction.
+
+**Consequences:** Text is always readable regardless of camera content. The 55% opacity balances readability against maintaining camera visibility (children need to see their tiles). CountdownTimer and SessionSummary get their own standalone cards since they render outside the game screen flow.
+
+---
+
+## ADR-014: Animated Onboarding Over Text Instructions
+
+**Date:** 2026-03-15
+**Status:** Accepted
+
+**Context:** The original GhostTileGuide used a text label ("Hold a tile up to the camera") that pre-readers (ages 5-6) cannot read. NN/G research shows pre-readers need visual demonstration, not text instruction.
+
+**Decision:** Replaced GhostTileGuide with a looping Motion animation: a tile floats toward a camera icon on a 2-second loop. `useReducedMotion` fallback shows a static tile + text label (for the rare case where users both prefer reduced motion AND can read). Wrapped in `AnimatePresence` for smooth entry/exit.
+
+**Consequences:** The mechanic is communicated without requiring literacy. The animation dismisses on first tile detection and never shows again (`localStorage` flag). The reduced-motion fallback is the only path that shows text.
+
+---
+
+## ADR-015: Spoken Feedback via DI-Based Audio Composition
+
+**Date:** 2026-03-15
+**Status:** Accepted
+
+**Context:** Outhwaite et al. (2023) found that explanatory feedback is a necessary condition for learning gains. The existing visual feedback (text explanations, count-on animations) uses only one modality. Mayer's dual-coding principle says complementary audio+visual channels improve learning, but redundant channels (saying exactly what's on screen) hurt.
+
+**Decision:** Created `spoken-feedback.ts` — pure functions that compose `SoundName[]` sequences from number-word clips (`number0`–`number9`) and 6 connecting-phrase clips (`phraseAnd`, `phraseMake`, `phraseTakeAway`, `phraseIs`, `phraseTheAnswerIs`, `phraseMakeTen`). Audio speaks the math fact ("three and five make eight") while the visual teaches the process (count-on animation). `playSentence` schedules clips via `setTimeout` chain with 300ms gaps. All functions receive `play` via dependency injection — no Howler dependency, trivially unit-testable. Gated on `difficulty ≤ 3` (Sweller's expertise reversal).
+
+**Consequences:** The audio module has zero coupling to React or Howler. New audio patterns (e.g., spelling word feedback) follow the same pattern: pure function returns `SoundName[]`, `playSentence` schedules it. The 300ms gap between clips is a tuning parameter — adjustable without code changes beyond the default argument. Four additional phrase clips (`phrase-then`, `phrase-more`, `phrase-you-found-it`, `phrase-missing-part-is`) are on disk but unregistered, available for future features.

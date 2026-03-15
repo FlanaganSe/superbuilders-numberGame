@@ -185,7 +185,7 @@ export function SpellingScreen({
 							className={
 								cell.revealed
 									? "flex h-20 w-16 items-center justify-center rounded-xl border-4 border-primary-400 bg-primary-50 font-display text-6xl text-primary-600 shadow-md"
-									: "flex h-20 w-16 items-center justify-center rounded-xl border-4 border-dashed border-primary-300 bg-primary-50/50 font-display text-5xl text-primary-500 shadow-sm"
+									: "flex h-20 w-16 items-center justify-center rounded-xl border-4 border-dashed border-primary-300 bg-primary-50 font-display text-5xl text-primary-500 shadow-sm"
 							}
 						>
 							{cell.revealed ? cell.letter : "?"}

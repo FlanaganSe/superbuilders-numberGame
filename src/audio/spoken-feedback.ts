@@ -52,6 +52,12 @@ export function buildCorrectSequence(
 	}
 
 	// Missing-addend: "left and answer make target"
+	// Only handle unknownPosition === "right" (the only form the generator produces).
+	// Any other unknownPosition value → skip (prevents wrong math if a future
+	// generator adds unknownPosition === "left").
+	if (problem.unknownPosition != null && problem.unknownPosition !== "right") {
+		return [];
+	}
 	if (problem.unknownPosition === "right") {
 		if (problem.target == null) return [];
 		if (!hasClip(problem.left) || !hasClip(problem.answer)) return [];

@@ -3,6 +3,7 @@
 ## Index
 
 - [audio_phonics.md](audio_phonics.md) — Audio strategy for phonics/spelling game: TTS vs pre-recorded findings, Web Speech API iOS bugs, Howler sprite architecture, multimodal learning evidence
+- [ui_readability.md](ui_readability.md) — No scrim between camera video and game text; frosted-glass card is the recommended fix; CalibrationGuide.tsx:47 is the existing proof-of-concept
 
 ## Consolidated into docs/ (removed from agent memory)
 

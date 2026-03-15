@@ -82,7 +82,7 @@ export function CountdownTimer({
 			<p className="font-body text-3xl text-white">Get ready!</p>
 			<m.span
 				key={secondsLeft}
-				className={`inline-block font-display text-9xl ${COUNTDOWN_COLORS[secondsLeft] ?? "text-primary-500"}`}
+				className={`inline-block font-display text-9xl ${COUNTDOWN_COLORS[secondsLeft] ?? "text-white"}`}
 				initial={{ scale: 0, opacity: 0 }}
 				animate={{ scale: 1, opacity: 1 }}
 				transition={COUNTDOWN_SPRING}

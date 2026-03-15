@@ -31,6 +31,7 @@ export function GhostTileGuide(): React.JSX.Element {
 			exit={{ opacity: 0 }}
 			transition={ENTER_SPRING}
 			className="flex flex-col items-center gap-3"
+			role="img"
 			aria-label="Hold a tile up to the camera"
 		>
 			{/* Camera icon */}
