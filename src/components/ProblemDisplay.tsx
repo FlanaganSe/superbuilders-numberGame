@@ -20,34 +20,34 @@ export function ProblemDisplay({
 	return (
 		<div className="flex flex-col items-center gap-2">
 			{/* Equation */}
-			<div className="flex items-center gap-4 font-display text-7xl text-slate-800">
+			<div className="flex items-center gap-4 font-display text-7xl text-white">
 				<span>{problem.left}</span>
-				<span className="text-primary-500">{problem.operator}</span>
+				<span className="text-primary-300">{problem.operator}</span>
 
 				{isMissingAddend ? (
 					showAnswer ? (
-						<span className="text-success-600">{problem.answer}</span>
+						<span className="text-success-400">{problem.answer}</span>
 					) : (
-						<span className="text-8xl text-primary-500">?</span>
+						<span className="text-8xl text-primary-300">?</span>
 					)
 				) : (
 					<span>{problem.right}</span>
 				)}
 
-				<span className="text-primary-500">=</span>
+				<span className="text-primary-300">=</span>
 
 				{isMissingAddend ? (
 					<span>{problem.target}</span>
 				) : showAnswer ? (
-					<span className="text-success-600">{problem.answer}</span>
+					<span className="text-success-400">{problem.answer}</span>
 				) : (
-					<span className="text-8xl text-primary-500">?</span>
+					<span className="text-8xl text-primary-300">?</span>
 				)}
 			</div>
 
 			{/* Math language prompt — rotated synonyms (Purpura et al. 2020) */}
 			{!showAnswer && problem.answer >= 0 && (
-				<p className="font-body text-xl text-slate-500">
+				<p className="font-body text-xl text-slate-300">
 					{getMathPrompt(
 						problem.operator,
 						problem.unknownPosition,

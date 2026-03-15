@@ -17,7 +17,7 @@ export function CameraUncertaintyPrompt(): React.JSX.Element {
 
 	return (
 		<m.p
-			className="font-body text-2xl text-slate-500"
+			className="font-body text-2xl text-slate-300"
 			initial={{ opacity: 0 }}
 			animate={{ opacity: 1 }}
 			exit={{ opacity: 0 }}

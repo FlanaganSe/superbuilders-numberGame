@@ -182,7 +182,7 @@ function CountSequenceAnimation({
 }): React.JSX.Element {
 	return (
 		<div className="flex items-center gap-2">
-			<span className="font-body text-lg text-slate-500">
+			<span className="font-body text-lg text-slate-300">
 				{sequence.start},
 			</span>
 			{sequence.steps.map((num, i) => (
@@ -193,7 +193,7 @@ function CountSequenceAnimation({
 					transition={
 						reduced ? { duration: 0 } : { delay: 0.3 + i * 0.3, duration: 0.3 }
 					}
-					className="font-display text-2xl text-primary-600"
+					className="font-display text-2xl text-primary-300"
 				>
 					{num}
 					{i < sequence.steps.length - 1 ? "," : "!"}
@@ -249,14 +249,12 @@ function CorrectFeedback({
 			exit={{ opacity: 0 }}
 			transition={reduced ? { duration: 0.3 } : CORRECT_SPRING}
 		>
-			<p className="font-display text-5xl text-success-600 drop-shadow-md">
-				{text}
-			</p>
+			<p className="font-display text-5xl text-success-400">{text}</p>
 			<p className="font-display text-6xl text-amber-600">
 				{"★".repeat(stars)}
 			</p>
 			{explanation && (
-				<p className="font-body text-xl text-slate-500">{explanation}</p>
+				<p className="font-body text-xl text-slate-300">{explanation}</p>
 			)}
 
 			{/* Counting-on/back animation — staggered entrance (Schiffman et al. 2018) */}
@@ -311,8 +309,8 @@ function TimeoutFeedback({
 			exit={{ opacity: 0 }}
 			transition={reduced ? { duration: 0.3 } : WOBBLE_TRANSITION}
 		>
-			<p className="font-display text-4xl text-primary-500">{text}</p>
-			<p className="font-body text-2xl text-slate-600">{hint}</p>
+			<p className="font-display text-4xl text-primary-300">{text}</p>
+			<p className="font-body text-2xl text-slate-300">{hint}</p>
 
 			{/* Count sequence on repeated timeout — worked example visual (attemptNumber >= 2) */}
 			{countSequence && attemptNumber >= 2 && difficulty <= 3 && (
@@ -336,7 +334,7 @@ function TileSeenFeedback({
 
 	return (
 		<m.p
-			className="font-body text-3xl text-success-500"
+			className="font-body text-3xl text-success-400"
 			initial={{ opacity: 0 }}
 			animate={reduced ? { opacity: 1 } : { opacity: 1, scale: [0.8, 1.15, 1] }}
 			exit={{ opacity: 0 }}
@@ -376,13 +374,13 @@ function WrongTileFeedback({
 				<p className="font-body text-2xl text-amber-600">
 					You made <span className="font-display text-3xl">{wrongValue}</span>.
 					We need{" "}
-					<span className="font-display text-3xl text-primary-600">
+					<span className="font-display text-3xl text-primary-300">
 						{expectedValue}
 					</span>
 					.
 				</p>
 			)}
-			<p className="font-body text-xl text-slate-500">Try again!</p>
+			<p className="font-body text-xl text-slate-300">Try again!</p>
 		</m.div>
 	);
 }

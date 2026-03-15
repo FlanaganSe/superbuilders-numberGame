@@ -22,7 +22,7 @@ export function ProgressPips({
 	roundStars,
 }: ProgressPipsProps): React.JSX.Element {
 	return (
-		<div className="flex items-center gap-1.5 rounded-full bg-black/20 px-3 py-1.5">
+		<div className="flex items-center gap-1.5 rounded-full bg-black/40 px-3 py-1.5">
 			{Array.from({ length: total }, (_, i) => (
 				<span
 					// biome-ignore lint/suspicious/noArrayIndexKey: static fixed-length list, never reorders

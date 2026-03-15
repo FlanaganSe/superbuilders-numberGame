@@ -270,72 +270,76 @@ export function GameScreen({
 					: null;
 
 	return (
-		<div className="flex flex-col items-center gap-6">
-			{/* Progress + mode + difficulty */}
-			<div className="flex items-center gap-3">
-				<span className="font-body text-sm text-white">{modeName}</span>
-				<ProgressPips
-					current={roundsCompleted}
-					total={MAX_PROBLEMS}
-					roundStars={roundStars}
-				/>
+		<div className="flex flex-col items-center gap-4">
+			{/* CARD: status + problem + feedback */}
+			<div className="flex flex-col items-center gap-6 rounded-2xl bg-black/55 px-8 py-6">
+				{/* Progress + mode + difficulty */}
+				<div className="flex items-center gap-3">
+					<span className="font-body text-sm text-white">{modeName}</span>
+					<ProgressPips
+						current={roundsCompleted}
+						total={MAX_PROBLEMS}
+						roundStars={roundStars}
+					/>
+				</div>
+
+				{/* Level Up! indicator — only on promotion, never demotion */}
+				<AnimatePresence>
+					{showLevelUp && (
+						<m.p
+							key="level-up"
+							initial={{ opacity: 0, scale: 0.8 }}
+							animate={{ opacity: 1, scale: [0.8, 1.15, 1] }}
+							exit={{ opacity: 0 }}
+							transition={{ duration: 0.4 }}
+							className="font-display text-2xl text-amber-600"
+						>
+							Level Up!
+						</m.p>
+					)}
+				</AnimatePresence>
+
+				{/* Problem display with tile-held beat animation */}
+				<m.div
+					key={tileSeen !== null ? `pop-${tileSeen}` : "idle"}
+					animate={tileSeen !== null ? { scale: [1, 1.03, 1] } : { scale: 1 }}
+					transition={
+						tileSeen !== null
+							? {
+									...POP_SPRING,
+									repeat: Number.POSITIVE_INFINITY,
+									repeatDelay: 0.4,
+								}
+							: { duration: 0 }
+					}
+				>
+					<ProblemDisplay
+						problem={problem}
+						showAnswer={!!stars}
+						roundIndex={roundsCompleted}
+						difficulty={difficulty}
+					/>
+				</m.div>
+
+				{/* Feedback overlay: correct / timeout / tile-seen */}
+				<FeedbackOverlay feedback={feedback} />
+
+				{/* Camera uncertainty prompt — shown when tile was seen but lost */}
+				<AnimatePresence>
+					{isScanning && cameraUncertain && (
+						<CameraUncertaintyPrompt key="camera-uncertainty" />
+					)}
+				</AnimatePresence>
+
+				{/* Ghost tile onboarding guide — first-scan only */}
+				{isScanning &&
+					showGuide &&
+					!cameraUncertain &&
+					tileSeen === null &&
+					wrongTileSeen === null && <GhostTileGuide visible={true} />}
 			</div>
 
-			{/* Level Up! indicator — only on promotion, never demotion */}
-			<AnimatePresence>
-				{showLevelUp && (
-					<m.p
-						key="level-up"
-						initial={{ opacity: 0, scale: 0.8 }}
-						animate={{ opacity: 1, scale: [0.8, 1.15, 1] }}
-						exit={{ opacity: 0 }}
-						transition={{ duration: 0.4 }}
-						className="font-display text-2xl text-amber-600"
-					>
-						Level Up!
-					</m.p>
-				)}
-			</AnimatePresence>
-
-			{/* Problem display with tile-held beat animation */}
-			<m.div
-				key={tileSeen !== null ? `pop-${tileSeen}` : "idle"}
-				animate={tileSeen !== null ? { scale: [1, 1.03, 1] } : { scale: 1 }}
-				transition={
-					tileSeen !== null
-						? {
-								...POP_SPRING,
-								repeat: Number.POSITIVE_INFINITY,
-								repeatDelay: 0.4,
-							}
-						: { duration: 0 }
-				}
-			>
-				<ProblemDisplay
-					problem={problem}
-					showAnswer={!!stars}
-					roundIndex={roundsCompleted}
-					difficulty={difficulty}
-				/>
-			</m.div>
-
-			{/* Feedback overlay: correct / timeout / tile-seen */}
-			<FeedbackOverlay feedback={feedback} />
-
-			{/* Camera uncertainty prompt — shown when tile was seen but lost */}
-			<AnimatePresence>
-				{isScanning && cameraUncertain && (
-					<CameraUncertaintyPrompt key="camera-uncertainty" />
-				)}
-			</AnimatePresence>
-
-			{/* Ghost tile onboarding guide — first-scan only */}
-			{isScanning &&
-				showGuide &&
-				!cameraUncertain &&
-				tileSeen === null &&
-				wrongTileSeen === null && <GhostTileGuide visible={true} />}
-
+			{/* CLEAR ZONE: answer hint + mock numpad */}
 			{/* Answer zone hint — only during scanning with no feedback showing */}
 			{isScanning &&
 				!showGuide &&
@@ -343,11 +347,11 @@ export function GameScreen({
 				tileSeen === null &&
 				wrongTileSeen === null && (
 					<div
-						className={`rounded-3xl border-4 border-dashed border-primary-400 px-12 py-5 ${
+						className={`rounded-3xl border-4 border-dashed border-primary-400 bg-black/30 px-12 py-5 ${
 							idleSeconds >= 10 ? "animate-pulse" : "animate-pulse-soft"
 						}`}
 					>
-						<p className="font-body text-2xl text-primary-500">
+						<p className="font-body text-2xl text-primary-300">
 							{idleSeconds >= 15
 								? "Try holding a tile up!"
 								: "Put your answer here"}

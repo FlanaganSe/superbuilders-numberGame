@@ -10,9 +10,9 @@ interface CountdownTimerProps {
 }
 
 const COUNTDOWN_COLORS: Record<number, string> = {
-	3: "text-primary-500",
-	2: "text-orange-500",
-	1: "text-red-500",
+	3: "text-primary-300",
+	2: "text-orange-300",
+	1: "text-red-400",
 } as const;
 
 const COUNTDOWN_SPRING = {
@@ -78,8 +78,8 @@ export function CountdownTimer({
 	}, [dispatch, mode, difficulty, play, stop]);
 
 	return (
-		<div className="flex flex-col items-center gap-4">
-			<p className="font-body text-3xl text-slate-600">Get ready!</p>
+		<div className="flex flex-col items-center gap-4 rounded-3xl bg-black/55 px-10 py-8">
+			<p className="font-body text-3xl text-white">Get ready!</p>
 			<m.span
 				key={secondsLeft}
 				className={`inline-block font-display text-9xl ${COUNTDOWN_COLORS[secondsLeft] ?? "text-primary-500"}`}
