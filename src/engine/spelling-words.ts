@@ -40,7 +40,7 @@ export const THREE_LETTER_WORDS: readonly string[] = [
 	"BUG",
 	"CUB",
 	"JUG",
-	"FIG",
+	"DIG",
 	"KID",
 	"HUG",
 ] as const;
@@ -108,7 +108,7 @@ const WORD_AUDIO_MAP: Readonly<Record<string, SoundName>> = {
 	BUG: "wordBug",
 	CUB: "wordCub",
 	JUG: "wordJug",
-	FIG: "wordFig",
+	DIG: "wordDig",
 	KID: "wordKid",
 	HUG: "wordHug",
 };

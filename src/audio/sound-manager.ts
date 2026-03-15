@@ -61,7 +61,7 @@ export type SoundName =
 	| "wordBug"
 	| "wordCub"
 	| "wordJug"
-	| "wordFig"
+	| "wordDig"
 	| "wordKid"
 	| "wordHug"
 	| "idleWonder";
@@ -115,7 +115,7 @@ const SOUND_FILES: Record<SoundName, string> = {
 	wordBug: "word-bug",
 	wordCub: "word-cub",
 	wordJug: "word-jug",
-	wordFig: "word-fig",
+	wordDig: "word-dig",
 	wordKid: "word-kid",
 	wordHug: "word-hug",
 	idleWonder: "idle-wonder",
