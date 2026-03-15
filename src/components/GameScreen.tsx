@@ -45,6 +45,12 @@ const POP_SPRING = {
 	damping: 10,
 };
 
+// ─── Celebration timing ──────────────────────────────────────────────────────
+// Event-driven: advance after both minimum display time AND spoken feedback
+// completion. No clip-count duration estimates.
+const MIN_CELEBRATION_MS = 3500;
+const MAX_CELEBRATION_MS = 15_000; // safety net if audio events never fire
+
 // ─── Props ──────────────────────────────────────────────────────────────────
 
 interface GameScreenProps {
@@ -137,27 +143,60 @@ export function GameScreen({
 		return () => window.removeEventListener("keydown", onKeyDown);
 	}, [handleDigit, flags.recognition]);
 
-	// Dynamic celebration window — longer when spoken feedback plays so the
-	// sequential audio chain finishes before auto-advancing to the next round.
-	const celebrationMs = useMemo(() => {
-		if (!stars || difficulty > 3 || problem.answer < 0 || problem.answer > 9)
-			return 3500;
-		const seq = buildCorrectSequence(problem, difficulty, stars);
-		if (seq.length === 0) return 3500;
-		// 1500ms spoken-feedback start delay + ~1.4s avg per clip + 500ms buffer
-		return 1500 + seq.length * 1400 + 500;
-	}, [stars, difficulty, problem]);
+	// ─── Celebration advance coordination ──────────────────────────────────
+	// Auto-advance requires two conditions: (1) minimum display time elapsed
+	// AND (2) spoken feedback complete (or not applicable). Driven by
+	// playSentence's onComplete callback — no clip-count duration estimates.
 
-	// Auto-advance after success — CV is paused because frame handler in
-	// App.tsx gates on phase !== "scanning".
+	const advanceRef = useRef({
+		minElapsed: false,
+		audioDone: true,
+		cancelled: false,
+	});
+
+	const tryAdvance = useCallback((): void => {
+		const c = advanceRef.current;
+		if (c.cancelled || !c.minElapsed || !c.audioDone) return;
+		c.cancelled = true;
+		resetCvState();
+		dispatch({ type: "NEXT_ROUND" });
+	}, [dispatch, resetCvState]);
+
+	// Auto-advance after success — waits for min display time, then checks
+	// whether spoken feedback has also finished before advancing.
 	useEffect(() => {
 		if (!stars) return;
-		const timer = setTimeout(() => {
-			resetCvState();
-			dispatch({ type: "NEXT_ROUND" });
-		}, celebrationMs);
-		return () => clearTimeout(timer);
-	}, [stars, dispatch, resetCvState, celebrationMs]);
+
+		const willSpeak =
+			problem.answer >= 0 &&
+			problem.answer <= 9 &&
+			difficulty <= 3 &&
+			buildCorrectSequence(problem, difficulty, stars).length > 0;
+
+		const c = advanceRef.current;
+		c.minElapsed = false;
+		c.audioDone = !willSpeak;
+		c.cancelled = false;
+
+		const minTimer = setTimeout(() => {
+			c.minElapsed = true;
+			tryAdvance();
+		}, MIN_CELEBRATION_MS);
+
+		const maxTimer = setTimeout(() => {
+			if (!c.cancelled) {
+				c.cancelled = true;
+				resetCvState();
+				dispatch({ type: "NEXT_ROUND" });
+			}
+		}, MAX_CELEBRATION_MS);
+
+		return () => {
+			c.cancelled = true;
+			clearTimeout(minTimer);
+			clearTimeout(maxTimer);
+		};
+	}, [stars, problem, difficulty, dispatch, resetCvState, tryAdvance]);
 
 	const isScanning = !stars && !timedOut;
 
@@ -244,6 +283,8 @@ export function GameScreen({
 	}, [idleSeconds, isScanning, tileSeen, play]);
 
 	// Spoken feedback — audible explanation after chime (PRD req #13)
+	// Signals advanceRef.audioDone when the chain completes so the
+	// auto-advance effect can fire (event-driven, no time estimates).
 	useEffect(() => {
 		if (!stars) return;
 		if (problem.answer < 0) return; // spelling
@@ -255,14 +296,19 @@ export function GameScreen({
 		// Start after existing number-word + chime sequence completes (~1.5s)
 		let cancel: (() => void) | null = null;
 		const startTimer = setTimeout(() => {
-			cancel = playSentence(seq, play);
+			cancel = playSentence(seq, play, () => {
+				advanceRef.current.audioDone = true;
+				tryAdvance();
+			});
 		}, 1500);
 
 		return () => {
 			clearTimeout(startTimer);
 			cancel?.();
+			// Signal done on cleanup so auto-advance doesn't hang
+			advanceRef.current.audioDone = true;
 		};
-	}, [stars, play, problem, difficulty]);
+	}, [stars, play, problem, difficulty, tryAdvance]);
 
 	// Spoken feedback — worked example answer on repeated timeout (PRD req #14)
 	useEffect(() => {

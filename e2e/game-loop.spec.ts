@@ -84,7 +84,10 @@ test.describe("Game loop (mock recognition)", () => {
 		});
 
 		// ── Round 2: answer correctly ────────────────────────────────────────
-		await expect(page.getByText("Get ready!")).toBeVisible({ timeout: 5_000 });
+		// Celebration window is event-driven — waits for spoken feedback to
+		// finish before auto-advancing. In WebKit, actual audio playback can
+		// take several seconds (5 clips at ~1s each + 1.5s start delay).
+		await expect(page.getByText("Get ready!")).toBeVisible({ timeout: 15_000 });
 		await waitForScanning(page);
 		await answerCorrectly(page);
 		await expect(page.getByText(CELEBRATION_PATTERN)).toBeVisible({
