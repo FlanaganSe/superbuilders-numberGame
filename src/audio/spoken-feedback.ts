@@ -118,20 +118,30 @@ export function buildTimeoutSequence(
 // ─── Playback ───────────────────────────────────────────────────────────────
 
 /**
- * Schedule a chain of play() calls with `gapMs` between each.
- * Returns a cancel function that clears all pending timeouts.
+ * Play a sequence of clips one after another, each starting when the
+ * previous clip finishes (via the `onEnd` callback from the audio layer).
+ * Returns a cancel function that stops the chain from advancing.
  */
 export function playSentence(
 	sequence: readonly SoundName[],
-	play: (name: SoundName) => void,
-	gapMs = 300,
+	play: (name: SoundName, onEnd?: () => void) => void,
+	onComplete?: () => void,
 ): () => void {
-	const timers: ReturnType<typeof setTimeout>[] = [];
-	for (let i = 0; i < sequence.length; i++) {
-		const name = sequence[i] as SoundName; // safe: i < sequence.length
-		timers.push(setTimeout(() => play(name), i * gapMs));
+	let cancelled = false;
+	let index = 0;
+
+	function playNext(): void {
+		if (cancelled) return;
+		if (index >= sequence.length) {
+			onComplete?.();
+			return;
+		}
+		const name = sequence[index++] as SoundName;
+		play(name, () => playNext());
 	}
+
+	playNext();
 	return () => {
-		for (const t of timers) clearTimeout(t);
+		cancelled = true;
 	};
 }

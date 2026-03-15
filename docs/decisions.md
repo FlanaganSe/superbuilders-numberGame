@@ -137,7 +137,7 @@ Append-only log. Read during planning, not loaded every session.
 ## ADR-011: WCAG 2.1 Contrast Compliance
 
 **Date:** 2026-03-15
-**Status:** Accepted
+**Status:** Amended by ADR-016
 
 **Context:** Audited all text-on-background combinations against the cream background (#fef9ef, relative luminance 0.95). Since all TileSight text uses 48pt+ Fredoka One or 24pt+ Lexend, the WCAG 2.1 SC 1.4.3 large text threshold of 3:1 applies. Five color classes failed:
 
@@ -218,3 +218,28 @@ The cream background (#fef9ef) was not changed — it is a deliberate design cho
 **Decision:** Created `spoken-feedback.ts` — pure functions that compose `SoundName[]` sequences from number-word clips (`number0`–`number9`) and 6 connecting-phrase clips (`phraseAnd`, `phraseMake`, `phraseTakeAway`, `phraseIs`, `phraseTheAnswerIs`, `phraseMakeTen`). Audio speaks the math fact ("three and five make eight") while the visual teaches the process (count-on animation). `playSentence` schedules clips via `setTimeout` chain with 300ms gaps. All functions receive `play` via dependency injection — no Howler dependency, trivially unit-testable. Gated on `difficulty ≤ 3` (Sweller's expertise reversal).
 
 **Consequences:** The audio module has zero coupling to React or Howler. New audio patterns (e.g., spelling word feedback) follow the same pattern: pure function returns `SoundName[]`, `playSentence` schedules it. The 300ms gap between clips is a tuning parameter — adjustable without code changes beyond the default argument. Four additional phrase clips (`phrase-then`, `phrase-more`, `phrase-you-found-it`, `phrase-missing-part-is`) are on disk but unregistered, available for future features.
+
+---
+
+## ADR-016: Warmer Cream Background for Readability
+
+**Date:** 2026-03-15
+**Status:** Accepted (amends ADR-011)
+
+**Context:** The original cream (#fef9ef, 97% lightness) was perceptually very close to white — the warmth was only noticeable where animated gradient overlays happened to overlap. Research on background color and reading comprehension in ages 5–8 (PMC5083879, PMC9674548) indicates the sweet spot is a warm hue (40–50°), low-to-moderate saturation, and 92–95% lightness. The previous value was above that range.
+
+**Decision:** Changed `--color-cream` from `#fef9ef` (hsl 42, 90%, 97%) to `#f8f3e7` (hsl 43, 55%, 94%). This shifts lightness from 97% to 94% and pulls saturation to 55% — squarely in the research-backed range. The warmer base means the animated gradient overlays remain complementary without retuning. `text-amber-600` on the home screen (stars, camera error) dropped from 3.05:1 to 2.88:1 against the new background, failing WCAG 2.1 SC 1.4.3 for large text. Darkened to `text-amber-700` (#b45309, 4.54:1).
+
+Re-audited all text on cream:
+
+| Color | Hex | Ratio on #f8f3e7 | Passes |
+|---|---|---|---|
+| Default text | #1e293b | 13.21:1 | AA |
+| text-primary-600 | #2563eb | 4.67:1 | AA |
+| text-primary-500 | #3b82f6 | 3.32:1 | 3:1 large |
+| text-slate-500 | #64748b | 4.30:1 | 3:1 large |
+| text-amber-700 | #b45309 | 4.54:1 | AA |
+
+Note: `text-amber-500` in ProgressiveLoader ("Oops!") was a pre-existing WCAG failure (2.05:1 on old cream) not caught by ADR-011 — tracked separately.
+
+**Consequences:** Background warmth is now intrinsic rather than overlay-dependent. Star text shifts from amber-600 to amber-700 — deeper bronze but still recognizably warm/golden. All game-phase text on dark cards (`bg-black/55`) is unaffected. PWA manifest `background_color` updated to match.

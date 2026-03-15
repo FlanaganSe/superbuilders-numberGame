@@ -5,7 +5,7 @@ import { playSound, type SoundName, stopSound } from "./sound-manager";
 export type { SoundName } from "./sound-manager";
 
 interface AudioControls {
-	readonly play: (name: SoundName) => void;
+	readonly play: (name: SoundName, onEnd?: () => void) => void;
 	readonly stop: (name: SoundName) => void;
 }
 
@@ -18,9 +18,12 @@ export function useAudio(): AudioControls {
 	const mutedRef = useRef(muted);
 	mutedRef.current = muted;
 
-	const play = useCallback((name: SoundName): void => {
+	const play = useCallback((name: SoundName, onEnd?: () => void): void => {
 		if (!mutedRef.current) {
-			playSound(name);
+			playSound(name, onEnd);
+		} else {
+			// When muted, still fire onEnd so sequential chains complete (silently).
+			onEnd?.();
 		}
 	}, []);
 

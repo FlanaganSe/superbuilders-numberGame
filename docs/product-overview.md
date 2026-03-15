@@ -499,7 +499,7 @@ Decisions are logged in `docs/decisions.md` (ADR-001 through ADR-015). Key ones:
 
 **Wrong-answer detection separate from temporal buffer (ADR-010):** Wrong-tile tracking has different timing (>3s guard, 2-frame threshold) and serves feedback, not state transitions. Lives in module-level variables in `game-store.ts`.
 
-**WCAG 2.1 contrast compliance (ADR-011):** All text-on-background combinations audited against cream background (#fef9ef). Five color classes were darkened to meet 3:1 (large text) or 4.5:1 (normal text) thresholds. The cream background is a deliberate design choice (off-white for reading comprehension).
+**WCAG 2.1 contrast compliance (ADR-011, amended by ADR-016):** All text-on-background combinations audited against cream background (#f8f3e7, hsl 43/55%/94%). Background was shifted from #fef9ef (97% lightness) to #f8f3e7 (94% lightness) for research-backed warmth in the 92–95% range. Star text darkened from amber-600 to amber-700 to maintain WCAG 2.1 SC 1.4.3 compliance (4.54:1). All combinations meet 3:1 (large text) or 4.5:1 (normal text) thresholds.
 
 **Strategy-aware math feedback with subitizing gate (ADR-012):** Feedback is now strategy-specific, not just operator-aware. Subitizing gate (both operands ≤ 3, sum ≤ 5) uses direct composition language instead of count-on. Make-ten uses "partner" vocabulary. Missing-addend uses process praise. Caregiver coaching tip on session summary. All gated by difficulty ≤ 3 (Sweller's expertise reversal).
 

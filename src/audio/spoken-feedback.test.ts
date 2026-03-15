@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import type { Problem } from "../types/game";
 import {
 	buildCorrectSequence,
@@ -175,54 +175,75 @@ describe("buildTimeoutSequence", () => {
 // ─── playSentence ───────────────────────────────────────────────────────────
 
 describe("playSentence", () => {
-	beforeEach(() => {
-		vi.useFakeTimers();
-	});
+	it("plays each clip sequentially via onEnd chaining", () => {
+		// Mock play that immediately fires onEnd (simulates instant clip completion)
+		const calls: string[] = [];
+		const play = vi.fn((name: string, onEnd?: () => void) => {
+			calls.push(name);
+			onEnd?.();
+		});
 
-	afterEach(() => {
-		vi.useRealTimers();
-	});
+		playSentence(["number3", "phraseAnd", "number5"], play);
 
-	it("calls play for each sound in sequence", () => {
-		const play = vi.fn();
-		playSentence(["number3", "phraseAnd", "number5"], play, 300);
-
-		// t=0: first sound
-		vi.advanceTimersByTime(0);
-		expect(play).toHaveBeenCalledWith("number3");
-
-		// t=300: second sound
-		vi.advanceTimersByTime(300);
-		expect(play).toHaveBeenCalledWith("phraseAnd");
-
-		// t=600: third sound
-		vi.advanceTimersByTime(300);
-		expect(play).toHaveBeenCalledWith("number5");
-
+		expect(calls).toEqual(["number3", "phraseAnd", "number5"]);
 		expect(play).toHaveBeenCalledTimes(3);
 	});
 
-	it("cancel function prevents remaining calls", () => {
-		const play = vi.fn();
-		const cancel = playSentence(["number3", "phraseAnd", "number5"], play, 300);
+	it("cancel function prevents remaining clips from playing", () => {
+		// Mock play that captures onEnd without calling it (simulates clip in progress)
+		let capturedOnEnd: (() => void) | undefined;
+		const play = vi.fn((_name: string, onEnd?: () => void) => {
+			capturedOnEnd = onEnd;
+		});
 
-		// t=0: first sound fires
-		vi.advanceTimersByTime(0);
+		const cancel = playSentence(["number3", "phraseAnd", "number5"], play);
+
+		// Only first clip started (waiting for onEnd)
 		expect(play).toHaveBeenCalledTimes(1);
+		expect(play).toHaveBeenCalledWith("number3", expect.any(Function));
 
-		// Cancel before remaining sounds
+		// Cancel while first clip is still playing
 		cancel();
 
-		// Advance past all remaining timers
-		vi.advanceTimersByTime(1000);
+		// Simulate first clip finishing after cancel
+		capturedOnEnd?.();
+
+		// No further clips should play
 		expect(play).toHaveBeenCalledTimes(1);
+	});
+
+	it("calls onComplete after the last clip finishes", () => {
+		const play = vi.fn((_name: string, onEnd?: () => void) => {
+			onEnd?.();
+		});
+		const onComplete = vi.fn();
+
+		playSentence(["number3", "phraseAnd"], play, onComplete);
+
+		expect(onComplete).toHaveBeenCalledTimes(1);
+	});
+
+	it("does not call onComplete when cancelled", () => {
+		let capturedOnEnd: (() => void) | undefined;
+		const play = vi.fn((_name: string, onEnd?: () => void) => {
+			capturedOnEnd = onEnd;
+		});
+		const onComplete = vi.fn();
+
+		const cancel = playSentence(["number3"], play, onComplete);
+		cancel();
+		capturedOnEnd?.();
+
+		expect(onComplete).not.toHaveBeenCalled();
 	});
 
 	it("handles empty sequence", () => {
 		const play = vi.fn();
-		const cancel = playSentence([], play);
-		vi.advanceTimersByTime(1000);
+		const onComplete = vi.fn();
+		const cancel = playSentence([], play, onComplete);
+
 		expect(play).not.toHaveBeenCalled();
+		expect(onComplete).toHaveBeenCalledTimes(1);
 		cancel(); // should not throw
 	});
 });

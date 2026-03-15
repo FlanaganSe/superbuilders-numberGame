@@ -97,13 +97,13 @@ export function TapToStart({
 			</m.h1>
 
 			{cumulative.totalStars > 0 && (
-				<p className="font-display text-2xl text-amber-600">
+				<p className="font-display text-2xl text-amber-700">
 					{"★"} {cumulative.totalStars} stars collected
 				</p>
 			)}
 
 			{cameraError && (
-				<p className="max-w-sm text-center font-body text-2xl text-amber-600">
+				<p className="max-w-sm text-center font-body text-2xl text-amber-700">
 					{cameraError.message}
 				</p>
 			)}

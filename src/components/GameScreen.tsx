@@ -137,16 +137,27 @@ export function GameScreen({
 		return () => window.removeEventListener("keydown", onKeyDown);
 	}, [handleDigit, flags.recognition]);
 
-	// Auto-advance after success (3.5s celebration window — CV is paused
-	// because frame handler in App.tsx gates on phase !== "scanning")
+	// Dynamic celebration window — longer when spoken feedback plays so the
+	// sequential audio chain finishes before auto-advancing to the next round.
+	const celebrationMs = useMemo(() => {
+		if (!stars || difficulty > 3 || problem.answer < 0 || problem.answer > 9)
+			return 3500;
+		const seq = buildCorrectSequence(problem, difficulty, stars);
+		if (seq.length === 0) return 3500;
+		// 1500ms spoken-feedback start delay + ~1.4s avg per clip + 500ms buffer
+		return 1500 + seq.length * 1400 + 500;
+	}, [stars, difficulty, problem]);
+
+	// Auto-advance after success — CV is paused because frame handler in
+	// App.tsx gates on phase !== "scanning".
 	useEffect(() => {
 		if (!stars) return;
 		const timer = setTimeout(() => {
 			resetCvState();
 			dispatch({ type: "NEXT_ROUND" });
-		}, 3500);
+		}, celebrationMs);
 		return () => clearTimeout(timer);
-	}, [stars, dispatch, resetCvState]);
+	}, [stars, dispatch, resetCvState, celebrationMs]);
 
 	const isScanning = !stars && !timedOut;
 
@@ -172,9 +183,16 @@ export function GameScreen({
 
 	// ─── Sound effects ──────────────────────────────────────────────────────
 
+	// StrictMode guard: useRef persists across StrictMode's effect
+	// double-invoke (React re-runs effects but doesn't remount the component),
+	// so the second run sees the ref was already set and skips playback.
+	const lastPlayedRoundRef = useRef(-1);
+
 	// Correct answer → number word then chime (Mayer dual coding)
 	useEffect(() => {
 		if (!stars) return;
+		if (lastPlayedRoundRef.current === roundsCompleted) return;
+		lastPlayedRoundRef.current = roundsCompleted;
 
 		const hasNumberWord = problem.answer >= 0 && problem.answer <= 9;
 
@@ -186,7 +204,7 @@ export function GameScreen({
 		}
 
 		play("correctChime");
-	}, [stars, play, problem.answer]);
+	}, [stars, play, problem.answer, roundsCompleted]);
 
 	// Timeout → encouragement
 	useEffect(() => {
