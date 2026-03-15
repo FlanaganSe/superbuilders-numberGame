@@ -133,6 +133,29 @@ const SOUND_FILES: Record<SoundName, string> = {
 	phraseMakeTen: "phrase-make-ten",
 };
 
+// ─── Speech duration map (ffmpeg silencedetect -40dB + 80ms padding) ────────
+// Only number clips and phrase clips used in playSentence chains.
+// Sounds NOT listed here play the full file via Howler's __default sprite.
+
+const SPEECH_MS: Partial<Record<SoundName, number>> = {
+	number0: 811,
+	number1: 643,
+	number2: 584,
+	number3: 643,
+	number4: 693,
+	number5: 734,
+	number6: 649,
+	number7: 751,
+	number8: 582,
+	number9: 750,
+	phraseAnd: 439,
+	phraseMake: 455,
+	phraseIs: 399,
+	phraseTakeAway: 719,
+	phraseTheAnswerIs: 837,
+	phraseMakeTen: 651,
+};
+
 // ─── Howl instance cache ────────────────────────────────────────────────────
 
 const howls = new Map<SoundName, Howl>();
@@ -142,10 +165,12 @@ function getHowl(name: SoundName): Howl {
 	if (existing) return existing;
 
 	const file = SOUND_FILES[name];
+	const speechMs = SPEECH_MS[name];
 	const howl = new Howl({
 		src: [`/sounds/${file}.mp3`, `/sounds/${file}.m4a`],
 		preload: true,
 		volume: 0.8,
+		...(speechMs != null && { sprite: { speech: [0, speechMs] } }),
 	});
 	howls.set(name, howl);
 	return howl;
@@ -164,7 +189,8 @@ export function preloadSounds(): void {
 /** Play a named sound. Does NOT check mute — caller is responsible. */
 export function playSound(name: SoundName, onEnd?: () => void): void {
 	const howl = getHowl(name);
-	const id = howl.play();
+	const speechMs = SPEECH_MS[name];
+	const id = speechMs != null ? howl.play("speech") : howl.play();
 	if (name === "correctChime") {
 		howl.once(
 			"play",
@@ -178,6 +204,11 @@ export function playSound(name: SoundName, onEnd?: () => void): void {
 		howl.once("end", () => onEnd(), id);
 		howl.once("playerror", () => onEnd(), id);
 	}
+}
+
+/** Get the speech duration in ms for a sound, or undefined if not sprite-trimmed. */
+export function getSpeechMs(name: SoundName): number | undefined {
+	return SPEECH_MS[name];
 }
 
 /** Stop all instances of a named sound. */
