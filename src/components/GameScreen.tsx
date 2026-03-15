@@ -332,11 +332,13 @@ export function GameScreen({
 				</AnimatePresence>
 
 				{/* Ghost tile onboarding guide — first-scan only */}
-				{isScanning &&
-					showGuide &&
-					!cameraUncertain &&
-					tileSeen === null &&
-					wrongTileSeen === null && <GhostTileGuide visible={true} />}
+				<AnimatePresence>
+					{isScanning &&
+						showGuide &&
+						!cameraUncertain &&
+						tileSeen === null &&
+						wrongTileSeen === null && <GhostTileGuide key="ghost-guide" />}
+				</AnimatePresence>
 			</div>
 
 			{/* CLEAR ZONE: answer hint + mock numpad */}

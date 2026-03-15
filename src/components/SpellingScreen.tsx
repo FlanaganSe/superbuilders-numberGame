@@ -222,9 +222,11 @@ export function SpellingScreen({
 				</AnimatePresence>
 
 				{/* Ghost tile onboarding guide — first-scan only */}
-				{isScanning && showGuide && !cameraUncertain && tileSeen === null && (
-					<GhostTileGuide visible={true} />
-				)}
+				<AnimatePresence>
+					{isScanning && showGuide && !cameraUncertain && tileSeen === null && (
+						<GhostTileGuide key="ghost-guide" />
+					)}
+				</AnimatePresence>
 			</div>
 
 			{/* CLEAR ZONE: answer hint */}

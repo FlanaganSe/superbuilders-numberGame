@@ -38,7 +38,11 @@ Three independently shippable features that address the three largest UX gaps re
 ## Milestone outline
 
 - [x] **M1: Camera-Safe UI Cards** — Add semi-transparent dark cards behind all game-phase text overlaying the camera feed, ensuring readability over any background
-- [ ] **M2: Animated Onboarding** — Replace the static GhostTileGuide with a looping tile-toward-camera animation that communicates the mechanic without text
+- [x] **M2: Animated Onboarding** — Replace the static GhostTileGuide with a looping tile-toward-camera animation that communicates the mechanic without text
+  - [x] Step 1 — Rewrite GhostTileGuide.tsx: camera icon SVG + animated tile + reduced-motion fallback → verify: `pnpm typecheck`
+  - [x] Step 2 — Wrap GhostTileGuide in AnimatePresence in GameScreen.tsx and SpellingScreen.tsx → verify: `pnpm typecheck && pnpm lint`
+  - [x] Step 3 — Full verification → verify: `pnpm typecheck && pnpm lint && pnpm build`
+  Commit: "feat: replace static ghost tile guide with animated onboarding"
 - [ ] **M3: Spoken Feedback** — Compose and play audible explanations from number-word + connecting-phrase clips on correct answers and worked-example timeouts
 
 ## Manual setup tasks
