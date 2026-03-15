@@ -61,6 +61,16 @@ export function getCountSequence(problem: Problem): CountSequence | null {
 
 	if (problem.operator === "+") {
 		if (problem.right === 0) return null;
+		// Subitizing: no count sequence for small sums children perceive directly
+		// Guard on unknownPosition to avoid suppressing count for missing-addend
+		if (
+			problem.unknownPosition === undefined &&
+			problem.left <= 3 &&
+			problem.right <= 3 &&
+			problem.left + problem.right <= 5
+		) {
+			return null;
+		}
 		return {
 			type: "count-on",
 			start: problem.left,
@@ -103,8 +113,8 @@ export function getCorrectExplanation(
 		const isMake10 = problem.target === 10;
 		if (stars === 3 && difficulty <= 3) {
 			return isMake10
-				? `${problem.left} and ${problem.answer} make ten!`
-				: `The missing part is ${problem.answer}! ${problem.left} and ${problem.answer} make ${problem.target}!`;
+				? `${problem.left} and ${problem.answer} make ten! ${capitalize(numberWord(problem.answer))} is the partner of ${numberWord(problem.left)}.`
+				: `You found it! ${problem.left} and ${problem.answer} make ${problem.target}.`;
 		}
 		if (stars === 3) {
 			return `${capitalize(numberWord(problem.answer))}!`;
@@ -204,6 +214,10 @@ function getFullExplanation(problem: Problem): string {
 	if (operator === "+") {
 		if (right === 0) {
 			return `${left} + 0 = ${answer}. Add nothing — still ${numberWord(answer)}!`;
+		}
+		// Subitizing: both operands ≤ 3 and sum ≤ 5 — direct composition, no count sequence
+		if (left <= 3 && right <= 3 && left + right <= 5) {
+			return `${left} + ${right} = ${answer}. ${capitalize(numberWord(left))} and ${numberWord(right)} make ${numberWord(answer)}!`;
 		}
 		return `${left} + ${right} = ${answer}. ${capitalize(numberWord(left))}, then ${numberWord(right)} more: ${countOnFrom(left, right)}!`;
 	}

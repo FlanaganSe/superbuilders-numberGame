@@ -121,13 +121,13 @@ describe("getCorrectExplanation", () => {
 	});
 
 	describe("missing-addend, first attempt (stars=3)", () => {
-		it("difficulty 1-3: part-whole explanation", () => {
+		it("difficulty 1-3: process praise with part-whole restatement", () => {
 			const p = missingAddendProblem(3, 4);
 			expect(getCorrectExplanation(p, 1, 3)).toBe(
-				"The missing part is 4! 3 and 4 make 7!",
+				"You found it! 3 and 4 make 7.",
 			);
 			expect(getCorrectExplanation(p, 3, 3)).toBe(
-				"The missing part is 4! 3 and 4 make 7!",
+				"You found it! 3 and 4 make 7.",
 			);
 		});
 
@@ -153,10 +153,14 @@ describe("getCorrectExplanation", () => {
 	});
 
 	describe("make-10, first attempt (stars=3)", () => {
-		it("difficulty 1-3: concise make-ten explanation", () => {
+		it("difficulty 1-3: make-ten with partner language", () => {
 			const p = make10Problem(7);
-			expect(getCorrectExplanation(p, 1, 3)).toBe("7 and 3 make ten!");
-			expect(getCorrectExplanation(p, 3, 3)).toBe("7 and 3 make ten!");
+			expect(getCorrectExplanation(p, 1, 3)).toBe(
+				"7 and 3 make ten! Three is the partner of seven.",
+			);
+			expect(getCorrectExplanation(p, 3, 3)).toBe(
+				"7 and 3 make ten! Three is the partner of seven.",
+			);
 		});
 
 		it("difficulty 4-5: brief acknowledgment", () => {
@@ -427,6 +431,113 @@ describe("getCountSequence", () => {
 				start: 5,
 				steps: [4, 3, 2, 1, 0],
 			});
+		});
+	});
+
+	describe("subitizing gate", () => {
+		it("returns null for subitizable sums (both ≤ 3, sum ≤ 5)", () => {
+			expect(getCountSequence(addProblem(1, 2))).toBeNull();
+			expect(getCountSequence(addProblem(2, 3))).toBeNull();
+			expect(getCountSequence(addProblem(1, 1))).toBeNull();
+			expect(getCountSequence(addProblem(0, 3))).toBeNull();
+		});
+
+		it("returns count-on for non-subitizable sums (sum > 5)", () => {
+			const p = addProblem(3, 3);
+			expect(getCountSequence(p)).toEqual({
+				type: "count-on",
+				start: 3,
+				steps: [4, 5, 6],
+			});
+		});
+
+		it("returns count-on when an operand > 3", () => {
+			const p = addProblem(4, 1);
+			expect(getCountSequence(p)).toEqual({
+				type: "count-on",
+				start: 4,
+				steps: [5],
+			});
+		});
+
+		it("does not affect subtraction", () => {
+			const p = subProblem(3, 2);
+			expect(getCountSequence(p)).toEqual({
+				type: "count-back",
+				start: 3,
+				steps: [2, 1],
+			});
+		});
+
+		it("does not affect missing-addend", () => {
+			const p = missingAddendProblem(1, 2);
+			expect(getCountSequence(p)).toEqual({
+				type: "count-on",
+				start: 1,
+				steps: [2, 3],
+			});
+		});
+	});
+});
+
+// ─── Strategy-aware feedback ────────────────────────────────────────────────
+
+describe("strategy-aware feedback", () => {
+	describe("subitizing (small sums)", () => {
+		it("uses 'make' language without count sequence", () => {
+			const p = addProblem(1, 2);
+			expect(getCorrectExplanation(p, 1, 3)).toBe(
+				"1 + 2 = 3. One and two make three!",
+			);
+		});
+
+		it("subitizing boundary: 2+3=5 uses make language", () => {
+			const p = addProblem(2, 3);
+			expect(getCorrectExplanation(p, 1, 3)).toBe(
+				"2 + 3 = 5. Two and three make five!",
+			);
+		});
+
+		it("subitizing boundary: 3+3=6 uses count-on (sum > 5)", () => {
+			const p = addProblem(3, 3);
+			expect(getCorrectExplanation(p, 1, 3)).toBe(
+				"3 + 3 = 6. Three, then three more: 4, 5, 6!",
+			);
+		});
+
+		it("high difficulty still returns brief for subitizable sums", () => {
+			const p = addProblem(1, 2);
+			expect(getCorrectExplanation(p, 4, 3)).toBe("Three!");
+		});
+	});
+
+	describe("make-10 partner language", () => {
+		it("includes partner vocabulary at low difficulty", () => {
+			const p = make10Problem(6);
+			expect(getCorrectExplanation(p, 1, 3)).toBe(
+				"6 and 4 make ten! Four is the partner of six.",
+			);
+		});
+
+		it("no partner language at high difficulty", () => {
+			const p = make10Problem(7);
+			expect(getCorrectExplanation(p, 4, 3)).toBe("Three!");
+		});
+	});
+
+	describe("part-whole process praise", () => {
+		it("uses 'You found it!' at low difficulty, first try", () => {
+			const p = missingAddendProblem(2, 5);
+			expect(getCorrectExplanation(p, 1, 3)).toBe(
+				"You found it! 2 and 5 make 7.",
+			);
+		});
+
+		it("retry still uses 'You figured it out!'", () => {
+			const p = missingAddendProblem(3, 4);
+			expect(getCorrectExplanation(p, 1, 2)).toBe(
+				"You figured it out! The missing part is 4.",
+			);
 		});
 	});
 });

@@ -2,6 +2,7 @@ import confetti from "canvas-confetti";
 import * as m from "motion/react-m";
 import { useEffect, useState } from "react";
 import { useAudio } from "../audio/use-audio";
+import { getCaregiverTip } from "../engine/caregiver-prompts";
 import { loadCumulative, recordSession } from "../engine/session";
 import { useGameStore } from "../store/game-store";
 import type { SessionData } from "../types/game";
@@ -172,6 +173,11 @@ export function SessionSummary({
 
 			<p className="font-body text-lg text-slate-500">
 				Come back tomorrow to practice more!
+			</p>
+
+			{/* Caregiver coaching tip — process-oriented (Berkowitz et al. 2015) */}
+			<p className="mt-2 font-body text-base text-slate-600 italic">
+				{getCaregiverTip(cumulative.sessionsPlayed)}
 			</p>
 		</div>
 	);

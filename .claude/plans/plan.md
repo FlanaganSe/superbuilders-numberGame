@@ -144,7 +144,12 @@ Single pure function returning one process-oriented tip:
 ---
 
 ### M3: Strategy-Aware Feedback & Caregiver Tip
-- [ ] M3: Make math feedback strategy-specific and add one caregiver tip at session end
+- [x] M3: Make math feedback strategy-specific and add one caregiver tip at session end
+  - [x] Step 1 — Strategy-aware explanation-generator: subitizing path, make-ten partner language, part-whole process praise, subitizing gate in getCountSequence + update existing tests + add new tests → verify: `pnpm test src/engine/explanation-generator.test.ts`
+  - [x] Step 2 — Create caregiver-prompts.ts + co-located tests → verify: `pnpm test src/engine/caregiver-prompts.test.ts`
+  - [x] Step 3 — Add caregiver tip to SessionSummary.tsx → verify: `pnpm typecheck`
+  - [x] Step 4 — Full verification gate → verify: `pnpm test && pnpm typecheck && pnpm lint:fix && pnpm build`
+  Commit: "feat: add strategy-aware math feedback and caregiver coaching tip"
 
 **Research basis:** Outhwaite et al. (2023) — explanatory + motivational feedback + levelling = necessary condition for effective apps. Current feedback is operator-aware (addition→count-on, subtraction→count-back) but not strategy-specific. Different mathematical structures benefit from different explanations: count-on for small addends, make-ten composition for near-ten problems, part-whole decomposition for missing addend. Berkowitz et al. (2015) — math-at-home app increased achievement; only 2/25 apps support adult interaction.
 
