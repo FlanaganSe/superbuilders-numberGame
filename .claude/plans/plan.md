@@ -43,7 +43,11 @@ Three independently shippable features that address the three largest UX gaps re
   - [x] Step 2 — Wrap GhostTileGuide in AnimatePresence in GameScreen.tsx and SpellingScreen.tsx → verify: `pnpm typecheck && pnpm lint`
   - [x] Step 3 — Full verification → verify: `pnpm typecheck && pnpm lint && pnpm build`
   Commit: "feat: replace static ghost tile guide with animated onboarding"
-- [ ] **M3: Spoken Feedback** — Compose and play audible explanations from number-word + connecting-phrase clips on correct answers and worked-example timeouts
+- [x] **M3: Spoken Feedback** — Compose and play audible explanations from number-word + connecting-phrase clips on correct answers and worked-example timeouts
+  - [x] Step 1 — Register 5 phrase SoundNames in sound-manager.ts (union + SOUND_FILES record) → verify: `pnpm typecheck`
+  - [x] Step 2 — Create spoken-feedback.ts (buildCorrectSequence, buildTimeoutSequence, playSentence) + spoken-feedback.test.ts → verify: `pnpm test && pnpm typecheck`
+  - [x] Step 3 — Add 2 useEffect blocks in GameScreen.tsx for correct-answer and timeout spoken feedback → verify: `pnpm test && pnpm typecheck && pnpm lint && pnpm build`
+  Commit: "feat: add spoken feedback for math explanations and worked examples"
 
 ## Manual setup tasks
 

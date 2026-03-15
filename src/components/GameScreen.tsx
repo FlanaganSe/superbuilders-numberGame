@@ -1,6 +1,11 @@
 import { AnimatePresence } from "motion/react";
 import * as m from "motion/react-m";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+	buildCorrectSequence,
+	buildTimeoutSequence,
+	playSentence,
+} from "../audio/spoken-feedback";
 import type { SoundName } from "../audio/use-audio";
 import { useAudio } from "../audio/use-audio";
 import {
@@ -219,6 +224,49 @@ export function GameScreen({
 			play("idleWonder");
 		}
 	}, [idleSeconds, isScanning, tileSeen, play]);
+
+	// Spoken feedback — audible explanation after chime (PRD req #13)
+	useEffect(() => {
+		if (!stars) return;
+		if (problem.answer < 0) return; // spelling
+		if (difficulty > 3) return;
+
+		const seq = buildCorrectSequence(problem, difficulty, stars);
+		if (seq.length === 0) return;
+
+		// Start after existing number-word + chime sequence completes (~1.5s)
+		let cancel: (() => void) | null = null;
+		const startTimer = setTimeout(() => {
+			cancel = playSentence(seq, play);
+		}, 1500);
+
+		return () => {
+			clearTimeout(startTimer);
+			cancel?.();
+		};
+	}, [stars, play, problem, difficulty]);
+
+	// Spoken feedback — worked example answer on repeated timeout (PRD req #14)
+	useEffect(() => {
+		if (!timedOut) return;
+		if (attemptNumber < 2) return;
+		if (difficulty > 3) return;
+		if (problem.answer < 0) return; // spelling
+
+		const seq = buildTimeoutSequence(problem, difficulty, attemptNumber);
+		if (seq.length === 0) return;
+
+		// Start after encouragement clip (~0.5s) + small buffer
+		let cancel: (() => void) | null = null;
+		const startTimer = setTimeout(() => {
+			cancel = playSentence(seq, play);
+		}, 600);
+
+		return () => {
+			clearTimeout(startTimer);
+			cancel?.();
+		};
+	}, [timedOut, attemptNumber, play, problem, difficulty]);
 
 	// Timeout handling — `stars` in deps ensures the timer is cancelled when
 	// a correct answer arrives (otherwise the old 30s timer survives into the

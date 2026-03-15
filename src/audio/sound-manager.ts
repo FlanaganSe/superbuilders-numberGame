@@ -64,7 +64,12 @@ export type SoundName =
 	| "wordDig"
 	| "wordKid"
 	| "wordHug"
-	| "idleWonder";
+	| "idleWonder"
+	| "phraseAnd"
+	| "phraseMake"
+	| "phraseTakeAway"
+	| "phraseIs"
+	| "phraseTheAnswerIs";
 
 // ─── File mapping ───────────────────────────────────────────────────────────
 // Individual files (not sprites). Swap to a single sprite by changing
@@ -119,6 +124,11 @@ const SOUND_FILES: Record<SoundName, string> = {
 	wordKid: "word-kid",
 	wordHug: "word-hug",
 	idleWonder: "idle-wonder",
+	phraseAnd: "phrase-and",
+	phraseMake: "phrase-make",
+	phraseTakeAway: "phrase-take-away",
+	phraseIs: "phrase-is",
+	phraseTheAnswerIs: "phrase-the-answer-is",
 };
 
 // ─── Howl instance cache ────────────────────────────────────────────────────
