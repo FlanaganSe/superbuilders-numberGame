@@ -105,7 +105,7 @@ AGPL-3.0 or enterprise. Fine for demo sprint. Flag immediately if commercial use
 | iOS camera permission re-prompts | RESOLVED | "Tap to Start" pattern implemented with NotAllowedError retry UI |
 | 6 vs 9 confusion | ACTIVE | Depends on custom training with underlined tiles; not yet trained |
 | Detection flicker / false positives | RESOLVED | Temporal buffer + motion gate implemented |
-| Model too large for cold start | RESOLVED | CacheFirst service worker; ~11MB model loads from cache after first visit |
+| Model too large for cold start | RESOLVED | StaleWhileRevalidate service worker (ADR-008); ~11MB model loads from cache after first visit |
 | @tailwindcss/vite peer dep | RESOLVED | Working with pnpm |
 
 ---

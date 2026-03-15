@@ -12,9 +12,9 @@ const results = postProcess({ output: tensor, numAnchors: 8400, numClasses: 10, 
 // results[0].digit === 7
 ```
 
-## Adding Labeled Test Frames (Future)
+## Adding Labeled Test Frames
 
-When real-device testing begins (M9), add labeled test frames here for regression testing:
+Add labeled test frames here for regression testing:
 
 1. Capture a frame using the Debug HUD's fixture capture button (`?debug=true`)
 2. Save the frame as `frames/<description>.jpg` (e.g., `digit-7-bright.jpg`)
