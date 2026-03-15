@@ -201,11 +201,11 @@ The game is a finite state machine with six phases, defined as a discriminated u
 
 1. **idle** — Welcome screen. "Let's Play!" button is live; "Spelling" and "Image Quiz" buttons are disabled (Coming Soon). Tapping "Let's Play!" atomically does four things: (a) unlocks AudioContext, (b) requests camera permission, (c) acquires screen wake lock, (d) starts the session. All four must happen in a single user gesture (iOS requirement).
 
-2. **countdown** — 5-second countdown with tick sounds, spring-animated numbers, and color urgency (5=blue → 4=teal → 3=amber → 2=orange → 1=red). Generates the next problem on completion.
+2. **countdown** — 3-second countdown with tick sounds, spring-animated numbers, and color urgency (3=blue → 2=orange → 1=red). Generates the next problem on completion.
 
 3. **scanning** — Active detection. Camera feeds frames to the CV pipeline. The problem displays with "?" as the answer. A dashed "Put your answer here" zone pulses until a tile is detected. Progress pips show the current round out of 15. 30-second timeout per round.
 
-4. **success** — Correct answer detected. Stars awarded (3 on first attempt, 2 on second, 1 on third+). Celebration animation + confetti + chime with randomized pitch. Auto-advances after 1.5s.
+4. **success** — Correct answer detected. Stars awarded (3 on first attempt, 2 on second, 1 on third+). Celebration animation + confetti + chime with randomized pitch. Auto-advances after 3.5s.
 
 5. **timeout** — 30 seconds expired without correct answer. Shows the correct answer for learning. Encouragement message (randomly chosen from a list — never punitive language). Auto-retries after 2s with the same problem and incremented attempt number.
 
