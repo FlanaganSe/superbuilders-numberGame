@@ -3,6 +3,7 @@ import type { Problem } from "../types/game";
 import {
 	buildCorrectSequence,
 	buildTimeoutSequence,
+	INTER_CLIP_GAP_MS,
 	playSentence,
 } from "./spoken-feedback";
 
@@ -176,39 +177,37 @@ describe("buildTimeoutSequence", () => {
 
 describe("playSentence", () => {
 	it("plays each clip sequentially via onEnd chaining", () => {
-		// Mock play that immediately fires onEnd (simulates instant clip completion)
 		const calls: string[] = [];
 		const play = vi.fn((name: string, onEnd?: () => void) => {
 			calls.push(name);
 			onEnd?.();
 		});
 
-		playSentence(["number3", "phraseAnd", "number5"], play);
+		playSentence(["number3", "phraseAnd", "number5"], play, undefined, 0);
 
 		expect(calls).toEqual(["number3", "phraseAnd", "number5"]);
 		expect(play).toHaveBeenCalledTimes(3);
 	});
 
 	it("cancel function prevents remaining clips from playing", () => {
-		// Mock play that captures onEnd without calling it (simulates clip in progress)
 		let capturedOnEnd: (() => void) | undefined;
 		const play = vi.fn((_name: string, onEnd?: () => void) => {
 			capturedOnEnd = onEnd;
 		});
 
-		const cancel = playSentence(["number3", "phraseAnd", "number5"], play);
+		const cancel = playSentence(
+			["number3", "phraseAnd", "number5"],
+			play,
+			undefined,
+			0,
+		);
 
-		// Only first clip started (waiting for onEnd)
 		expect(play).toHaveBeenCalledTimes(1);
 		expect(play).toHaveBeenCalledWith("number3", expect.any(Function));
 
-		// Cancel while first clip is still playing
 		cancel();
-
-		// Simulate first clip finishing after cancel
 		capturedOnEnd?.();
 
-		// No further clips should play
 		expect(play).toHaveBeenCalledTimes(1);
 	});
 
@@ -218,7 +217,7 @@ describe("playSentence", () => {
 		});
 		const onComplete = vi.fn();
 
-		playSentence(["number3", "phraseAnd"], play, onComplete);
+		playSentence(["number3", "phraseAnd"], play, onComplete, 0);
 
 		expect(onComplete).toHaveBeenCalledTimes(1);
 	});
@@ -230,7 +229,7 @@ describe("playSentence", () => {
 		});
 		const onComplete = vi.fn();
 
-		const cancel = playSentence(["number3"], play, onComplete);
+		const cancel = playSentence(["number3"], play, onComplete, 0);
 		cancel();
 		capturedOnEnd?.();
 
@@ -240,10 +239,72 @@ describe("playSentence", () => {
 	it("handles empty sequence", () => {
 		const play = vi.fn();
 		const onComplete = vi.fn();
-		const cancel = playSentence([], play, onComplete);
+		const cancel = playSentence([], play, onComplete, 0);
 
 		expect(play).not.toHaveBeenCalled();
 		expect(onComplete).toHaveBeenCalledTimes(1);
 		cancel(); // should not throw
+	});
+
+	it("inserts gap between clips using default INTER_CLIP_GAP_MS", () => {
+		vi.useFakeTimers();
+		try {
+			const calls: string[] = [];
+			const onEndCallbacks: Array<() => void> = [];
+			const play = vi.fn((name: string, onEnd?: () => void) => {
+				calls.push(name);
+				if (onEnd) onEndCallbacks.push(onEnd);
+			});
+			const onComplete = vi.fn();
+
+			playSentence(["number3", "phraseAnd", "number5"], play, onComplete);
+
+			expect(calls).toEqual(["number3"]);
+
+			// First clip ends → gap timer starts
+			const end0 = onEndCallbacks[0] as () => void;
+			end0();
+			expect(calls).toEqual(["number3"]);
+
+			vi.advanceTimersByTime(INTER_CLIP_GAP_MS);
+			expect(calls).toEqual(["number3", "phraseAnd"]);
+
+			// Second clip ends → gap → third clip
+			const end1 = onEndCallbacks[1] as () => void;
+			end1();
+			vi.advanceTimersByTime(INTER_CLIP_GAP_MS);
+			expect(calls).toEqual(["number3", "phraseAnd", "number5"]);
+
+			// Last clip ends → onComplete (no gap after last clip)
+			const end2 = onEndCallbacks[2] as () => void;
+			end2();
+			expect(onComplete).toHaveBeenCalledTimes(1);
+		} finally {
+			vi.useRealTimers();
+		}
+	});
+
+	it("cancel clears pending gap timer", () => {
+		vi.useFakeTimers();
+		try {
+			const onEndCallbacks: Array<() => void> = [];
+			const play = vi.fn((_name: string, onEnd?: () => void) => {
+				if (onEnd) onEndCallbacks.push(onEnd);
+			});
+
+			const cancel = playSentence(["number3", "phraseAnd"], play);
+
+			// First clip ends → gap timer starts
+			const end0 = onEndCallbacks[0] as () => void;
+			end0();
+
+			cancel();
+
+			// Advance timer — second clip should NOT start
+			vi.advanceTimersByTime(INTER_CLIP_GAP_MS);
+			expect(play).toHaveBeenCalledTimes(1);
+		} finally {
+			vi.useRealTimers();
+		}
 	});
 });

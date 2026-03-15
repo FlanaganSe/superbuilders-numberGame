@@ -117,31 +117,49 @@ export function buildTimeoutSequence(
 
 // ─── Playback ───────────────────────────────────────────────────────────────
 
+/** Default inter-clip pause (Mattys 2010: brief pauses improve word recognition). */
+export const INTER_CLIP_GAP_MS = 150;
+
 /**
  * Play a sequence of clips one after another, each starting when the
  * previous clip finishes (via the `onEnd` callback from the audio layer).
+ * Inserts `gapMs` of silence between clips for natural pacing.
  * Returns a cancel function that stops the chain from advancing.
  */
 export function playSentence(
 	sequence: readonly SoundName[],
 	play: (name: SoundName, onEnd?: () => void) => void,
 	onComplete?: () => void,
+	gapMs: number = INTER_CLIP_GAP_MS,
 ): () => void {
 	let cancelled = false;
 	let index = 0;
+	let gapTimer: ReturnType<typeof setTimeout> | null = null;
 
 	function playNext(): void {
+		gapTimer = null;
 		if (cancelled) return;
 		if (index >= sequence.length) {
 			onComplete?.();
 			return;
 		}
 		const name = sequence[index++] as SoundName;
-		play(name, () => playNext());
+		play(name, () => {
+			if (cancelled) return;
+			if (index < sequence.length && gapMs > 0) {
+				gapTimer = setTimeout(playNext, gapMs);
+			} else {
+				playNext();
+			}
+		});
 	}
 
 	playNext();
 	return () => {
 		cancelled = true;
+		if (gapTimer != null) {
+			clearTimeout(gapTimer);
+			gapTimer = null;
+		}
 	};
 }
