@@ -62,7 +62,7 @@ describe("buildCorrectSequence", () => {
 		]);
 	});
 
-	it("returns [] for Make-10 (target === 10)", () => {
+	it("returns Make-10 sequence using phraseMakeTen clip", () => {
 		const p = makeProblem({
 			left: 6,
 			right: 4,
@@ -71,7 +71,12 @@ describe("buildCorrectSequence", () => {
 			unknownPosition: "right",
 			target: 10,
 		});
-		expect(buildCorrectSequence(p, 1, 3)).toEqual([]);
+		expect(buildCorrectSequence(p, 1, 3)).toEqual([
+			"number6",
+			"phraseAnd",
+			"number4",
+			"phraseMakeTen",
+		]);
 	});
 
 	it("returns [] for subtraction with left > 9", () => {

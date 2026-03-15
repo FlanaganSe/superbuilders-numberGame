@@ -34,9 +34,6 @@ export function buildCorrectSequence(
 	if (problem.answer < 0) return []; // spelling
 	if (difficulty > 3) return []; // expertise reversal
 
-	// Make-10: skip correct-answer audio (no number10 clip)
-	if (problem.target === 10) return [];
-
 	// Subtraction: "left take-away right is answer"
 	if (problem.operator === "-") {
 		if (
@@ -57,12 +54,19 @@ export function buildCorrectSequence(
 	// Missing-addend: "left and answer make target"
 	if (problem.unknownPosition === "right") {
 		if (problem.target == null) return [];
-		if (
-			!hasClip(problem.left) ||
-			!hasClip(problem.answer) ||
-			!hasClip(problem.target)
-		)
-			return [];
+		if (!hasClip(problem.left) || !hasClip(problem.answer)) return [];
+
+		// Make-10: use single "make ten" clip (no number10 clip exists)
+		if (problem.target === 10) {
+			return [
+				numberSound(problem.left),
+				"phraseAnd",
+				numberSound(problem.answer),
+				"phraseMakeTen",
+			];
+		}
+
+		if (!hasClip(problem.target)) return [];
 		return [
 			numberSound(problem.left),
 			"phraseAnd",
