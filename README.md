@@ -1,4 +1,4 @@
-# Superbuilders
+# TileSight
 
 A browser-based educational game that uses real-time computer vision to recognize physical number and letter tiles via an iPad camera. Children ages 5-8 solve arithmetic problems by placing tiles on a play surface, and the app detects answers through the camera feed with instant celebratory feedback.
 

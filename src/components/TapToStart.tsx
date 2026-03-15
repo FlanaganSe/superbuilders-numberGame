@@ -93,7 +93,7 @@ export function TapToStart({
 				transition={GENTLE_SPRING}
 				className="font-display text-7xl text-primary-600 drop-shadow-sm"
 			>
-				Superbuilders
+				TileSight
 			</m.h1>
 
 			{cumulative.totalStars > 0 && (

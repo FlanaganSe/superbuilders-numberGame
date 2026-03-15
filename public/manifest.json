@@ -1,6 +1,6 @@
 {
-	"name": "Superbuilders",
-	"short_name": "Superbuilders",
+	"name": "TileSight",
+	"short_name": "TileSight",
 	"description": "Math game with real-time computer vision for ages 5-8",
 	"start_url": "/",
 	"display": "standalone",
