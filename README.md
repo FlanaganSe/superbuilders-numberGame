@@ -6,7 +6,8 @@ An educational math and spelling game for children ages 5-8. Kids solve problems
 
 <p align="center">
   <img src="docs/assets/home-ex.png" alt="TileSight home screen showing five game modes" width="320" />
-  <img src="docs/assets/make-10-ex.png" alt="Make 10 mode recognizing a physical tile via iPad camera" width="280" />
+  <img src="docs/assets/make-10-ex.png" alt="Make 10 mode recognizing a physical tile via iPad camera" width="240" />
+  <img src="docs/assets/spelling-ex.png" alt="Make 10 mode recognizing a physical tile via iPad camera" width="260" />
 </p>
 
 ## How it works
