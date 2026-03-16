@@ -161,7 +161,7 @@ src/
 |   +-- use-wake-lock.ts        # Screen Wake Lock API — prevents iPad sleep
 |
 |-- audio/
-|   |-- sound-manager.ts        # Howler.js config, AudioContext unlock, visibility resume
+|   |-- sound-manager.ts        # Howler.js config, speech sprites, AudioContext unlock (ADR-017)
 |   |-- use-audio.ts            # Mute-aware playback hook
 |   +-- spoken-feedback.ts      # Pure functions: compose SoundName[] sequences for spoken math (ADR-015)
 |
@@ -187,7 +187,7 @@ e2e/
 
 docs/
 |-- product-overview.md         # This file
-|-- decisions.md                # Append-only ADR log (15 decisions)
+|-- decisions.md                # Append-only ADR log (17 decisions)
 |-- requirements.md             # Original PRD
 |-- research.md                 # Verified platform facts and constraints
 |-- learning-science-research.md  # Consolidated learning science research
@@ -212,7 +212,7 @@ The game is a finite state machine with six phases, defined as a discriminated u
 
 3. **scanning** — Active detection. Camera feeds frames to the CV pipeline. All game text overlays the camera inside a semi-transparent dark card (`bg-black/55`, ADR-013). The problem displays with `?` as the answer placeholder. Below the card, a dashed "Put your answer here" clear zone pulses until a tile is detected. On first-ever scan, an animated onboarding guide shows a tile floating toward a camera icon (ADR-014). Progress pips show the current round. Math: 30-second timeout. Spelling: 45-second timeout.
 
-4. **success** — Correct answer detected. Stars awarded (3 on first attempt, 2 on second, 1 on third+). Celebration animation + confetti + chime with randomized pitch. Research-backed explanation text shown at difficulty 1-3 (fades at 4+ per Sweller's expertise reversal principle, ADR-009). Spoken feedback plays after the chime — audio speaks the math fact (e.g., "three and five make eight") while the visual teaches the process (ADR-015). Auto-advances after 3.5s.
+4. **success** — Correct answer detected. Stars awarded (3 on first attempt, 2 on second, 1 on third+). Celebration animation + confetti + chime with randomized pitch. Research-backed explanation text shown at difficulty 1-3 (fades at 4+ per Sweller's expertise reversal principle, ADR-009). Spoken feedback plays after the chime — audio speaks the math fact (e.g., "three and five make eight") while the visual teaches the process (ADR-015, ADR-017). Auto-advances after both minimum display time (3.5s) AND spoken feedback completion (event-driven via `onComplete` callback). Safety net at 15s if audio events never fire.
 
 5. **timeout** — Timer expired without correct answer. Shows encouragement (never punitive language) plus instructional feedback: strategy hint on first timeout, worked example on repeat (ADR-009). On repeated timeout (attempt >= 2, difficulty <= 3), spoken audio plays "the answer is [N]" after the encouragement clip (ADR-015). Spelling timeout goes to countdown (new word); math timeout retries the same problem with incremented attempt number. Auto-retries after 2s (math first attempt) or 4s (math repeated timeout, to allow worked example reading).
 
@@ -302,15 +302,18 @@ Training is documented in the standalone `digit-training` project at `~/proj/dig
 
 4 additional phrase clips sit on disk unregistered for future use: `phrase-then`, `phrase-more`, `phrase-you-found-it`, `phrase-missing-part-is`.
 
+Number and phrase clips used in spoken feedback have **Howler sprites** (ADR-017): a `SPEECH_MS` map stores measured speech durations (ffmpeg silencedetect at -40dB + 80ms padding), and `getHowl()` creates `sprite: { speech: [0, ms] }` so Howler's `end` event fires at the speech boundary instead of the file end. `playSound()` calls `howl.play("speech")` for sprite-mapped sounds, `howl.play()` for all others. Sounds without `SPEECH_MS` entries (chime, fanfare, encourage, tile-pop, word clips, prompts, idle) play the full file unchanged via Howler's `__default` sprite.
+
 Correct chime plays at randomized rate (`0.9 + Math.random() * 0.2`) so consecutive correct answers sound distinct. Lazy Howl instantiation: each sound created on first access and cached in a `Map`. `preloadSounds()` triggers all during the start gesture.
 
-### Spoken feedback (ADR-015)
+### Spoken feedback (ADR-015, ADR-017)
 
-`spoken-feedback.ts` composes audible sentences from number-word clips and connecting-phrase clips. Pure functions with no Howler dependency — receives `play` via dependency injection for testability. Three exports:
+`spoken-feedback.ts` composes audible sentences from number-word clips and connecting-phrase clips. Pure functions with no Howler dependency — receives `play` via dependency injection for testability. Key exports:
 
 - **`buildCorrectSequence(problem, difficulty, stars)`** — Returns `SoundName[]` for correct-answer audio. Addition: "N and M make R". Subtraction: "N take away M is R". Missing-addend: "N and M make target". Make-10: uses single `phraseMakeTen` clip. Returns `[]` for difficulty > 3 (Sweller), spelling, or operands > 9 (no clips).
 - **`buildTimeoutSequence(problem, difficulty, attemptNumber)`** — Returns `["phraseTheAnswerIs", "numberN"]` for repeated timeouts (attempt >= 2). Returns `[]` for first timeout, difficulty > 3, or spelling.
-- **`playSentence(sequence, play, gapMs?)`** — Schedules `play()` calls with 300ms gaps via `setTimeout` chain. Returns a cancel function that clears all pending timeouts.
+- **`playSentence(sequence, play, onComplete?, gapMs?)`** — Chains clips via `onEnd` callbacks with 150ms inter-clip gaps (`INTER_CLIP_GAP_MS`, Mattys 2010). Returns a cancel function that sets a cancelled flag and clears the pending gap timer. Combined with Howler sprites (ADR-017), the sentence "three and four make seven" plays in ~3.6s instead of ~5.9s.
+- **`INTER_CLIP_GAP_MS`** — Exported constant (150ms) for test use and reference.
 
 ---
 
@@ -479,7 +482,7 @@ pnpm test:e2e         # E2E (Playwright WebKit, requires pnpm build first)
 
 ## Important decisions and tradeoffs
 
-Decisions are logged in `docs/decisions.md` (ADR-001 through ADR-015). Key ones:
+Decisions are logged in `docs/decisions.md` (ADR-001 through ADR-017). Key ones:
 
 **WASM-only inference, no WebGPU fallback (ADR-002):** Rather than building a fallback chain (try WebGPU -> WASM), the codebase hardcodes `executionProviders: ["wasm"]`. Simpler, avoids 2-5 second crash-and-retry penalty. The `RecognitionService` interface preserves the seam.
 
@@ -507,7 +510,9 @@ Decisions are logged in `docs/decisions.md` (ADR-001 through ADR-015). Key ones:
 
 **Animated onboarding over text instructions (ADR-014):** GhostTileGuide uses a looping Motion animation (tile floats toward camera icon) instead of text. Pre-readers can't read "Hold a tile up" — visual demonstration is required (NN/G research). `useReducedMotion` fallback shows static tile + text label. Dismisses on first tile detection, never shows again (localStorage gate).
 
-**Spoken feedback via DI-based audio composition (ADR-015):** Pure functions compose `SoundName[]` sequences from number-word and phrase clips. Audio speaks the math fact while the visual teaches the process (Mayer's dual-coding — complementary channels, not redundant). `playSentence` uses `setTimeout` chain with 300ms gaps. All functions receive `play` via dependency injection — zero coupling to React or Howler. Gated on difficulty ≤ 3.
+**Spoken feedback via DI-based audio composition (ADR-015):** Pure functions compose `SoundName[]` sequences from number-word and phrase clips. Audio speaks the math fact while the visual teaches the process (Mayer's dual-coding — complementary channels, not redundant). `playSentence` chains clips via `onEnd` callbacks with 150ms inter-clip gaps. All functions receive `play` via dependency injection — zero coupling to React or Howler. Gated on difficulty ≤ 3.
+
+**Howler sprites for speech clip boundaries (ADR-017, amends ADR-015):** Audio clips have 0.2–1.2s trailing silence. Rather than trimming files (lossy re-encode, dual MP3+M4A), a `SPEECH_MS` map holds measured speech durations and configures Howler sprites so `end` fires at the speech boundary. Sentence "three and four make seven" goes from ~5.9s → ~3.6s. Fully reversible — remove sprite config and clips play the full file again.
 
 ---
 
@@ -540,8 +545,9 @@ Decisions are logged in `docs/decisions.md` (ADR-001 through ADR-015). Key ones:
 - **`resetCvState()` must be called before every `NEXT_ROUND` dispatch.** Clears temporal buffers but preserves `spellingWordsUsed`.
 
 ### Audio timing specifics
-- **Spoken feedback uses a dual-cleanup pattern.** The outer `setTimeout` delays the start (1500ms after correct, 600ms after timeout). The inner `playSentence` returns a cancel function for its `setTimeout` chain. The useEffect cleanup must clear both: `clearTimeout(startTimer); cancel?.();`. If `NEXT_ROUND` fires while audio is playing, both timers must be cancelled to prevent stale audio in the next round.
-- **`playSentence` fires the first clip at `i=0 * gapMs = 0ms`** (immediately). This means the start delay is the actual delay before the first sound is heard.
+- **Spoken feedback uses a dual-cleanup pattern.** The outer `setTimeout` delays the start (1500ms after correct, 1200ms after timeout). The inner `playSentence` returns a cancel function for its `onEnd` chain + gap timer. The useEffect cleanup must clear both: `clearTimeout(startTimer); cancel?.();`. If `NEXT_ROUND` fires while audio is playing, both must be cancelled to prevent stale audio in the next round.
+- **`playSentence` plays the first clip immediately** (no initial gap). Gaps are only inserted *between* clips, not before the first or after the last. This means the outer start delay is the actual delay before the first sound is heard.
+- **Howler sprite `end` timing is approximate.** Sprites use `setTimeout` for the boundary, which has ~4ms precision. The 80ms padding in `SPEECH_MS` values absorbs this drift. Across a 5-clip chain, cumulative drift is ~20-80ms — imperceptible.
 
 ### Build and deployment
 - **ONNX WASM files must be statically copied** — cannot be imported as ES modules. `vite-plugin-static-copy` handles this.

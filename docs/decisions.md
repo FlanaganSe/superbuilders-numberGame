@@ -243,3 +243,16 @@ Re-audited all text on cream:
 Note: `text-amber-500` in ProgressiveLoader ("Oops!") was a pre-existing WCAG failure (2.05:1 on old cream) not caught by ADR-011 — tracked separately.
 
 **Consequences:** Background warmth is now intrinsic rather than overlay-dependent. Star text shifts from amber-600 to amber-700 — deeper bronze but still recognizably warm/golden. All game-phase text on dark cards (`bg-black/55`) is unaffected. PWA manifest `background_color` updated to match.
+
+---
+
+## ADR-017: Howler Sprites for Speech Clip Boundaries
+
+**Date:** 2026-03-15
+**Status:** Accepted (amends ADR-015)
+
+**Context:** ADR-015 introduced `playSentence` with 300ms `setTimeout` gaps between clips. However, every audio clip has 0.2–1.2s of trailing silence baked in (measured via ffmpeg silencedetect at -40dB). Howler's `end` event fires at the file end, not the speech end, so the sentence "three and four make seven" took 5.9s with only 2.6s of actual speech (56% dead air). Trimming audio files was rejected: lossy re-encode, dual MP3+M4A processing, and a build step.
+
+**Decision:** Use Howler.js sprites to define speech boundaries in code. A `SPEECH_MS` map holds measured durations (silencedetect + 80ms padding) for number and phrase clips. `getHowl()` creates `sprite: { speech: [0, ms] }` for mapped sounds; `playSound()` calls `howl.play("speech")` which fires the `end` event at the sprite boundary (verified in `howler.core.js:955`). Inter-clip gaps reduced from 300ms to 150ms (Mattys et al. 2010: brief pauses improve word recognition at boundaries). Sounds without `SPEECH_MS` entries play the full file unchanged.
+
+**Consequences:** The same sentence now takes ~3.6s — a 39% reduction with no audio file changes. Sprite durations are instantly tunable (change a number) and fully reversible (remove the sprite config). The 80ms padding absorbs iOS Safari `setTimeout` drift (~4ms per clip). Trade-off: if a duration is wrong, the clip sounds cut off — but padding makes this unlikely, and values are adjustable without redeploying audio.
