@@ -1,6 +1,6 @@
 # TileSight
 
-An educational math and spelling game for children ages 5-8. Kids solve problems by placing physical number and letter tiles in front of an iPad camera. The app recognizes tiles in real-time using on-device computer vision — no cloud, no backend, fully offline after first load.
+An educational math and spelling game for children ages 4-8. Kids solve problems by placing physical number and letter tiles in front of an iPad or iPhone camera. The app recognizes tiles in real-time using on-device computer vision — no cloud, no backend, fully offline after first load.
 
 **[Play it live](https://superbuilders-numbergame.pages.dev/)**
 
@@ -40,8 +40,6 @@ cloudflared tunnel --url https://localhost:5173
 | Document | Description |
 |---|---|
 | [Product Overview](docs/product-overview.md) | Architecture, directory structure, patterns, gotchas |
-| [Decisions](docs/decisions.md) | Append-only architecture decision records |
-| [Requirements](docs/requirements.md) | Original product requirements |
 | [Learning Science Research](docs/learning-science-research.md) | Research synthesis behind instructional feedback |
 | [ML Training Pipeline](https://github.com/FlanaganSe/ml-digit-training) | Separate repo for model training |
 
@@ -57,7 +55,6 @@ Append `?recognition=mock` to use an on-screen numpad instead of the camera. Add
 | `pnpm dev` | HTTPS dev server |
 | `pnpm build` | Production build (typecheck + Vite) |
 | `pnpm test` | Unit tests (Vitest) |
-| `pnpm test:watch` | Unit tests in watch mode |
 | `pnpm test:e2e` | E2E tests (Playwright WebKit, requires `pnpm build` first) |
 | `pnpm lint` | Lint + format check (Biome) |
 | `pnpm lint:fix` | Auto-fix lint + format |
